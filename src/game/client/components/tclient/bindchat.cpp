@@ -291,7 +291,7 @@ bool CBindChat::ChatDoBinds(const char *pText)
 	for(const CBind &Bind : m_vBinds)
 	{
 		const bool SendsMessage = str_find(Bind.m_aCommand, "say") ||
-					  str_find(Bind.m_aCommand, "say_team") || str_find(Bind.m_aCommand, "reply_last");
+			str_find(Bind.m_aCommand, "reply_last");
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{

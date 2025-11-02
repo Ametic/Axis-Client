@@ -224,13 +224,15 @@ public:
 	// It uses team or public chat depending on m_Mode.
 	void SendChatQueued(const char *pLine);
 
-	// E-Client
+	//<E-Client
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
 	void AddHistoryEntry(const char *pLine);
 
 private:
-	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client
-	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData); // E-Client
+	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); 
+	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData); 
+	static void ConSayQueued(IConsole::IResult *pResult, void *pUserData);
+	// E-Client>
 };
 #endif

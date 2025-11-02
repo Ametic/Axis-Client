@@ -264,6 +264,7 @@ void CChat::OnConsoleInit()
 	Console()->Register("clear_chat", "", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClearChat, this, "Clear chat messages");
 
 	Console()->Register("set_input", "r[input]", CFGFLAG_CLIENT, ConSetChatInput, this, "Opens chat and sets the input as the message"); // E-Client [Quick Actions]
+	Console()->Register("say_queued", "r[message]", CFGFLAG_CLIENT, ConSayQueued, this, "Say in queue chat"); // E-Client
 }
 
 void CChat::OnInit()
@@ -1751,6 +1752,14 @@ void CChat::ConSetChatInput(IConsole::IResult *pResult, void *pUserData)
 	CChat *pChat = (CChat *)pUserData;
 	pChat->EnableMode(TEAM_FLOCK);
 	pChat->m_Input.Set(pResult->GetString(0));
+}
+
+void CChat::ConSayQueued(IConsole::IResult *pResult, void *pUserData)
+{
+	CChat *pChat = (CChat *)pUserData;
+	pChat->m_Mode = MODE_ALL;
+	pChat->SendChatQueued(pResult->GetString(0));
+	pChat->m_Mode = MODE_NONE;
 }
 
 void CChat::AddHistoryEntry(const char *pLine)
