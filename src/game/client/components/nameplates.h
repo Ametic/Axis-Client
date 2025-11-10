@@ -8,51 +8,6 @@
 
 struct CNetObj_PlayerInfo;
 
-enum class EHookStrongWeakState
-{
-	WEAK,
-	NEUTRAL,
-	STRONG
-};
-
-class CNamePlateData
-{
-public:
-	bool m_InGame;
-	ColorRGBA m_Color;
-	bool m_ShowName;
-	const char *m_pName;
-	bool m_ShowFriendMark;
-	bool m_ShowClientId;
-	int m_ClientId;
-	float m_FontSizeClientId;
-	bool m_ClientIdSeparateLine;
-	float m_FontSize;
-	bool m_ShowClan;
-	const char *m_pClan;
-	float m_FontSizeClan;
-	bool m_ShowDirection;
-	bool m_DirLeft;
-	bool m_DirJump;
-	bool m_DirRight;
-	float m_FontSizeDirection;
-	bool m_ShowHookStrongWeak;
-	EHookStrongWeakState m_HookStrongWeakState;
-	bool m_ShowHookStrongWeakId;
-	int m_HookStrongWeakId;
-	float m_FontSizeHookStrongWeak;
-
-	// E-Client
-	bool m_PingCircle = false;
-	bool m_IsMuted = false;
-	bool m_IsEntity = false;
-	const char *m_pReason = "";
-	bool m_ShowReason = false;
-
-	// TClient
-	bool m_ShowClanWarInName = false;
-};
-
 class CNamePlates : public CComponent
 {
 private:

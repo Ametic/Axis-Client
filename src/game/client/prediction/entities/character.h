@@ -179,8 +179,6 @@ private:
 	void DDRacePostCoreTick();
 	void HandleTuneLayer();
 
-	CTuningParams *CharacterTuning();
-
 	int m_StrongWeakId;
 
 	int m_LastWeaponSwitchTick;
