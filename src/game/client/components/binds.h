@@ -50,13 +50,13 @@ class CBinds : public CComponent
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
-	CBindSlot GetBindSlot(const char *pBindString) const;
-
 	// free buffer after use
 	char *GetKeyBindCommand(int ModifierCombination, int Key) const;
 
 public:
 	CBindSlot GetBindSlot(const char *pBindString) const;
+
+	const char *GetKeyBinding(int modifierMask, int key) const { return m_aapKeyBindings[modifierMask][key]; } // E-Client
 
 	CBinds();
 	~CBinds() override;

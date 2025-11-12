@@ -47,6 +47,16 @@ public:
 	bool m_ShowHookStrongWeakId;
 	int m_HookStrongWeakId;
 	float m_FontSizeHookStrongWeak;
+
+	// E-Client
+	bool m_PingCircle = false;
+	bool m_IsMuted = false;
+	bool m_IsEntity = false;
+	const char *m_pReason = "";
+	bool m_ShowReason = false;
+
+	// TClient
+	bool m_ShowClanWarInName = false;
 };
 
 // Part Types
@@ -859,8 +869,8 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
 		{
 			const char *pReason = Data.m_pReason;
-			Data.m_pReason = Data.m_pName;
-			Data.m_pName = pReason;
+			Data.m_pReason = Data.m_aName;
+			str_copy(Data.m_aName, pReason);
 		}
 	}
 
@@ -869,7 +879,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_FontSizeClientId = Data.m_ClientIdSeparateLine ? (18.0f + 20.0f * g_Config.m_ClNamePlatesIdsSize / 100.0f) : Data.m_FontSize;
 
 	Data.m_ShowClan = Data.m_ShowName && ShowClanPlate;
-	Data.m_aClan = GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_aClan;
+	str_copy(Data.m_aClan, ShowClanPlate ? GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_aClan : "");
 	Data.m_FontSizeClan = 18.0f + 20.0f * g_Config.m_ClNamePlatesClanSize / 100.0f;
 
 	Data.m_FontSizeHookStrongWeak = 18.0f + 20.0f * g_Config.m_ClNamePlatesStrongSize / 100.0f;

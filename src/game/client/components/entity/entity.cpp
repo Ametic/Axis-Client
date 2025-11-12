@@ -225,8 +225,8 @@ void CEClient::GoresMode()
 		return;
 	}
 	const char *pKeyName = Input()->KeyName(Key);
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
-	const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+	const CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
+	const char *pBind = GameClient()->m_Binds.GetKeyBinding(BindSlot.m_ModifierMask, BindSlot.m_Key);
 	if(!pBind)
 		return;
 
@@ -256,17 +256,13 @@ void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IC
 		int GoresMode = pResult->GetInteger(0);
 
 		if(GoresMode)
-		{
-			pSelf->GoresModeSave(true);
-		}
+			pSelf->GoresModeSave();
 		else
-		{
 			pSelf->GoresModeRestore();
-		}
 	}
 }
 
-void CEClient::GoresModeSave(bool Enable)
+void CEClient::GoresModeSave()
 {
 	int Key = g_Config.m_ClGoresModeKey;
 	if(Key < KEY_FIRST || Key >= KEY_LAST)
@@ -277,8 +273,8 @@ void CEClient::GoresModeSave(bool Enable)
 	}
 	const char *pKeyName = Input()->KeyName(Key);
 
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
-	const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+	const CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
+	const char *pBind = GameClient()->m_Binds.GetKeyBinding(BindSlot.m_ModifierMask, BindSlot.m_Key);
 	str_copy(g_Config.m_ClGoresModeSaved, pBind);
 
 	GameClient()->m_Binds.Bind(Key, "+fire;+prevweapon");
@@ -593,15 +589,6 @@ void CEClient::OnShutdown()
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 	}
 
-	if(g_Config.m_ClDisableGoresOnShutdown)
-	{
-		g_Config.m_ClGoresMode = 0;
-		int Key = g_Config.m_ClGoresModeKey;
-		if(Key < KEY_FIRST || Key >= KEY_LAST)
-			return;
-		GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
-	}
-
 	g_Config.m_ClKillCounter = m_KillCount;
 }
 
@@ -620,9 +607,6 @@ void CEClient::OnInit()
 
 	// Dummy Rainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
-
-	if(g_Config.m_ClDisableGoresOnShutdown)
-		GoresModeSave();
 
 	// Set Kill Counter
 	m_KillCount = g_Config.m_ClKillCounter;

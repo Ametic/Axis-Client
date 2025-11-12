@@ -181,7 +181,7 @@ public:
 	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	void GoresMode();
 
-	void GoresModeSave(bool Enable = false);
+	void GoresModeSave();
 	void GoresModeRestore();
 
 	int64_t m_JoinTeam;

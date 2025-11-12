@@ -272,7 +272,6 @@ MACRO_CONFIG_INT(ClGoresMode, ec_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_S
 MACRO_CONFIG_INT(ClGoresModeKey, ec_gores_mode_key, 291, 0, 512, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The key it binds to")
 MACRO_CONFIG_INT(ClGoresModeDisableIfWeapons, ec_gores_mode_disable_weapons, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable Gores Mode When The Player Has Another Weapon")
 MACRO_CONFIG_INT(ClAutoEnableGoresMode, ec_gores_mode_auto_enable, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enables it on Gores gametype and disables on others")
-MACRO_CONFIG_INT(ClDisableGoresOnShutdown, ec_gores_mode_disable_shutdown, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "disables it on shutdown")
 MACRO_CONFIG_STR(ClGoresModeSaved, ec_gores_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")
 
 // Tee

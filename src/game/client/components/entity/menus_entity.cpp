@@ -1145,25 +1145,6 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
 	Ui()->DoLabel(&Label, Localize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
 
-	// Do Settings Key
-	CKeyInfo Key = CKeyInfo{"Quick Actions Key", "+quickactions", 0, 0};
-	for(int Mod = 0; Mod < CBinds::MODIFIER_COMBINATION_COUNT; Mod++)
-	{
-		for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
-		{
-			const char *pBind = GameClient()->m_Binds.Get(KeyId, Mod);
-			if(!pBind[0])
-				continue;
-
-			if(str_comp(pBind, Key.m_pCommand) == 0)
-			{
-				Key.m_KeyId = KeyId;
-				Key.m_ModifierCombination = Mod;
-				break;
-			}
-		}
-	}
-
 	// RenderTee
 	{
 		const char *pSkinName = g_Config.m_ClPlayerSkin;
@@ -1195,21 +1176,11 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 
 	CUIRect KeyLabel;
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
-	Button.VSplitLeft(120.0f, &KeyLabel, &Button);
-	Button.VSplitLeft(100.0f, &Button, nullptr);
-	char aBuf[64];
-	str_format(aBuf, sizeof(aBuf), "%s:", Localize((const char *)Key.m_pName));
+	Button.VSplitLeft(250.0f, &KeyLabel, &Button);
 
-	Ui()->DoLabel(&KeyLabel, aBuf, 14.0f, TEXTALIGN_ML);
-	int OldId = Key.m_KeyId, OldModifierCombination = Key.m_ModifierCombination, NewModifierCombination;
-	int NewId = GameClient()->m_KeyBinder.DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
-	if(NewId != OldId || NewModifierCombination != OldModifierCombination)
-	{
-		if(OldId != 0 || NewId == 0)
-			GameClient()->m_Binds.Bind(OldId, "", false, OldModifierCombination);
-		if(NewId != 0)
-			GameClient()->m_Binds.Bind(NewId, Key.m_pCommand, false, NewModifierCombination);
-	}
+	static CButtonContainer s_ReaderButtonWheel, s_ClearButtonWheel;
+	DoLine_KeyReader(KeyLabel, s_ReaderButtonWheel, s_ClearButtonWheel, Localize("Quick Actions Key:"), "+quickactions");
+
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
 
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetQuickActionMouse, Localize("Reset position of mouse when opening the quick actions menu"), &g_Config.m_ClResetQuickActionMouse, &Button, LineSize);
@@ -1365,49 +1336,21 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
 	Ui()->DoLabel(&Label, Localize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
 
-	// Do Settings Key
-	CKeyInfo Key = CKeyInfo{"Bind Wheel Key", "+bindwheel", 0, 0};
-	for(int Mod = 0; Mod < CBinds::MODIFIER_COMBINATION_COUNT; Mod++)
-	{
-		for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
-		{
-			const char *pBind = GameClient()->m_Binds.Get(KeyId, Mod);
-			if(!pBind[0])
-				continue;
-
-			if(str_comp(pBind, Key.m_pCommand) == 0)
-			{
-				Key.m_KeyId = KeyId;
-				Key.m_ModifierCombination = Mod;
-				break;
-			}
-		}
-	}
 
 	CUIRect KeyLabel;
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
-	Button.VSplitLeft(120.0f, &KeyLabel, &Button);
-	Button.VSplitLeft(100.0f, &Button, nullptr);
-	char aBuf[64];
-	str_format(aBuf, sizeof(aBuf), "%s:", Localize((const char *)Key.m_pName));
+	Button.VSplitLeft(250.0f, &KeyLabel, &Button);
 
-	Ui()->DoLabel(&KeyLabel, aBuf, 14.0f, TEXTALIGN_ML);
-	int OldId = Key.m_KeyId, OldModifierCombination = Key.m_ModifierCombination, NewModifierCombination;
-	int NewId = GameClient()->m_KeyBinder.DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
-	if(NewId != OldId || NewModifierCombination != OldModifierCombination)
-	{
-		if(OldId != 0 || NewId == 0)
-			GameClient()->m_Binds.Bind(OldId, "", false, OldModifierCombination);
-		if(NewId != 0)
-			GameClient()->m_Binds.Bind(NewId, Key.m_pCommand, false, NewModifierCombination);
-	}
+	static CButtonContainer s_ReaderButtonWheel, s_ClearButtonWheel;
+	DoLine_KeyReader(KeyLabel, s_ReaderButtonWheel, s_ClearButtonWheel, Localize("Bind Wheel Key:"), "+bindwheel");
+
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
 
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetBindWheelMouse, Localize("Reset position of mouse when opening bindwheel"), &g_Config.m_ClResetBindWheelMouse, &Button, LineSize);
 
 	CUIRect CopyRight;
 	MainView.HSplitBottom(20.0f, 0, &CopyRight);
-	CopyRight.VSplitLeft(225.0f, &CopyRight, &CopyRight);
+	CopyRight.VSplitLeft(255.0f, &CopyRight, &CopyRight);
 	Ui()->DoLabel(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
 }
 
@@ -2536,43 +2479,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideFrozenGhosts, Localize("Hide ghosts of frozen players"), &g_Config.m_ClHideFrozenGhosts, &GhostTools, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderGhostAsCircle, Localize("Render ghosts as circles"), &g_Config.m_ClRenderGhostAsCircle, &GhostTools, LineSize);
 
-				{
-					static CKeyInfo s_Key = CKeyInfo{Localize("Toggle ghosts key"), "toggle tc_show_others_ghosts 0 1", 0, 0};
-					s_Key.m_ModifierCombination = s_Key.m_KeyId = 0;
-					for(int Mod = 0; Mod < CBinds::MODIFIER_COMBINATION_COUNT; Mod++)
-					{
-						for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
-						{
-							const char *pBind = GameClient()->m_Binds.Get(KeyId, Mod);
-							if(!pBind[0])
-								continue;
+				static CButtonContainer s_ReaderButtonGhost, s_ClearButtonGhost;
+				DoLine_KeyReader(GhostTools, s_ReaderButtonGhost, s_ClearButtonGhost, Localize("Toggle ghosts key"), "toggle tc_show_others_ghosts 0 1");
 
-							if(str_comp(pBind, s_Key.m_pCommand) == 0)
-							{
-								s_Key.m_KeyId = KeyId;
-								s_Key.m_ModifierCombination = Mod;
-								break;
-							}
-						}
-					}
-
-					CUIRect KeyButton, KeyLabel;
-					GhostTools.HSplitTop(LineSize, &KeyButton, &GhostTools);
-					KeyButton.VSplitMid(&KeyLabel, &KeyButton);
-					char aBuf[64];
-					str_format(aBuf, sizeof(aBuf), "%s:", Localize(s_Key.m_pName));
-					Ui()->DoLabel(&KeyLabel, aBuf, 12.0f, TEXTALIGN_ML);
-					int OldId = s_Key.m_KeyId, OldModifierCombination = s_Key.m_ModifierCombination, NewModifierCombination;
-					int NewId = GameClient()->m_KeyBinder.DoKeyReader(&s_Key, &KeyButton, OldId, OldModifierCombination, &NewModifierCombination);
-					if(NewId != OldId || NewModifierCombination != OldModifierCombination)
-					{
-						if(OldId != 0 || NewId == 0)
-							GameClient()->m_Binds.Bind(OldId, "", false, OldModifierCombination);
-						if(NewId != 0)
-							GameClient()->m_Binds.Bind(NewId, s_Key.m_pCommand, false, NewModifierCombination);
-					}
-					GhostTools.HSplitTop(MarginExtraSmall, nullptr, &GhostTools);
-				}
 			}
 		}
 	}
@@ -2581,7 +2490,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Gores Mode */
 	{
 		GoresMode.VMargin(5.0f, &GoresMode);
-		GoresMode.HSplitTop(140.0f, &GoresMode, &MenuSettings);
+		GoresMode.HSplitTop(120.0f, &GoresMode, &MenuSettings);
 		if(s_ScrollRegion.AddRect(GoresMode))
 		{
 			GoresMode.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -2593,11 +2502,12 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresMode, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresMode, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &GoresMode, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresMode, LineSize);
-
+	
 			// Key Reader for Gores Mode
 			{
-				static int s_GoresModeKey = g_Config.m_ClGoresModeKey;
+				static CBindSlot s_GoresBind(g_Config.m_ClGoresModeKey, 0);
+				if(s_GoresBind.m_Key != g_Config.m_ClGoresModeKey)
+					s_GoresBind.m_Key = g_Config.m_ClGoresModeKey;
 
 				const char *pText = Localize("Gores Mode Key:");
 				float Length = TextRender()->TextBoundingBox(FontSize, pText).m_W + 3.5f;
@@ -2605,17 +2515,23 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				GoresMode.HSplitTop(LineSize, &KeyButton, &GoresMode);
 				KeyButton.VSplitLeft(Length, &KeyLabel, &KeyButton);
 
-				Ui()->DoLabel(&KeyLabel, Localize(pText), 14.0f, TEXTALIGN_ML);
+				Ui()->DoLabel(&KeyLabel, pText, 14.0f, TEXTALIGN_ML);
 
-				int NewModifierCombination = 0;
-				int NewKey = GameClient()->m_KeyBinder.DoKeyReader(&s_GoresModeKey, &KeyButton, s_GoresModeKey, 0, &NewModifierCombination);
+				static CButtonContainer s_ReaderButtonGores, s_ClearButtonGores;
+				const auto Result = GameClient()->m_KeyBinder.DoKeyReader(&s_ReaderButtonGores, &s_ClearButtonGores, &KeyButton, s_GoresBind, false);
 
-				if(NewKey != s_GoresModeKey)
+				if(Result.m_Bind != s_GoresBind)
 				{
 					GameClient()->m_EClient.GoresModeRestore();
-					s_GoresModeKey = NewKey;
-					g_Config.m_ClGoresModeKey = s_GoresModeKey;
-					GameClient()->m_EClient.GoresModeSave(true);
+
+					if(Result.m_Bind.m_Key == KEY_UNKNOWN)
+						g_Config.m_ClGoresModeKey = KEY_UNKNOWN;
+					else
+					{
+						s_GoresBind = Result.m_Bind;
+						g_Config.m_ClGoresModeKey = s_GoresBind.m_Key;
+					}
+					GameClient()->m_EClient.GoresModeSave();
 				}
 			}
 		}
@@ -3689,6 +3605,48 @@ bool CMenus::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRec
 	if(*pOption != Value)
 	{
 		*pOption = Value;
+		return true;
+	}
+	return false;
+}
+
+bool CMenus::DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CButtonContainer &ClearButton, const char *pName, const char *pCommand)
+{
+	CBindSlot Bind(0, 0);
+	for(int Mod = 0; Mod < KeyModifier::COMBINATION_COUNT; Mod++)
+	{
+		for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
+		{
+			const char *pBind = GameClient()->m_Binds.Get(KeyId, Mod);
+			if(!pBind[0])
+				continue;
+
+			if(str_comp(pBind, pCommand) == 0)
+			{
+				Bind.m_Key = KeyId;
+				Bind.m_ModifierMask = Mod;
+				break;
+			}
+		}
+	}
+
+	CUIRect KeyButton, KeyLabel;
+	View.HSplitTop(LineSize, &KeyButton, &View);
+	KeyButton.VSplitMid(&KeyLabel, &KeyButton);
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "%s", pName);
+	Ui()->DoLabel(&KeyLabel, aBuf, FontSize, TEXTALIGN_ML);
+
+	View.HSplitTop(MarginExtraSmall, nullptr, &View);
+
+	const auto Result = GameClient()->m_KeyBinder.DoKeyReader(&ReaderButton, &ClearButton, &KeyButton, Bind, false);
+	if(Result.m_Bind != Bind)
+	{
+		if(Bind.m_Key != KEY_UNKNOWN)
+			GameClient()->m_Binds.Bind(Bind.m_Key, "", false, Bind.m_ModifierMask);
+		if(Result.m_Bind.m_Key != KEY_UNKNOWN)
+			GameClient()->m_Binds.Bind(Result.m_Bind.m_Key, pCommand, false, Result.m_Bind.m_ModifierMask);
 		return true;
 	}
 	return false;
