@@ -1625,7 +1625,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListScoreboard, Localize("Colors in scoreboard"), &g_Config.m_ClWarListScoreboard, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSpecMenu, Localize("Colors in specmenu"), &g_Config.m_ClWarListSpecMenu, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListShowClan, Localize("Show clan if war"), &g_Config.m_ClWarListShowClan, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwapNameReason, Localize("Switch Reason with Name"), &g_Config.m_ClWarListSwapNameReason, &Column2, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwapNameReason, Localize("Swap Reason with Name"), &g_Config.m_ClWarListSwapNameReason, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListAllowDuplicates, Localize("Allow Duplicate Entries"), &g_Config.m_ClWarListAllowDuplicates, &Column2, LineSize);
 
 	// ======WAR TYPE EDITING======
@@ -2517,8 +2517,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				Ui()->DoLabel(&KeyLabel, pText, 14.0f, TEXTALIGN_ML);
 
-				static CButtonContainer s_ReaderButtonGores, s_ClearButtonGores;
-				const auto Result = GameClient()->m_KeyBinder.DoKeyReader(&s_ReaderButtonGores, &s_ClearButtonGores, &KeyButton, s_GoresBind, false);
+				static CButtonContainer s_ReaderButtonGores;
+				const auto Result = GameClient()->m_KeyBinder.DoKeyReader(&s_ReaderButtonGores, &KeyButton, s_GoresBind, false);
 
 				if(Result.m_Bind != s_GoresBind)
 				{

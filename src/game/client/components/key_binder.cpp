@@ -31,6 +31,8 @@ bool CKeyBinder::OnInput(const IInput::CEvent &Event)
 	return true;
 }
 
+
+
 CKeyBinder::CKeyReaderResult CKeyBinder::DoKeyReader(CButtonContainer *pReaderButton, CButtonContainer *pClearButton, const CUIRect *pRect, const CBindSlot &CurrentBind, bool Activate)
 {
 	CKeyReaderResult Result = {CurrentBind, false};
@@ -86,6 +88,63 @@ CKeyBinder::CKeyReaderResult CKeyBinder::DoKeyReader(CButtonContainer *pReaderBu
 
 	const ColorRGBA Color = m_pKeyReaderId == pReaderButton && m_TakeKey ? ColorRGBA(0.0f, 1.0f, 0.0f, 0.4f) : ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f * Ui()->ButtonColorMul(pReaderButton));
 	KeyReaderButton.Draw(Color, IGraphics::CORNER_L, 5.0f);
+	CUIRect Label;
+	KeyReaderButton.HMargin(1.0f, &Label);
+	Ui()->DoLabel(&Label, aBuf, Label.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+
+	return Result;
+}
+
+CKeyBinder::CKeyReaderResult CKeyBinder::DoKeyReader(CButtonContainer *pReaderButton, const CUIRect *pRect, const CBindSlot &CurrentBind, bool Activate)
+{
+	CKeyReaderResult Result = {CurrentBind, false};
+
+	CUIRect KeyReaderButton, ClearButton;
+	pRect->VSplitRight(pRect->h, &KeyReaderButton, &ClearButton);
+
+	const int ButtonResult = Ui()->DoButtonLogic(pReaderButton, 0, &KeyReaderButton, BUTTONFLAG_LEFT | BUTTONFLAG_RIGHT);
+	if(ButtonResult == 1 || Activate)
+	{
+		m_pKeyReaderId = pReaderButton;
+		m_TakeKey = true;
+		m_Key = std::nullopt;
+	}
+	else if(ButtonResult == 2)
+	{
+		Result.m_Bind = CBindSlot(KEY_UNKNOWN, KeyModifier::NONE);
+	}
+
+	if(m_pKeyReaderId == pReaderButton && m_Key.has_value())
+	{
+		if(m_Key.value().m_Key == KEY_ESCAPE)
+		{
+			Result.m_Aborted = true;
+		}
+		else
+		{
+			Result.m_Bind = m_Key.value();
+		}
+		m_pKeyReaderId = nullptr;
+		m_Key = std::nullopt;
+		Ui()->SetActiveItem(nullptr);
+	}
+
+	char aBuf[64];
+	if(m_pKeyReaderId == pReaderButton && m_TakeKey)
+	{
+		str_copy(aBuf, Localize("Press a key…"));
+	}
+	else if(Result.m_Bind.m_Key == KEY_UNKNOWN)
+	{
+		aBuf[0] = '\0';
+	}
+	else
+	{
+		GameClient()->m_Binds.GetKeyBindName(Result.m_Bind.m_Key, Result.m_Bind.m_ModifierMask, aBuf, sizeof(aBuf));
+	}
+
+	const ColorRGBA Color = m_pKeyReaderId == pReaderButton && m_TakeKey ? ColorRGBA(0.0f, 1.0f, 0.0f, 0.4f) : ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f * Ui()->ButtonColorMul(pReaderButton));
+	KeyReaderButton.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
 	CUIRect Label;
 	KeyReaderButton.HMargin(1.0f, &Label);
 	Ui()->DoLabel(&Label, aBuf, Label.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);

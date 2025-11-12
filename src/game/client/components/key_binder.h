@@ -21,6 +21,10 @@ public:
 		bool m_Aborted;
 	};
 	CKeyReaderResult DoKeyReader(CButtonContainer *pReaderButton, CButtonContainer *pClearButton, const CUIRect *pRect, const CBindSlot &CurrentBind, bool Activate);
+	// <E-Client
+	CKeyReaderResult DoKeyReader(CButtonContainer *pReaderButton, const CUIRect *pRect, const CBindSlot &CurrentBind, bool Activate);
+	// E-Client>
+	
 	bool IsActive() const;
 
 private:

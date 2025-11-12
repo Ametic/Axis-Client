@@ -52,7 +52,7 @@ public:
 	bool m_PingCircle = false;
 	bool m_IsMuted = false;
 	bool m_IsEntity = false;
-	const char *m_pReason = "";
+	char m_aReason[MAX_WARLIST_REASON_LENGTH] = "";
 	bool m_ShowReason = false;
 
 	// TClient
@@ -494,12 +494,12 @@ protected:
 			return false;
 
 		m_Color = ColorRGBA(0.7f, 0.7f, 0.7f, Data.m_Color.a);
-		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_pReason) != 0;
+		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_aReason) != 0;
 	}
 	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSizeClan;
-		str_copy(m_aText, Data.m_pReason);
+		str_copy(m_aText, Data.m_aReason);
 		CTextCursor Cursor;
 		Cursor.SetPosition(vec2(0, 0));
 		Cursor.m_FontSize = m_FontSize;
@@ -840,8 +840,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	const bool OtherTeam = GameClient()->IsOtherTeam(pPlayerInfo->m_ClientId);
 
 	// TClient
-	bool ClanPlateOverride = g_Config.m_ClWarList && g_Config.m_ClWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarClan;
-	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || ClanPlateOverride;
+	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || (g_Config.m_ClWarList && g_Config.m_ClWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarClan);
 	bool ShowClanWarInName = g_Config.m_ClWarList && !ShowClanPlate && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarClan && !GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarName;
 	Data.m_ShowClanWarInName = ShowClanWarInName;
 
@@ -858,19 +857,20 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	if(g_Config.m_ClWarList)
 	{
-		Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
+		str_copy(Data.m_aReason, GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason);
 		Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
 		CTempData TempData = GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId];
 
 		if((TempData.IsTempWar || TempData.IsTempHelper))
-			Data.m_pReason = TempData.m_aReason;
+			str_copy(Data.m_aReason, TempData.m_aReason);
 
-		if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
+		if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_aReason, "") != 0)
 		{
-			const char *pReason = Data.m_pReason;
-			Data.m_pReason = Data.m_aName;
-			str_copy(Data.m_aName, pReason);
+			char Reason[MAX_WARLIST_REASON_LENGTH] = "";
+			str_copy(Reason, Data.m_aReason);	
+			str_copy(Data.m_aReason, Data.m_aName);
+			str_copy(Data.m_aName, Reason);
 		}
 	}
 
@@ -1005,7 +1005,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	CNamePlateData Data;
 
 	// E-Client
-	Data.m_pReason = "Reason";
+	str_copy(Data.m_aReason, "Reason");
 	Data.m_ShowReason = g_Config.m_ClWarListReason;
 
 	Data.m_InGame = false;
@@ -1052,7 +1052,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 		SwitchDelay = time_get() + time_freq() * 0.5f;
 	}
 
-	Data.m_pReason = Reason;
+	str_copy(Data.m_aReason, Reason);
 
 	Data.m_Color = Colors;
 	Data.m_Color.a = 1.0f;
