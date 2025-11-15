@@ -46,53 +46,6 @@ bool CFreezeBars::RenderKillBar()
 	return true;
 }
 
-bool CFreezeBars::RenderKillBar()
-{	
-	if(!g_Config.m_ClShowFreezeBars)
-		return false;
-
-	if(!g_Config.m_ClFreezeKill || !GameClient()->CurrentRaceTime())
-		return false;
-
-	if(g_Config.m_ClFreezeKillMultOnly)
-	{
-		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
-			return false;
-	}
-
-	int ClientId = GameClient()->m_Snap.m_LocalClientId;
-
-	const float FreezeBarWidth = 64.0f;
-	const float FreezeBarHalfWidth = 32.0f;
-	const float FreezeBarHeight = 16.0f;
-
-	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
-	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_Predicted;
-
-	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
-		return false;
-
-	if(g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
-		return false;
-
-	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
-	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
-	float FreezeProgress = std::clamp(Time / time_freq(), 0.0f, Max) / Max;
-	if(FreezeProgress <= 0.0f)
-		return false;
-
-	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
-	Position.x -= FreezeBarHalfWidth;
-	Position.y += 22.0f;
-
-	float Alpha = GameClient()->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
-
-	const ColorRGBA Color = ColorRGBA(0.6f, 1.0f, 1.6f, Alpha);
-
-	RenderFreezeBarPos(Position.x, Position.y, FreezeBarWidth, FreezeBarHeight, FreezeProgress, Color);
-	return true;
-}
-
 void CFreezeBars::RenderFreezeBar(const int ClientId)
 {
 	if(!g_Config.m_ClShowFreezeBars)

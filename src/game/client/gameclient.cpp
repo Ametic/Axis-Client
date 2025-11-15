@@ -1203,7 +1203,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 				if(CCharacter *pChar = m_GameWorld.GetCharacterById(ClientId))
 				{
 					pChar->ResetPrediction();
-					vStrongWeakSorted.emplace_back(i, pMsg->m_First == i ? MAX_CLIENTS : (pChar ? pChar->GetStrongWeakId() : 0));
+					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : (pChar ? pChar->GetStrongWeakId() : 0));
 				}
 				m_GameWorld.ReleaseHooked(ClientId);
 			}
@@ -2335,7 +2335,8 @@ void CGameClient::OnNewSnapshot()
 				const float Volume = 1.0f; // TODO snd_game_volume_others
 				m_Effects.AirJump(Pos, Alpha, Volume);
 			}
-
+		}
+	}
 	if(g_Config.m_ClFreezeStars && !m_SuppressEvents)
 	{
 		for(auto &Character : m_Snap.m_aCharacters)
@@ -2664,55 +2665,6 @@ void CGameClient::OnPredict()
 			if(g_Config.m_ClPredict && !m_SuppressEvents)
 				if(Events & COREEVENT_AIR_JUMP)
 					m_Effects.AirJump(Pos, 1.0f, 1.0f);
-		}
-	}
-
-	if(g_Config.m_ClFastInput)
-		m_PredictedWorld.CopyWorld(&m_PrevPredictedWorld);
-
-	if(g_Config.m_ClRemoveAnti)
-	{
-		m_ExtraPredictedWorld.CopyWorldClean(&m_PredictedWorld);
-
-		// Remove other tees to reduce lag and because they aren't really important in this case
-		for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-		{
-			if(ClientId != m_Snap.m_LocalClientId)
-			{
-				if(CCharacter *pDelChar = m_ExtraPredictedWorld.GetCharacterById(ClientId))
-				{
-					pDelChar->Destroy();
-				}
-			}
-		}
-
-		CCharacter *pExtraChar = m_ExtraPredictedWorld.GetCharacterById(m_Snap.m_LocalClientId);
-		if(pExtraChar)
-		{
-			bool Unfrozen = false;
-			bool Frozen = false;
-			for(int i = 0; i < g_Config.m_ClUnfreezeLagDelayTicks; i++)
-			{
-				if(!pExtraChar)
-					continue;
-
-				if(Frozen && pExtraChar->m_AliveAccumulation > 0)
-					Unfrozen = true;
-
-				if(pExtraChar->m_AliveAccumulation < 0)
-					Frozen = true;
-
-				if(!Unfrozen)
-				{
-					m_ExtraPredictedWorld.m_GameTick++;
-					m_ExtraPredictedWorld.Tick();
-				}
-				else
-				{
-					pExtraChar->m_AliveAccumulation = std::max(pExtraChar->m_AliveAccumulation, 1);
-					pExtraChar->m_AliveAccumulation = std::min(pExtraChar->m_AliveAccumulation + 1, g_Config.m_ClUnfreezeLagDelayTicks);
-				}
-			}
 		}
 	}
 
