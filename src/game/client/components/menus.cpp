@@ -545,7 +545,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 	}
 	else
 	{
-		dbg_assert(false, "Client state invalid for RenderMenubar");
+		dbg_assert_failed("Client state %d is invalid for RenderMenubar", ClientState);
 	}
 
 	// First render buttons aligned from right side so remaining
@@ -1226,7 +1226,7 @@ void CMenus::Render()
 			}
 			else
 			{
-				dbg_assert(false, "m_MenuPage invalid STATE_OFFLINE");
+				dbg_assert_failed("Invalid m_MenuPage: %d", m_MenuPage);
 			}
 
 			RenderMenubar(TabBar, ClientState);
@@ -1282,7 +1282,7 @@ void CMenus::Render()
 			}
 			else
 			{
-				dbg_assert(false, "m_GamePage invalid STATE_ONLINE");
+				dbg_assert_failed("Invalid m_GamePage: %d", m_GamePage);
 			}
 
 			RenderMenubar(TabBar, ClientState);
@@ -2133,8 +2133,7 @@ void CMenus::RenderPopupLoading(CUIRect Screen)
 			str_copy(aLabel1, Localize("Sending initial client info"));
 			break;
 		default:
-			dbg_assert(false, "Invalid loading state for RenderPopupLoading");
-			break;
+			dbg_assert_failed("Invalid loading state %d for RenderPopupLoading", static_cast<int>(Client()->LoadingStateDetail()));
 		}
 		aLabel2[0] = '\0';
 	}
@@ -2448,7 +2447,7 @@ void CMenus::UpdateColors()
 	ms_ColorTabbarHoverOutgame = ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f);
 
 	const float ColorIngameScaleI = 0.5f;
-	const float ColorIngameAcaleA = 0.2f;
+	const float ColorIngameScaleA = 0.2f;
 
 	ms_ColorTabbarInactiveIngame = ColorRGBA(
 		ms_GuiColor.r * ColorIngameScaleI,
@@ -2457,9 +2456,9 @@ void CMenus::UpdateColors()
 		ms_GuiColor.a * 0.8f);
 
 	ms_ColorTabbarActiveIngame = ColorRGBA(
-		ms_GuiColor.r * ColorIngameAcaleA,
-		ms_GuiColor.g * ColorIngameAcaleA,
-		ms_GuiColor.b * ColorIngameAcaleA,
+		ms_GuiColor.r * ColorIngameScaleA,
+		ms_GuiColor.g * ColorIngameScaleA,
+		ms_GuiColor.b * ColorIngameScaleA,
 		ms_GuiColor.a);
 
 	ms_ColorTabbarHoverIngame = ColorRGBA(1.0f, 1.0f, 1.0f, 0.75f);
@@ -2531,9 +2530,8 @@ int CMenus::DoButton_CheckBox_Tristate(const void *pId, const char *pText, TRIST
 	case TRISTATE::ALL:
 		return DoButton_CheckBox_Common(pId, pText, "X", pRect, BUTTONFLAG_LEFT);
 	default:
-		dbg_assert(false, "invalid tristate");
+		dbg_assert_failed("Invalid tristate. Checked: %d", static_cast<int>(Checked));
 	}
-	dbg_break();
 }
 
 int CMenus::MenuImageScan(const char *pName, int IsDir, int DirType, void *pUser)

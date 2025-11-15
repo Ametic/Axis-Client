@@ -228,8 +228,8 @@ public:
 
 	virtual void WarnPngliteIncompatibleImages(bool Warn) = 0;
 	virtual void SetWindowParams(int FullscreenMode, bool IsBorderless) = 0;
-	virtual bool SetWindowScreen(int Index) = 0;
-	virtual bool SwitchWindowScreen(int Index) = 0;
+	virtual bool SetWindowScreen(int Index, bool MoveToCenter) = 0;
+	virtual bool SwitchWindowScreen(int Index, bool MoveToCenter) = 0;
 	virtual bool SetVSync(bool State) = 0;
 	virtual bool SetMultiSampling(uint32_t ReqMultiSamplingCount, uint32_t &MultiSamplingCountBackend) = 0;
 	virtual int GetWindowScreen() = 0;
@@ -594,7 +594,7 @@ public:
 		EMessageBoxType m_Type = EMessageBoxType::ERROR;
 		/**
 		 * Buttons shown in the message box. At least one button is required.
-		 * The buttons are layed out from left to right.
+		 * The buttons are laid out from left to right.
 		 */
 		std::vector<CMessageBoxButton> m_vButtons = {{.m_pLabel = "OK", .m_Confirm = true, .m_Cancel = true}};
 	};

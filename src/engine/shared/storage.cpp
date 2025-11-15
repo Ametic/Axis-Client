@@ -436,7 +436,7 @@ public:
 		}
 		else
 		{
-			dbg_assert(false, "Type invalid");
+			dbg_assert_failed("Type invalid");
 		}
 	}
 
@@ -475,7 +475,7 @@ public:
 		}
 		else
 		{
-			dbg_assert(false, "Type invalid");
+			dbg_assert_failed("Type invalid");
 		}
 	}
 
@@ -552,8 +552,7 @@ public:
 		}
 		else
 		{
-			dbg_assert(false, "Type invalid");
-			return nullptr;
+			dbg_assert_failed("Type invalid");
 		}
 	}
 
@@ -580,8 +579,7 @@ public:
 		}
 		else
 		{
-			dbg_assert(false, "Type invalid");
-			return false;
+			dbg_assert_failed("Type invalid");
 		}
 	}
 
@@ -730,7 +728,7 @@ public:
 		}
 		else
 		{
-			dbg_assert(false, "Type invalid");
+			dbg_assert_failed("Type invalid");
 		}
 
 		return pBuffer[0] != 0;
@@ -793,7 +791,7 @@ public:
 		}
 		else
 		{
-			dbg_assert(false, "Type invalid");
+			dbg_assert_failed("Type invalid");
 		}
 
 		return pEntries->size();
