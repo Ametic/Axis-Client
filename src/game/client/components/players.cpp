@@ -1247,7 +1247,7 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 		}
 		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
 		{
-			GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
+			GameClient()->m_Effects.FireTrailEffect(BodyPos, Alpha);
 		}
 		else if(g_Config.m_ClEffect == EFFECT_SWITCH && !Frozen)
 		{
@@ -1268,8 +1268,8 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 				Sin = round_to_int(random_float(3.0f, 6.0f));
 				Change = time_get() + time_freq() * 15;
 			}
-			GameClient()->m_Effects.SwitchEffet(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
-			GameClient()->m_Effects.SwitchEffet(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
+			GameClient()->m_Effects.SwitchEffect(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
+			GameClient()->m_Effects.SwitchEffect(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
 		}
 	}
 }

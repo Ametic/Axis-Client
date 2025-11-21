@@ -1953,10 +1953,10 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	RenderServerbrowserToolBox(ToolBox);
 
 	// E-Client
-	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && !m_WarlistInitalized)
+	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && !m_WarlistInitialized)
 	{
 		UpdateWarlistCache();
-		m_WarlistInitalized = true;
+		m_WarlistInitialized = true;
 	}
 }
 
@@ -2120,9 +2120,9 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 	const float FontSize = 10.0f;
 	const float SpacingH = 2.0f; 
 
-	CUIRect ExtaSpace;
-	List.HSplitTop(5.0f, &ExtaSpace, &List);
-	ScrollRegion.AddRect(ExtaSpace);
+	CUIRect ExtraSpace;
+	List.HSplitTop(5.0f, &ExtraSpace, &List);
+	ScrollRegion.AddRect(ExtraSpace);
 
 	static std::vector<int> s_aWarListExtended;
 

@@ -1864,8 +1864,8 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 			float MaxExtent = std::max(Cross.w, Cross.h);
 			TextRender()->TextColor(ColorRGBA(1.0f, 0.0f, 0.0f));
 			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-			const auto TextBoudningBox = TextRender()->TextBoundingBox(MaxExtent * 0.8f, FONT_ICON_XMARK);
-			TextRender()->Text(Cross.x + (Cross.w - TextBoudningBox.m_W) / 2.0f, Cross.y + (Cross.h - TextBoudningBox.m_H) / 2.0f, MaxExtent * 0.8f, FONT_ICON_XMARK);
+			const auto TextBoundingBox = TextRender()->TextBoundingBox(MaxExtent * 0.8f, FONT_ICON_XMARK);
+			TextRender()->Text(Cross.x + (Cross.w - TextBoundingBox.m_W) / 2.0f, Cross.y + (Cross.h - TextBoundingBox.m_H) / 2.0f, MaxExtent * 0.8f, FONT_ICON_XMARK);
 			TextRender()->TextColor(TextRender()->DefaultTextColor());
 			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 		};
@@ -2108,11 +2108,11 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 	static CListBox s_ListBox;
 	s_ListBox.DoStart(50.0f, ProfileList.size(), MainView.w / 200.0f, 3, s_SelectedProfile, &MainView, true, IGraphics::CORNER_ALL, true);
 
-	static bool s_Indexs[1024];
+	static bool Indexes[1024];
 
 	for(size_t i = 0; i < ProfileList.size(); ++i)
 	{
-		CListboxItem Item = s_ListBox.DoNextItem(&s_Indexs[i], s_SelectedProfile >= 0 && (size_t)s_SelectedProfile == i);
+		CListboxItem Item = s_ListBox.DoNextItem(&Indexes[i], s_SelectedProfile >= 0 && (size_t)s_SelectedProfile == i);
 		if(!Item.m_Visible)
 			continue;
 
@@ -2549,7 +2549,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			MenuSettings.HSplitTop(HeaderHeight, &Button, &MenuSettings);
 			Ui()->DoLabel(&Button, Localize("Menu Settings"), HeaderSize, HeaderAlignment);
 			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, Localize("Show Settigns Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &MenuSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, Localize("Show Settings Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &MenuSettings, LineSize);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendColor, Localize("Friend Color in Spectate Menu"), &g_Config.m_ClSpecMenuFriendColor, &MenuSettings, LineSize);
 
@@ -3429,7 +3429,7 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	int Value = *pOption;
 	Min /= Scale;
 	Max /= Scale;
-	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidently adjusting the value)
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
 	int Increment = std::max(1, (Max - Min) / 35);
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
 	{
@@ -3554,7 +3554,7 @@ bool CMenus::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRec
 			Value = Max;
 	}
 
-	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidently adjusting the value)
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
 	int Increment = std::max(1, (Max - Min) / 35);
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
 	{

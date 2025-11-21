@@ -600,20 +600,20 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
 					TextRender()->TextEx(&Cursor, aClientId);
 				}
-				if(GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempMute)
+				if(pInfo->m_ClientId >= 0 && (GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempMute))
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
-					int IdOffest = IconRowX * -1 + 2;
+					int IdOffset = IconRowX * -1 + 2;
 					if(g_Config.m_ClShowIds)
 					{
 						if(GameClient()->m_Snap.m_HighestClientId >= 10)
 						{
-							IdOffest = 3;
+							IdOffset = 3;
 							TextRender()->TextEx(&Cursor, "     ");
 						}
 						else
 						{
-							IdOffest = -15;
+							IdOffset = -15;
 							TextRender()->TextEx(&Cursor, "    ");
 						}
 					}
@@ -624,7 +624,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
 					Graphics()->QuadsBegin();
 					Graphics()->SetColor(Color);
-					IGraphics::CQuadItem QuadItem(NameOffset + IconRowX + IdOffest, Row.y + IconRowY, IconSize, IconSize);
+					IGraphics::CQuadItem QuadItem(NameOffset + IconRowX + IdOffset, Row.y + IconRowY, IconSize, IconSize);
 					Graphics()->QuadsDrawTL(&QuadItem, 2);
 					Graphics()->QuadsEnd();
 				}

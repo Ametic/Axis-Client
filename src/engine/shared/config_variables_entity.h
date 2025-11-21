@@ -98,7 +98,7 @@ MACRO_CONFIG_INT(ClRunOnJoinDelay, ec_run_on_join_delay, 2, 7, 50000, CFGFLAG_CL
 MACRO_CONFIG_STR(ClRunOnJoinMsg, ec_run_on_join_console_msg, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 
 // Limit Mouse
-MACRO_CONFIG_INT(ClLimitMouseToScreen, ec_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundries")
+MACRO_CONFIG_INT(ClLimitMouseToScreen, ec_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundaries")
 MACRO_CONFIG_INT(ClScaleMouseDistance, ec_scale_mouse_distance, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Improve mouse precision by scaling max distance to 1000")
 MACRO_CONFIG_INT(ClUiMouseBorderTeleport, ec_ui_mouse_border_teleport, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Teleport Mouse from one border to the other if it goes off screen")
 
@@ -317,8 +317,7 @@ MACRO_CONFIG_INT(ClRevertTeamColors, ec_revert_team_colors, 0, 0, 1, CFGFLAG_CLI
 MACRO_CONFIG_INT(ClEClientSettingsTabs, ec_eclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
 
 // Kill Counter
-MACRO_CONFIG_INT(ClKillCounter, ec_self_murder_count, 0, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "I'f you wish to fake the ammount of deaths then this is the config to edit (it's named that way so its harder to find)")
-
+MACRO_CONFIG_INT(ClKillCounter, ec_self_murder_count, 0, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If you wish to fake the amount of deaths then this is the config to edit")
 // Silent Messages
 MACRO_CONFIG_INT(ClSilentMessages, ec_silent_messages, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When sending a Silent Message to the chat it will still show what you typed")
 MACRO_CONFIG_COL(ClSilentColor, ec_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")

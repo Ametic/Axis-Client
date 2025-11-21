@@ -150,7 +150,7 @@ void CEClient::AutoJoinTeam()
 					GameClient()->ClientMessage(Joined);
 
 					m_JoinedTeam = true;
-					m_AttempedJoinTeam = true;
+					m_AttemptedJoinTeam = true;
 				}
 				if(GameClient()->m_Teams.SameTeam(Local, ClientId) && m_JoinedTeam)
 				{
@@ -164,15 +164,15 @@ void CEClient::AutoJoinTeam()
 
 					m_JoinedTeam = false;
 				}
-				if(!GameClient()->m_Teams.SameTeam(Local, ClientId) && m_AttempedJoinTeam)
+				if(!GameClient()->m_Teams.SameTeam(Local, ClientId) && m_AttemptedJoinTeam)
 				{
 					char Joined[2048] = "Couldn't Join The Team of ";
 					str_append(Joined, GameClient()->m_aClients[ClientId].m_aName);
 					GameClient()->ClientMessage(Joined);
 
-					m_AttempedJoinTeam = false;
+					m_AttemptedJoinTeam = false;
 				}
-				if(PrevTeam != Team && m_AttempedJoinTeam)
+				if(PrevTeam != Team && m_AttemptedJoinTeam)
 				{
 					GameClient()->ClientMessage("team has changed");
 					m_JoinedTeam = false;
@@ -186,7 +186,7 @@ void CEClient::AutoJoinTeam()
 				if(LocalTeam != Team)
 				{
 					PrevTeam = Team;
-					m_AttempedJoinTeam = false;
+					m_AttemptedJoinTeam = false;
 					LocalTeam = GameClient()->m_Teams.Team(Local);
 				}
 				return;
@@ -600,7 +600,7 @@ void CEClient::OnInit()
 	m_LastMovement = 0;
 
 	m_JoinedTeam = false;
-	m_AttempedJoinTeam = false;
+	m_AttemptedJoinTeam = false;
 
 	// Rainbow
 	m_RainbowColor[0] = g_Config.m_ClPlayerColorBody;
@@ -631,7 +631,7 @@ void CEClient::OnStateChange(int NewState, int OldState)
 	{
 		m_SentKill = false;
 		m_JoinedTeam = false;
-		m_AttempedJoinTeam = false;
+		m_AttemptedJoinTeam = false;
 		m_LastReplyId = -1;
 		m_aLastPing = CLastPing();
 	}

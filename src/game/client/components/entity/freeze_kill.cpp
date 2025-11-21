@@ -117,7 +117,7 @@ void CFreezeKill::OnRender()
 			}
 		}
 
-		// if not wating for x amount of seconds
+		// if not waiting for x amount of seconds
 		else if(pCharacter->m_IsInFreeze)
 		{
 			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)

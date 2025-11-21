@@ -434,7 +434,7 @@ void CEffects::SparkleEffect(vec2 Pos, float Alpha)
 	GameClient()->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
 }
 
-void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
+void CEffects::FireTrailEffect(vec2 Pos, float Alpha)
 {
 	if(!m_AddXhz)
 		return;
@@ -465,7 +465,7 @@ void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
 	GameClient()->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
-void CEffects::SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha)
+void CEffects::SwitchEffect(vec2 Pos, ColorRGBA Color, float Alpha)
 {
 	if(!m_AddXhz)
 		return;

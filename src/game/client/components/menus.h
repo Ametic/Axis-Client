@@ -924,7 +924,7 @@ public:
 		}
 	};
 
-	bool m_WarlistInitalized = false;
+	bool m_WarlistInitialized = false;
 	std::vector<CWarlistCache> m_vWarlistCache;
 	const CWarlistCache *m_pRemoveEntry = nullptr;
 

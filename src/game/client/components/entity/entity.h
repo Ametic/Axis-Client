@@ -54,7 +54,7 @@ public:
 
 class CEClient : public CComponent
 {
-	bool m_AttempedJoinTeam;
+	bool m_AttemptedJoinTeam;
 	bool m_JoinedTeam;
 
 	bool m_WeaponsGot;

@@ -1706,11 +1706,14 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			if(str_find_nocase(pLine, "bro, check out this client") && Team == TEAM_WHISPER_RECV) // whisper advertising
 				AdBotFound = true;
 
-			// rit sometimes sends "hink" instead of "think"
-			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without"))
+			if(str_find_nocase(pLine, "you could do better") && str_find_nocase(pLine, "Not without"))
 			{
 				// try to not remove their message if they are just trying to be funny
-				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") && !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") && !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") && !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
+				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "ddnet") &&
+					!str_find_nocase(pLine, "tater") &&  !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") &&
+					!str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") &&
+					!str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") &&
+					!str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
 					AdBotFound = true;
 				if(str_find(pLine, " ")) // This is the little white space it uses between some letters
 					AdBotFound = true;

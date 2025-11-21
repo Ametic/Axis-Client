@@ -17,7 +17,7 @@ bool CFreezeBars::RenderKillBar()
 
 	const float FreezeBarWidth = 64.0f;
 	const float FreezeBarHalfWidth = 32.0f;
-	const float FreezeBarHight = 16.0f;
+	const float FreezeBarHeight = 16.0f;
 
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
 	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_Predicted;
@@ -42,7 +42,7 @@ bool CFreezeBars::RenderKillBar()
 
 	const ColorRGBA Color = ColorRGBA(0.6f, 1.0f, 1.6f, Alpha);
 
-	RenderFreezeBarPos(Position.x, Position.y, FreezeBarWidth, FreezeBarHight, FreezeProgress, Color);
+	RenderFreezeBarPos(Position.x, Position.y, FreezeBarWidth, FreezeBarHeight, FreezeProgress, Color);
 	return true;
 }
 
