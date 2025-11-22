@@ -266,15 +266,9 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	float Spacing;
 	float RoundRadius;
 	float FontSize;
-	float IconSize;
-	float IconRowX;
-	float IconRowY;
 
 	if(NumPlayers <= 8)
 	{
-		IconRowY = 13.0f;
-		IconRowX = 46.0f;
-		IconSize = 34.0f;
 		LineHeight = 60.0f;
 		TeeSizeMod = 1.0f;
 		Spacing = 16.0f;
@@ -283,9 +277,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 12)
 	{
-		IconRowY = 9.0f;
-		IconRowX = 47.0f;
-		IconSize = 32.0f;
 		LineHeight = 50.0f;
 		TeeSizeMod = 0.9f;
 		Spacing = 5.0f;
@@ -294,9 +285,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 16)
 	{
-		IconRowY = 6.0f;
-		IconSize = 30.0f;
-		IconRowX = 48.0f;
 		LineHeight = 40.0f;
 		TeeSizeMod = 0.8f;
 		Spacing = 0.0f;
@@ -305,9 +293,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 24)
 	{
-		IconRowY = 2.0f;
-		IconSize = 26.0f;
-		IconRowX = 42.0f;
 		LineHeight = 27.0f;
 		TeeSizeMod = 0.6f;
 		Spacing = 0.0f;
@@ -316,9 +301,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 32)
 	{
-		IconRowY = 1.0f;
-		IconSize = 19.0f;
-		IconRowX = 29.0f;
 		LineHeight = 20.0f;
 		TeeSizeMod = 0.4f;
 		Spacing = 0.0f;
@@ -327,9 +309,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(LowScoreboardWidth)
 	{
-		IconRowY = 8.0f;
-		IconSize = 25.0f;
-		IconRowX = 35.0f;
 		LineHeight = 15.0f;
 		TeeSizeMod = 0.25f;
 		Spacing = 0.0f;
@@ -338,9 +317,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else
 	{
-		IconRowY = 7.0f;
-		IconSize = 25.0f;
-		IconRowX = 38.0f;
 		LineHeight = 7.0f;
 		TeeSizeMod = 0.2f;
 		Spacing = 0.0f;
@@ -600,34 +576,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
 					TextRender()->TextEx(&Cursor, aClientId);
 				}
-				if(pInfo->m_ClientId >= 0 && (GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempMute))
-				{
-					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
-					int IdOffset = IconRowX * -1 + 2;
-					if(g_Config.m_ClShowIds)
-					{
-						if(GameClient()->m_Snap.m_HighestClientId >= 10)
-						{
-							IdOffset = 3;
-							TextRender()->TextEx(&Cursor, "     ");
-						}
-						else
-						{
-							IdOffset = -15;
-							TextRender()->TextEx(&Cursor, "    ");
-						}
-					}
-					else
-						TextRender()->TextEx(&Cursor, "     ");
-
-					Graphics()->BlendNormal();
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
-					Graphics()->QuadsBegin();
-					Graphics()->SetColor(Color);
-					IGraphics::CQuadItem QuadItem(NameOffset + IconRowX + IdOffset, Row.y + IconRowY, IconSize, IconSize);
-					Graphics()->QuadsDrawTL(&QuadItem, 2);
-					Graphics()->QuadsEnd();
-				}
 
 				float Alpha = 1.0f;
 				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -665,6 +613,25 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				{
 					TextRender()->TextColor(0.1f, 1.0f, 0.1f, TextColor.a);
 					TextRender()->TextEx(&Cursor, "✓");
+				}
+
+				if(pInfo->m_ClientId >= 0 && (GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempMute))
+				{
+					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
+
+					Graphics()->BlendNormal();
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
+					Graphics()->QuadsBegin();
+					Graphics()->SetColor(Color);
+
+					float MuteSize = 34.0f * TeeSizeMod;
+
+					float x = NameOffset + Cursor.BoundingBox().m_W + FontSize / 2.0f;
+					float y = Row.y + (Row.h - MuteSize) / 2.0f;
+
+					IGraphics::CQuadItem QuadItem(x, y, MuteSize, MuteSize);
+					Graphics()->QuadsDrawTL(&QuadItem, 2);
+					Graphics()->QuadsEnd();
 				}
 			}
 
