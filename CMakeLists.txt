@@ -3115,6 +3115,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     prng.cpp
     score.cpp
     secure_random.cpp
+    server.cpp
     serverbrowser.cpp
     serverinfo.cpp
     shell_execute.cpp
@@ -3130,6 +3131,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     timestamp.cpp
     unix.cpp
     uuid.cpp
+    vmath.cpp
   )
   set(TESTS_EXTRA
     src/engine/client/blocklist_driver.cpp

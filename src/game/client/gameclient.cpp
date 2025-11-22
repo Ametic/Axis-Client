@@ -684,7 +684,7 @@ void CGameClient::OnReset()
 	for(auto &Stats : m_aStats)
 		Stats.Reset();
 
-	m_NextChangeInfo = 0;
+	std::fill(std::begin(m_aNextChangeInfo), std::end(m_aNextChangeInfo), -1);
 	std::fill(std::begin(m_aLocalIds), std::end(m_aLocalIds), -1);
 	m_DummyInput = {};
 	m_HammerInput = {};
@@ -1080,6 +1080,14 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 		return;
 	}
 
+	if(MsgId == NETMSGTYPE_SV_CHANGEINFOCOOLDOWN)
+	{
+		CNetMsg_Sv_ChangeInfoCooldown *pMsg = (CNetMsg_Sv_ChangeInfoCooldown *)pRawMsg;
+		m_aNextChangeInfo[Conn] = pMsg->m_WaitUntil;
+		g_Config.m_SvInfoChangeDelay = (pMsg->m_WaitUntil - Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() - 1) / Client()->GameTickSpeed();
+		return;
+	}
+
 	if(Dummy)
 	{
 		if(MsgId == NETMSGTYPE_SV_CHAT && m_aLocalIds[0] >= 0 && m_aLocalIds[1] >= 0)
@@ -1213,12 +1221,6 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 		{
 			m_CharOrder.GiveWeak(Id.first);
 		}
-	}
-	else if(MsgId == NETMSGTYPE_SV_CHANGEINFOCOOLDOWN)
-	{
-		CNetMsg_Sv_ChangeInfoCooldown *pMsg = (CNetMsg_Sv_ChangeInfoCooldown *)pRawMsg;
-		m_NextChangeInfo = pMsg->m_WaitUntil;
-		g_Config.m_SvInfoChangeDelay = (pMsg->m_WaitUntil - Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() - 1) / Client()->GameTickSpeed();
 	}
 	else if(MsgId == NETMSGTYPE_SV_MAPSOUNDGLOBAL)
 	{
@@ -1895,7 +1897,10 @@ void CGameClient::OnNewSnapshot()
 				m_Snap.m_SpecInfo.m_Zoom = pDDNetSpecInfo->m_Zoom / 1000.0f;
 				m_Snap.m_SpecInfo.m_Deadzone = pDDNetSpecInfo->m_Deadzone;
 				m_Snap.m_SpecInfo.m_FollowFactor = pDDNetSpecInfo->m_FollowFactor;
-				m_Snap.m_SpecInfo.m_SpectatorCount = pDDNetSpecInfo->m_SpectatorCount;
+			}
+			else if(Item.m_Type == NETOBJTYPE_SPECTATORCOUNT)
+			{
+				m_Snap.m_pSpectatorCount = (const CNetObj_SpectatorCount *)Item.m_pData;
 			}
 			else if(Item.m_Type == NETOBJTYPE_GAMEINFO)
 			{
@@ -3611,7 +3616,7 @@ IGameClient *CreateGameClient()
 	return new CGameClient();
 }
 
-int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 &NewPos2, int OwnId)
+int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 &NewPos2, int OwnId, vec2 *pPlayerPosition)
 {
 	float Distance = 0.0f;
 	int ClosestId = -1;
@@ -3655,6 +3660,8 @@ int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 &NewPos2, in
 					NewPos2 = ClosestPoint;
 					ClosestId = ClientId;
 					Distance = distance(HookPos, Position);
+					if(pPlayerPosition)
+						*pPlayerPosition = Position;
 				}
 			}
 		}

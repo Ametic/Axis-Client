@@ -373,6 +373,7 @@ public:
 		const CNetObj_PlayerInfo *m_pLocalInfo;
 		const CNetObj_SpectatorInfo *m_pSpectatorInfo;
 		const CNetObj_SpectatorInfo *m_pPrevSpectatorInfo;
+		const CNetObj_SpectatorCount *m_pSpectatorCount;
 		int m_NumFlags;
 		const CNetObj_Flag *m_apFlags[CSnapshot::MAX_ITEMS];
 		const CNetObj_Flag *m_apPrevFlags[CSnapshot::MAX_ITEMS];
@@ -404,7 +405,6 @@ public:
 			float m_Zoom;
 			int m_Deadzone;
 			int m_FollowFactor;
-			int m_SpectatorCount;
 		};
 		CSpectateInfo m_SpecInfo;
 
@@ -697,7 +697,7 @@ public:
 	void SendKill() const;
 	void SendReadyChange7();
 
-	int m_NextChangeInfo;
+	int m_aNextChangeInfo[NUM_DUMMIES];
 
 	// DDRace
 
@@ -709,7 +709,7 @@ public:
 
 	class CTeamsCore m_Teams;
 
-	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 &NewPos2, int OwnId);
+	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 &NewPos2, int OwnId, vec2 *pPlayerPosition = nullptr);
 
 	int LastRaceTick() const;
 	int CurrentRaceTime() const;
