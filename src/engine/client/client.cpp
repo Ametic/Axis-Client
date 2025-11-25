@@ -213,7 +213,7 @@ void CClient::SendqxdInfo(int Conn)
 
 void CClient::SendInfo(int Conn)
 {
-	SendqxdInfo(CONN_MAIN); // E-Client
+	SendqxdInfo(Conn); // E-Client
 
 	if(!str_comp(g_Config.m_Password, ""))
 		str_copy(g_Config.m_Password, g_Config.m_ClPermaPassword);
