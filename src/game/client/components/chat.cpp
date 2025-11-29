@@ -1721,7 +1721,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 			if(AdBotFound == true)
 			{
-				// This is done so that when a player forwards a message of another player sending a krx message it wont start a vote for the forwarder
+				// Forwarding the message
 				if(str_find_nocase(pLine, "← "))
 					return false;
 
