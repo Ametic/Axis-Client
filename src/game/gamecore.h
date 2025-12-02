@@ -252,9 +252,6 @@ public:
 	bool m_Solo;
 	bool m_Jetpack;
 
-	// FoxNet
-	bool m_ExplosionGun;
-
 	bool m_CollisionDisabled;
 	bool m_EndlessHook;
 	bool m_EndlessJump;
