@@ -336,21 +336,6 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 
 			const int Id = Col.m_Id;
 
-			bool FoxNet = false;
-			{
-				using namespace std;
-				const char *aName = str_find_nocase(pItem->m_aAddress, ":");
-
-				int n = str_length(pItem->m_aAddress) - str_length(aName);
-				string ServerIp(pItem->m_aAddress);
-				ServerIp.erase(n);
-
-				if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
-				{
-					FoxNet = true;
-				}
-			}
-
 			if(Id == COL_FLAG_LOCK)
 			{
 				if(pItem->m_Flags & SERVER_FLAG_PASSWORD)
@@ -365,31 +350,11 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 			else if(Id == COL_FLAG_FAV)
 			{
 				if(pItem->m_Favorite != TRISTATE::NONE)
-				{
-					if(FoxNet)
-						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(0.25f, 0.55f, 0.85f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
-					else
-						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
-				}
+					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
 			}
 			else if(Id == COL_COMMUNITY)
-			{
-				if(FoxNet)
-				{
-					CUIRect FoxRect;
-					Button.Margin(2.0f, &FoxRect);
-
-					FoxRect.VMargin(FoxRect.w / 2.0f - FoxRect.h, &FoxRect);
-
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
-					Graphics()->QuadsBegin();
-					Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-					Graphics()->SelectSprite(SPRITE_FOXNET_FLAG0);
-					IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
-					Graphics()->QuadsDrawTL(&QuadItem, 1);
-					Graphics()->QuadsEnd();
-				}
-				else if(pCommunity != nullptr)
+			{	
+				if(pCommunity != nullptr)
 				{
 					const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
 					if(pIcon != nullptr)
@@ -1642,41 +1607,9 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				// server info
 				if(Friend.ServerInfo())
 				{
-					bool FoxNet = false;
-					{
-						using namespace std;
-						const char *aName = str_find_nocase(Friend.ServerInfo()->m_aAddress, ":");
-
-						int n = str_length(Friend.ServerInfo()->m_aAddress) - str_length(aName);
-						string ServerIp(Friend.ServerInfo()->m_aAddress);
-						ServerIp.erase(n);
-
-						if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
-						{
-							FoxNet = true;
-						}
-					}
-
 					// community icon
 					const CCommunity *pCommunity = ServerBrowser()->Community(Friend.ServerInfo()->m_aCommunityId);
-					if(FoxNet)
-					{
-						CUIRect FoxRect;
-						InfoLabel.VSplitLeft(21.0f, &FoxRect, &InfoLabel);
-						InfoLabel.VSplitLeft(2.0f, nullptr, &InfoLabel);
-
-						FoxRect.VMargin(FoxRect.w / 2.0f - FoxRect.h, &FoxRect);
-
-						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
-						Graphics()->QuadsBegin();
-						Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-						Graphics()->SelectSprite(SPRITE_FOXNET_FLAG0);
-						
-						IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
-						Graphics()->QuadsDrawTL(&QuadItem, 1);
-						Graphics()->QuadsEnd();
-					}
-					else if(pCommunity != nullptr)
+					if(pCommunity != nullptr)
 					{
 						const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
 						if(pIcon != nullptr)
@@ -2237,40 +2170,9 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 			// clan
 			Ui()->DoLabel(&ClanLabel, Entry.Clan(), FontSize - 2.0f, TEXTALIGN_ML);
 
-			bool FoxNet = false;
-			{
-				using namespace std;
-				const char *aName = str_find_nocase(Entry.m_aAddress, ":");
-
-				int n = str_length(Entry.m_aAddress) - str_length(aName);
-				string ServerIp(Entry.m_aAddress);
-				ServerIp.erase(n);
-
-				if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
-				{
-					FoxNet = true;
-				}
-			}
-
 			// community icon
 			const CCommunity *pCommunity = ServerBrowser()->Community(Entry.m_aCommunityId);
-			if(FoxNet)
-			{
-				CUIRect FoxRect;
-				InfoLabel.VSplitLeft(21.0f, &FoxRect, &InfoLabel);
-				InfoLabel.VSplitLeft(2.0f, nullptr, &InfoLabel);
-
-				FoxRect.VMargin(FoxRect.w / 2.0f - FoxRect.h, &FoxRect);
-
-				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
-				Graphics()->QuadsBegin();
-				Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-				Graphics()->SelectSprite(SPRITE_FOXNET_FLAG0);
-				IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
-				Graphics()->QuadsDrawTL(&QuadItem, 1);
-				Graphics()->QuadsEnd();
-			}
-			else if(pCommunity != nullptr)
+			if(pCommunity != nullptr)
 			{
 				const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
 				if(pIcon != nullptr)

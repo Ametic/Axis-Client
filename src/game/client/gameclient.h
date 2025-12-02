@@ -87,6 +87,7 @@
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/statusbar.h"
 #include "components/tclient/warlist.h"
+#include "components/tclient/custom_communities.h"
 
 class CGameInfo
 {
@@ -221,6 +222,7 @@ public:
 	CSkinProfiles m_SkinProfiles;
 	CStatusBar m_StatusBar;
 	CWarList m_WarList;
+	CCustomCommunities m_CustomCommunities;
 
 private:
 	std::vector<class CComponent *> m_vpAll;
