@@ -160,7 +160,6 @@ namespace FontIcons
 	[[maybe_unused]] static const char *FONT_ICON_CAMERA = "\xEF\x80\xB0";
 
 	// E-Client
-	[[maybe_unused]] static const char *FONT_ICON_COMMENT = "\xEF\x81\xB5";
 	[[maybe_unused]] static const char *FONT_ICON_USERS = "\xEF\x83\x80";
 }
 
