@@ -709,11 +709,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)
 				{
-					if(GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempWar)
-						TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Alpha));
-					else if(GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempHelper)
-						TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Alpha));
-					else if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
+					if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
 						TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId).WithAlpha(Alpha));
 				}
 
@@ -726,7 +722,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					TextRender()->TextEx(&Cursor, "✓");
 				}
 
-				if(pInfo->m_ClientId >= 0 && (GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempMute))
+				if(pInfo->m_ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted)
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 
@@ -1109,22 +1105,13 @@ CUi::EPopupMenuFunctionResult CScoreboard::PopupScoreboard(void *pContext, CUIRe
 		Container.VSplitLeft(ActionSize, &Action, &Container);
 
 		// E-Client
-		bool FullMute = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].IsMuted;
-		bool TempMute = pScoreboard->GameClient()->m_EClient.m_TempPlayers[pPopupContext->m_ClientId].IsTempMute;
-		bool Muted = FullMute || TempMute;
+		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].IsMuted;
 		if(pUi->DoButton_FontIcon(&pPopupContext->m_MuteAction, FontIcons::FONT_ICON_BAN, Muted, &Action, BUTTONFLAG_LEFT, ActionCorners))
 		{
 			if(!Muted)
-			{
-				pScoreboard->GameClient()->m_WarList.AddMute(Client.m_aName);
-			}
+				pScoreboard->GameClient()->m_WarList.AddMute(Client.m_aName, false);
 			else
-			{
-				if(FullMute)
-					pScoreboard->GameClient()->m_WarList.DelMute(Client.m_aName);
-				if(TempMute)
-				pScoreboard->GameClient()->m_EClient.UnTempMute(Client.m_aName);
-			}
+				pScoreboard->GameClient()->m_WarList.RemoveMute(Client.m_aName);
 		}
 		// E-Client
 		pScoreboard->GameClient()->m_Tooltips.DoToolTip(&pPopupContext->m_MuteAction, &Action, Muted ? Localize("Unmute") : Localize("Mute"));

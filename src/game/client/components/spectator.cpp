@@ -535,11 +535,7 @@ void CSpectator::OnRender()
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			if(g_Config.m_ClWarListSpecMenu)
 			{
-				if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar && g_Config.m_ClWarList)
-					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-				else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper && g_Config.m_ClWarList)
-					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
-				else if(GameClient()->m_WarList.GetAnyWar(ClientId) && g_Config.m_ClWarList)
+				if(GameClient()->m_WarList.GetAnyWar(ClientId) && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.GetPriorityColor(ClientId);
 			}
 			TextRender()->TextColor(Color.WithAlpha(Alpha));

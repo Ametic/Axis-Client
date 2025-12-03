@@ -212,38 +212,36 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("restore", "restoreskin");
 	AddDefaultBind("save", "saveskin");
 
-	AddDefaultBind("tempwar", "addtempwar");
-	AddDefaultBind("untempwar", "deltempwar");
-	AddDefaultBind("deltempwar", "deltempwar");
 
 	AddDefaultBind("temphelper", "addtemphelper");
-	AddDefaultBind("untemphelper", "deltemphelper");
-	AddDefaultBind("deltemphelper", "deltemphelper");
 
 	AddDefaultBind("tempmute", "addtempmute");
-	AddDefaultBind("untempmute", "deltempmute");
 
-	AddDefaultBind("war", "war_name_index 1");
+	AddDefaultBind("tempwar", "war_name_index 1 1");
+	AddDefaultBind("war", "war_name_index 0 1");
 	AddDefaultBind("delwar", "remove_war_name_index 1");
 	AddDefaultBind("unwar", "remove_war_name_index 1");
 
-	AddDefaultBind("team", "war_name_index 2");
+	AddDefaultBind("tempteam", "war_name_index 1 2");
+	AddDefaultBind("team", "war_name_index 0 2");
 	AddDefaultBind("delteam", "remove_war_name_index 2");
 	AddDefaultBind("unteam", "remove_war_name_index 2");
 
-	AddDefaultBind("helper", "war_name_index 3");
+	AddDefaultBind("temphelper", "war_name_index 1 3");
+	AddDefaultBind("helper", "war_name_index 0 3");
 	AddDefaultBind("delhelper", "remove_war_name_index 3");
 	AddDefaultBind("unhelper", "remove_war_name_index 3");
 
-	AddDefaultBind("mute", "addmute");
-	AddDefaultBind("delmute", "delmute");
-	AddDefaultBind("unmute", "delmute");
+	AddDefaultBind("tempmute", "addmute 1");
+	AddDefaultBind("mute", "addmute 0");
+	AddDefaultBind("delmute", "delmute 0");
+	AddDefaultBind("unmute", "delmute 0");
 
-	AddDefaultBind("clanwar", "war_clan_index 1");
+	AddDefaultBind("clanwar", "war_clan_index 0 1");
 	AddDefaultBind("delclanwar", "remove_war_clan_index 1");
 	AddDefaultBind("unclanwar", "remove_war_clan_index 1");
 
-	AddDefaultBind("clanteam", "war_clan_index 2");
+	AddDefaultBind("clanteam", "war_clan_index 0 2");
 	AddDefaultBind("delclanteam", "remove_war_clan_index 2");
 	AddDefaultBind("unclanteam", "remove_war_clan_index 2");
 }

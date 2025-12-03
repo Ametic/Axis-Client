@@ -23,8 +23,10 @@ public:
 	ColorRGBA m_Color = ColorRGBA(1, 1, 1, 1);
 	bool m_Removable = true;
 	bool m_Imported = false;
+	// <E-Client
 	int m_Index = 0;
 	int m_NumEntries = 0;
+	// E-Client>
 
 	CWarType(const char *pName, ColorRGBA Color = ColorRGBA(1, 1, 1, 1), bool Removable = true, bool IsImport = false)
 	{
@@ -52,6 +54,9 @@ public:
 
 	CWarType *m_pWarType = nullptr;
 	bool m_Imported = false;
+	// <E-Client
+	bool m_TempEntry = false;
+	// E-Client>
 
 	CWarEntry(CWarType *pWarType)
 	{
@@ -80,6 +85,7 @@ class CMuteEntry
 {
 public:
 	char m_aMutedName[MAX_NAME_LENGTH] = "";
+	bool m_TempEntry = false;
 
 	CMuteEntry(const char *pName)
 	{
@@ -207,24 +213,24 @@ public:
 
 	void UpdateWarPlayers();
 
-	void UpdateWarEntry(int Index, const char *pName, const char *pClan, const char *pReason, CWarType *pType);
+	void UpdateWarEntry(int Index, const char *pName, const char *pClan, const char *pReason, CWarType *pType, bool Temp = false);
 
 	// Adds a new war entry if the specified index is not found
 	void UpsertWarType(int Index, const char *pType, ColorRGBA Color);
 
-	void AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan);
+	void AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan, bool Temp = false);
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
 	// E-Client
-	void AddMuteEntry(const char *pName);
-	void AddMute(const char *pName);
-	void DelMute(const char *pName, bool Silent = false);
+	void AddMuteEntry(const char *pName, bool Temp = false);
+	void AddMute(const char *pName, bool Quiet, bool Temp = false);
+	void RemoveMute(const char *pName, bool Silent = false);
 
 	int FindWarTypeWithName(const char *pName);
 	int FindWarTypeWithClan(const char *pClan);
 	char *GetWarTypeName(int ClientId);
 
-	void AddWarEntry(const char *pName, const char *pClan, const char *pReason, const char *pType);
+	void AddWarEntry(const char *pName, const char *pClan, const char *pReason, const char *pType, bool Temp = false);
 	void AddWarType(const char *pType, ColorRGBA Color);
 
 	void RemoveWarEntry(const char *pName, const char *pClan, const char *pType);

@@ -151,42 +151,6 @@ void CEClient::Votekick(const char *pName, const char *pReason)
 	}
 }
 
-// Temp War Commands
-void CEClient::ConTempWar(IConsole::IResult *pResult, void *pUserData)
-{
-	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->TempWar(pResult->GetString(0), pResult->GetString(1));
-}
-void CEClient::ConUnTempWar(IConsole::IResult *pResult, void *pUserData)
-{
-	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->UnTempWar(pResult->GetString(0));
-}
-
-// Temp Helper Commands
-void CEClient::ConTempHelper(IConsole::IResult *pResult, void *pUserData)
-{
-	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->TempHelper(pResult->GetString(0), pResult->GetString(1));
-}
-void CEClient::ConUnTempHelper(IConsole::IResult *pResult, void *pUserData)
-{
-	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->UnTempHelper(pResult->GetString(0));
-}
-
-// Mute Commands
-void CEClient::ConTempMute(IConsole::IResult *pResult, void *pUserData)
-{
-	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->TempMute(pResult->GetString(0));
-}
-void CEClient::ConUnTempMute(IConsole::IResult *pResult, void *pUserData)
-{
-	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->UnTempMute(pResult->GetString(0));
-}
-
 // Saving and Restoring Skins
 void CEClient::ConSaveSkin(IConsole::IResult *pResult, void *pUserData)
 {
@@ -213,159 +177,6 @@ void CEClient::ConViewLink(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->Client()->ViewLink(pResult->GetString(0));
-}
-
-void CEClient::TempWar(const char *pName, const char *pReason, bool Silent)
-{
-	UnTempWar(pName, true); // Remove previous Reason
-
-	CTempEntry Entry(0, pName, pReason);
-	str_copy(Entry.m_aTempWar, pName);
-	str_copy(Entry.m_aReason, pReason);
-
-	m_TempEntries.push_back(Entry);
-	UnTempHelper(pName, true);
-
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName);
-	if(!Silent)
-		GameClient()->ClientMessage(aBuf);
-
-	UpdateTempPlayers();
-}
-bool CEClient::UnTempWar(const char *pName, bool Silent)
-{
-	bool Removed = false;
-
-	if(!str_comp(pName, ""))
-		return Removed;
-
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp War List", pName);
-	CTempEntry Entry(0, pName, "");
-
-	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
-	if(it != m_TempEntries.end())
-	{
-		for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
-		{
-			bool IsDuplicate = !str_comp(it2->m_aTempWar, pName);
-
-			if(IsDuplicate)
-				it2 = m_TempEntries.erase(it2);
-			else
-				++it2;
-
-			if(!str_comp(it2->m_aTempWar, pName))
-			{
-				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
-				Removed = true;
-			}
-		}
-	}
-	if(!Silent)
-		GameClient()->ClientMessage(aBuf);
-	return Removed;
-}
-
-void CEClient::TempHelper(const char *pName, const char *pReason, bool Silent)
-{
-	UnTempHelper(pName, true); // Remove previous Reason
-
-	CTempEntry Entry(1, pName, pReason);
-	str_copy(Entry.m_aTempHelper, pName);
-	str_copy(Entry.m_aReason, pReason);
-
-	m_TempEntries.push_back(Entry);
-	UnTempWar(pName, true);
-
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Helper List", pName);
-	if(!Silent)
-		GameClient()->ClientMessage(aBuf);
-
-	UpdateTempPlayers();
-}
-bool CEClient::UnTempHelper(const char *pName, bool Silent)
-{
-	bool Removed = false;
-	if(!str_comp(pName, ""))
-		return Removed;
-
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Helper List", pName);
-	CTempEntry Entry(1, pName, "");
-
-	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
-	if(it != m_TempEntries.end())
-	{
-		for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
-		{
-			bool IsDuplicate = !str_comp(it2->m_aTempHelper, pName);
-
-			if(IsDuplicate)
-				it2 = m_TempEntries.erase(it2);
-			else
-				++it2;
-
-			if(!str_comp(it2->m_aTempHelper, pName))
-			{
-				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Helper List", pName);
-				Removed = true;
-			}
-		}
-	}
-	if(!Silent)
-		GameClient()->ClientMessage(aBuf);
-	return Removed;
-}
-
-void CEClient::TempMute(const char *pName, bool Silent)
-{
-	CTempEntry Entry(2, pName, "");
-	str_copy(Entry.m_aTempMute, pName);
-
-	m_TempEntries.push_back(Entry);
-
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Mute List", pName);
-	if(!Silent)
-		GameClient()->ClientMessage(aBuf);
-
-	UpdateTempPlayers();
-}
-bool CEClient::UnTempMute(const char *pName, bool Silent)
-{
-	bool Removed = false;
-	if(!str_comp(pName, ""))
-		return Removed;
-
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Mute List", pName);
-	CTempEntry Entry(2, pName, "");
-
-	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
-	if(it != m_TempEntries.end())
-	{
-		for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
-		{
-			bool IsDuplicate = !str_comp(it2->m_aTempMute, pName);
-
-			if(IsDuplicate)
-				it2 = m_TempEntries.erase(it2);
-			else
-				++it2;
-
-			if(!str_comp(it2->m_aTempMute, pName))
-			{
-				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
-				Removed = true;
-			}
-		}
-	}
-	if(!Silent)
-		GameClient()->ClientMessage(aBuf);
-	return Removed;
 }
 
 void CEClient::RestoreSkin()
@@ -428,6 +239,7 @@ void CEClient::SaveSkin()
 		GameClient()->ClientMessage("Can't Save! Rainbow mode is enabled.");
 }
 
+// ToDo @qxdFox: wtf is this??
 void CEClient::OnlineInfo(bool Integrate)
 {
 	char aBuf[512];
@@ -446,15 +258,9 @@ void CEClient::OnlineInfo(bool Integrate)
 	for(auto &Client : GameClient()->m_aClients)
 	{
 		bool War = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[1];
-		bool TempWar = m_TempPlayers[Client.ClientId()].IsTempWar;
-
 		bool Team = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[2];
-
 		bool Helper = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[3];
-		bool TempHelper = m_TempPlayers[Client.ClientId()].IsTempHelper;
-
 		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.ClientId()].IsMuted;
-		bool TempMute = m_TempPlayers[Client.ClientId()].IsTempMute;
 
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
@@ -462,7 +268,7 @@ void CEClient::OnlineInfo(bool Integrate)
 		if(Client.ClientId() == GameClient()->m_Snap.m_LocalClientId)
 			continue;
 
-		if(War || TempWar)
+		if(War)
 		{
 			NumberWars++;
 			if(Client.m_Afk)
@@ -474,13 +280,13 @@ void CEClient::OnlineInfo(bool Integrate)
 			if(Client.m_Afk)
 				NumberTeamsAfk++;
 		}
-		else if(Helper || TempHelper)
+		else if(Helper)
 		{
 			NumberHelpers++;
 			if(Client.m_Afk)
 				NumberHelpersAfk++;
 		}
-		if(Mute || TempMute)
+		if(Mute)
 		{
 			NumberMutes++;
 			if(Client.m_Afk)
@@ -613,14 +419,14 @@ void CEClient::OnConsoleInit()
 	Console()->Register("playerinfo", "s[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");
 
 	// Temporary Lists
-	Console()->Register("addtempwar", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempWar, this, "temporary War");
-	Console()->Register("deltempwar", "s[name]", CFGFLAG_CLIENT, ConUnTempWar, this, "remove temporary War");
+	//Console()->Register("addtempwar", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempWar, this, "temporary War");
+	//Console()->Register("deltempwar", "s[name]", CFGFLAG_CLIENT, ConUnTempWar, this, "remove temporary War");
 
-	Console()->Register("addtemphelper", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempHelper, this, "temporary Helper");
-	Console()->Register("deltemphelper", "s[name]", CFGFLAG_CLIENT, ConUnTempHelper, this, "remove temporary Helper");
+	//Console()->Register("addtemphelper", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempHelper, this, "temporary Helper");
+	//Console()->Register("deltemphelper", "s[name]", CFGFLAG_CLIENT, ConUnTempHelper, this, "remove temporary Helper");
 
-	Console()->Register("addtempmute", "s[name]", CFGFLAG_CLIENT, ConTempMute, this, "temporary Mute");
-	Console()->Register("deltempmute", "s[name]", CFGFLAG_CLIENT, ConUnTempMute, this, "remove temporary Mute");
+	//Console()->Register("addtempmute", "s[name]", CFGFLAG_CLIENT, ConTempMute, this, "temporary Mute");
+	//Console()->Register("deltempmute", "s[name]", CFGFLAG_CLIENT, ConUnTempMute, this, "remove temporary Mute");
 
 	// Skin Saving/Restoing
 	Console()->Register("restoreskin", "", CFGFLAG_CLIENT, ConRestoreSkin, this, "Restore Your Saved Info");

@@ -6,52 +6,6 @@
 #include <vector>
 #include <engine/shared/protocol.h>
 
-class CTempEntry
-{
-public:
-	// name matches the user with that name
-	char m_aTempWar[16] = "";
-	char m_aTempHelper[16] = "";
-	char m_aTempMute[16] = "";
-	char m_aReason[128] = "";
-
-	/*
-	 * Type = 0 -> TempWar
-	 * Type = 1 -> TempHelper
-	 * type = 2 -> TempMute
-	 */
-	CTempEntry(int Type, const char *pName, const char *pReason)
-	{
-		if(Type == 0)
-			str_copy(m_aTempWar, pName);
-		else if(Type == 1)
-			str_copy(m_aTempHelper, pName);
-		else if(Type == 2)
-			str_copy(m_aTempMute, pName);
-
-		if(!str_comp(pReason, ""))
-			str_copy(m_aReason, pReason);
-	}
-
-	bool operator==(const CTempEntry &Other) const
-	{
-		bool TempWarMatch = !str_comp(m_aTempWar, Other.m_aTempWar) && str_comp(m_aTempWar, "") != 0;
-		bool TempHelperMatch = !str_comp(m_aTempHelper, Other.m_aTempHelper) && str_comp(m_aTempHelper, "") != 0;
-		bool TempMuteMatch = !str_comp(m_aTempMute, Other.m_aTempMute) && str_comp(m_aTempMute, "") != 0;
-		return (TempWarMatch || TempHelperMatch || TempMuteMatch);
-	}
-};
-
-class CTempData
-{
-public:
-	bool IsTempWar = false;
-	bool IsTempHelper = false;
-	bool IsTempMute = false;
-
-	char m_aReason[128] = "";
-};
-
 class CEClient : public CComponent
 {
 	bool m_AttemptedJoinTeam;
@@ -95,15 +49,6 @@ class CEClient : public CComponent
 
 	static void ConViewLink(IConsole::IResult *pResult, void *pUserData);
 
-	static void ConTempWar(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnTempWar(IConsole::IResult *pResult, void *pUserData);
-
-	static void ConTempHelper(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnTempHelper(IConsole::IResult *pResult, void *pUserData);
-
-	static void ConTempMute(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnTempMute(IConsole::IResult *pResult, void *pUserData);
-
 	static void ConSaveSkin(IConsole::IResult *pResult, void *pUserData);
 	static void ConRestoreSkin(IConsole::IResult *pResult, void *pUserData);
 
@@ -121,14 +66,6 @@ public:
 	bool m_SentKill;
 	int m_KillCount;
 
-	void TempWar(const char *pName, const char *pReason, bool Silent = false);
-	void TempHelper(const char *pName, const char *pReason, bool Silent = false);
-	void TempMute(const char *pName, bool Silent = false);
-
-	bool UnTempHelper(const char *pName, bool Silent = false);
-	bool UnTempWar(const char *pName, bool Silent = false);
-	bool UnTempMute(const char *pName, bool Silent = false);
-
 	void Votekick(const char *pName, const char *pReason);
 
 	void PlayerInfo(const char *pName);
@@ -136,13 +73,6 @@ public:
 	void SaveSkin();
 	void RestoreSkin();
 	void OnlineInfo(bool Integrate = false);
-
-	// Temporary War Entries
-	std::vector<CTempEntry> m_TempEntries;
-	CTempData m_TempPlayers[MAX_CLIENTS];
-	void UpdateTempPlayers();
-	void RemoveWarEntryDuplicates(const char *pName);
-	void RemoveWarEntry(int Type, const char *pName);
 
 	// Movement Notification if tabbed out
 	vec2 m_LastPos = vec2(0, 0);

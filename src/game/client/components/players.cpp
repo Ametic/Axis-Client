@@ -1032,11 +1032,6 @@ void CPlayers::OnRender()
 					Color = GameClient()->m_WarList.GetNameplateColor(i);
 				else if(GameClient()->m_WarList.GetWarData(i).IsWarClan)
 					Color = GameClient()->m_WarList.GetClanColor(i);
-
-				if(GameClient()->m_EClient.m_TempPlayers[i].IsTempWar)
-					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-				else if(GameClient()->m_EClient.m_TempPlayers[i].IsTempHelper)
-					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
 			}
 
 			if(g_Config.m_ClSweatModeSelfColor && (Local || Dummy))

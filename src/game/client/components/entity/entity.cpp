@@ -48,8 +48,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Client()->DummyConnected() && !str_comp(aName, GameClient()->m_aClients[GameClient()->m_aLocalIds[1]].m_aName))
 		return;
 
-	bool HiddenMessage = (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute) ||
-			     (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar));
+	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1]));
 
 	if(!HiddenMessage)
 	{
@@ -64,7 +63,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(ClientId != m_LastReplyId)
 	{
 		char Reply[MAX_LINE_LENGTH];
-		if(g_Config.m_ClReplyMuted && (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute))
+		if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
 		{
 			str_format(Reply, sizeof(Reply), "%s: %s", aName, g_Config.m_ClAutoReplyMutedMsg);
 
@@ -454,68 +453,6 @@ void CEClient::NotifyOnMove()
 	m_LastPos = LocalPos;
 }
 
-void CEClient::RemoveWarEntryDuplicates(const char *pName)
-{
-	if(!str_comp(pName, ""))
-		return;
-
-	for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
-	{
-		bool IsDuplicate = !str_comp(it->m_aTempWar, pName) || !str_comp(it->m_aTempHelper, pName) || !str_comp(it->m_aTempMute, pName);
-
-		if(IsDuplicate)
-		{
-			it = m_TempEntries.erase(it);
-		}
-		else
-			++it;
-	}
-	UpdateTempPlayers();
-}
-
-void CEClient::RemoveWarEntry(int Type, const char *pName)
-{
-	CTempEntry Entry(Type, pName, "");
-	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
-	if(it != m_TempEntries.end())
-		m_TempEntries.erase(it);
-
-	UpdateTempPlayers();
-}
-
-void CEClient::UpdateTempPlayers()
-{
-	for(int i = 0; i < MAX_CLIENTS; ++i)
-	{
-		if(!GameClient()->m_aClients[i].m_Active)
-			continue;
-
-		m_TempPlayers[i].IsTempWar = false;
-		m_TempPlayers[i].IsTempHelper = false;
-		m_TempPlayers[i].IsTempMute = false;
-		memset(m_TempPlayers[i].m_aReason, 0, sizeof(m_TempPlayers[i].m_aReason));
-
-		for(CTempEntry &Entry : m_TempEntries)
-		{
-			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempWar) && str_comp(Entry.m_aTempWar, "") != 0)
-			{
-				str_copy(m_TempPlayers[i].m_aReason, Entry.m_aReason);
-				m_TempPlayers[i].IsTempWar = true;
-			}
-			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempHelper) && str_comp(Entry.m_aTempHelper, "") != 0)
-			{
-				str_copy(m_TempPlayers[i].m_aReason, Entry.m_aReason);
-				m_TempPlayers[i].IsTempHelper = true;
-			}
-			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempMute) && str_comp(Entry.m_aTempMute, "") != 0)
-			{
-				str_copy(m_TempPlayers[i].m_aReason, Entry.m_aReason);
-				m_TempPlayers[i].IsTempMute = true;
-			}
-		}
-	}
-}
-
 void CEClient::UpdateRainbow()
 {
 	static bool m_RainbowWasOn = false;
@@ -621,7 +558,6 @@ void CEClient::OnInit()
 
 void CEClient::OnNewSnapshot()
 {
-	UpdateTempPlayers();
 	NotifyOnMove();
 }
 
@@ -642,7 +578,7 @@ void CEClient::OnStateChange(int NewState, int OldState)
 		Client()->GetServerInfo(&CurrentServerInfo);
 
 		m_FoxNetServer = false;
-		if(!str_comp(CurrentServerInfo.m_aGameType, "FoxNetwork"))
+		if(!str_comp(CurrentServerInfo.m_aGameType, "FoxNet"))
 			m_FoxNetServer = true;
 	}
 }

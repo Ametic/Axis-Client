@@ -418,11 +418,6 @@ protected:
 				Color = This.m_WarList.GetNameplateColor(Data.m_ClientId);
 			else if(Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
 				Color = This.m_WarList.GetClanColor(Data.m_ClientId);
-
-			if(This.m_EClient.m_TempPlayers[Data.m_ClientId].IsTempWar)
-				Color = This.m_WarList.m_WarTypes[1]->m_Color;
-			else if(This.m_EClient.m_TempPlayers[Data.m_ClientId].IsTempHelper)
-				Color = This.m_WarList.m_WarTypes[3]->m_Color;
 		}
 
 		m_Color = Color.WithAlpha(Data.m_Color.a);
@@ -853,17 +848,14 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
 
 	// E-Client
-	Data.m_IsMuted = Data.m_ShowName && (GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId].IsTempMute);
+	Data.m_IsMuted = Data.m_ShowName && GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted;
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	if(g_Config.m_ClWarList)
 	{
-		str_copy(Data.m_aReason, GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason);
+		CWarDataCache Cache = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId);
+
+		str_copy(Data.m_aReason, Cache.m_aReason);
 		Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
-
-		CTempData TempData = GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId];
-
-		if((TempData.IsTempWar || TempData.IsTempHelper))
-			str_copy(Data.m_aReason, TempData.m_aReason);
 
 		if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_aReason, "") != 0)
 		{
