@@ -1108,11 +1108,26 @@ CUi::EPopupMenuFunctionResult CScoreboard::PopupScoreboard(void *pContext, CUIRe
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);
 		Container.VSplitLeft(ActionSize, &Action, &Container);
 
-		if(pUi->DoButton_FontIcon(&pPopupContext->m_MuteAction, FontIcons::FONT_ICON_BAN, Client.m_ChatIgnore, &Action, BUTTONFLAG_LEFT, ActionCorners))
+		// E-Client
+		bool FullMute = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].IsMuted;
+		bool TempMute = pScoreboard->GameClient()->m_EClient.m_TempPlayers[pPopupContext->m_ClientId].IsTempMute;
+		bool Muted = FullMute || TempMute;
+		if(pUi->DoButton_FontIcon(&pPopupContext->m_MuteAction, FontIcons::FONT_ICON_BAN, Muted, &Action, BUTTONFLAG_LEFT, ActionCorners))
 		{
-			Client.m_ChatIgnore ^= 1;
+			if(!Muted)
+			{
+				pScoreboard->GameClient()->m_WarList.AddMute(Client.m_aName);
+			}
+			else
+			{
+				if(FullMute)
+					pScoreboard->GameClient()->m_WarList.DelMute(Client.m_aName);
+				if(TempMute)
+				pScoreboard->GameClient()->m_EClient.UnTempMute(Client.m_aName);
+			}
 		}
-		pScoreboard->GameClient()->m_Tooltips.DoToolTip(&pPopupContext->m_MuteAction, &Action, Client.m_ChatIgnore ? Localize("Unmute") : Localize("Mute"));
+		// E-Client
+		pScoreboard->GameClient()->m_Tooltips.DoToolTip(&pPopupContext->m_MuteAction, &Action, Muted ? Localize("Unmute") : Localize("Mute"));
 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);
 		Container.VSplitLeft(ActionSize, &Action, &Container);
