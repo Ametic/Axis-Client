@@ -13,7 +13,6 @@
 #include <game/editor/editor_trackers.h>
 #include <game/editor/mapitems/envelope.h>
 #include <game/editor/mapitems/layer.h>
-#include <game/editor/references.h>
 
 #include <functional>
 #include <memory>
@@ -32,6 +31,7 @@ class CLayerSwitch;
 class CLayerTele;
 class CLayerTune;
 class CQuad;
+class IEditorEnvelopeReference;
 
 class CDataFileWriterFinishJob : public IJob
 {
@@ -46,6 +46,8 @@ public:
 	const char *GetRealFilename() const { return m_aRealFilename; }
 	const char *GetTempFilename() const { return m_aTempFilename; }
 };
+
+using FErrorHandler = std::function<void(const char *pErrorMessage)>;
 
 class CEditorMap
 {
@@ -155,10 +157,10 @@ public:
 	void CheckIntegrity();
 
 	// io
-	bool Save(const char *pFilename, const std::function<void(const char *pErrorMessage)> &ErrorHandler);
-	bool PerformPreSaveSanityChecks(const std::function<void(const char *pErrorMessage)> &ErrorHandler);
-	bool Load(const char *pFilename, int StorageType, const std::function<void(const char *pErrorMessage)> &ErrorHandler);
-	void PerformSanityChecks(const std::function<void(const char *pErrorMessage)> &ErrorHandler);
+	bool Save(const char *pFilename, const FErrorHandler &ErrorHandler);
+	bool PerformPreSaveSanityChecks(const FErrorHandler &ErrorHandler);
+	bool Load(const char *pFilename, int StorageType, const FErrorHandler &ErrorHandler);
+	void PerformSanityChecks(const FErrorHandler &ErrorHandler);
 
 	void MakeGameGroup(std::shared_ptr<CLayerGroup> pGroup);
 	void MakeGameLayer(const std::shared_ptr<CLayer> &pLayer);

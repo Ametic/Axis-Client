@@ -21,6 +21,10 @@ CEmoticon::CEmoticon()
 void CEmoticon::ConKeyEmoticon(IConsole::IResult *pResult, void *pUserData)
 {
 	CEmoticon *pSelf = (CEmoticon *)pUserData;
+
+	if(pSelf->GameClient()->m_Scoreboard.IsActive())
+		return;
+
 	if(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		if(pSelf->GameClient()->m_Bindwheel.IsActive() || pSelf->GameClient()->m_QuickActions.IsActive())
