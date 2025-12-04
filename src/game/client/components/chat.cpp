@@ -777,8 +777,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		char TypeName[512];
 		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(Line.m_ClientId));
 
-		bool IsWarlist = GameClient()->m_WarList.GetAnyWar(Line.m_ClientId);
-
 		const char *pFrom;
 		if(Line.m_Whisper)
 			pFrom = "whisper";
@@ -1550,8 +1548,6 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					
 					char aReason[128] = "";
 					str_copy(aReason, aOldName);
-
-					const char *pClan = GameClient()->m_aClients[PlayerCid].m_aClan;
 
 					if(GameClient()->m_WarList.FindWarTypeWithName(aName) == 2)
 					{
