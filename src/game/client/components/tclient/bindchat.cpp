@@ -234,8 +234,8 @@ void CBindChat::OnConsoleInit()
 
 	AddDefaultBind("tempmute", "addmute 1");
 	AddDefaultBind("mute", "addmute 0");
-	AddDefaultBind("delmute", "delmute 0");
-	AddDefaultBind("unmute", "delmute 0");
+	AddDefaultBind("delmute", "delmute");
+	AddDefaultBind("unmute", "delmute");
 
 	AddDefaultBind("clanwar", "war_clan_index 0 1");
 	AddDefaultBind("delclanwar", "remove_war_clan_index 1");
