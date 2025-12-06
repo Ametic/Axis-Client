@@ -571,16 +571,6 @@ void CEClient::OnStateChange(int NewState, int OldState)
 		m_LastReplyId = -1;
 		m_aLastPing = CLastPing();
 	}
-
-	if(NewState == IClient::STATE_ONLINE)
-	{
-		CServerInfo CurrentServerInfo;
-		Client()->GetServerInfo(&CurrentServerInfo);
-
-		m_FoxNetServer = false;
-		if(!str_comp(CurrentServerInfo.m_aGameType, "FoxNet"))
-			m_FoxNetServer = true;
-	}
 }
 
 void CEClient::OnRender()

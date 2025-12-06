@@ -58,10 +58,7 @@ class CEClient : public CComponent
 
 	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
 
-	bool m_FoxNetServer;
-
 public:
-	bool FoxNetServer() const { return m_FoxNetServer; }
 
 	bool m_SentKill;
 	int m_KillCount;

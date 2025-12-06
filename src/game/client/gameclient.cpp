@@ -5548,50 +5548,6 @@ bool CGameClient::CheckNewInput()
 	return m_Controls.CheckNewInput();
 }
 
-void CGameClient::ClientMessage(const char *pString)
-{
-	m_Chat.AddLine(-3, 0, pString);
-}
-
-void CGameClient::OnJoinInfo()
-{
-	m_EClient.OnConnect();
-}
-
-void CGameClient::RequestEClientInfo()
-{
-	m_EntityInfo.FetchEClientInfo();
-}
-
-void CGameClient::SetLastMovementTime()
-{
-	m_EClient.m_LastMovement = time_get();
-}
-
-int CGameClient::GetClientId(const char *pName)
-{
-	int ClientId;
-
-	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-	{
-		if(!str_comp(pName, m_aClients[ClientId].m_aName))
-		{
-			return ClientId;
-		}
-	}
-	return -1;
-}
-
-const char *CGameClient::GetClientName(int ClientId)
-{
-	return m_aClients[ClientId].m_aName;
-}
-
-void CGameClient::OnServerBrowserUpdate()
-{
-	m_Menus.UpdateWarlistCache();
-}
-
 void CGameClient::OnSaveCodeNetMessage(const CNetMsg_Sv_SaveCode *pMsg)
 {
 	char aBuf[512];
@@ -5698,4 +5654,48 @@ void CGameClient::StoreSave(const char *pTeamMembers, const char *pGeneratedCode
 	}
 	CsvWrite(File, std::size(SAVES_HEADER), apColumns);
 	io_close(File);
+}
+
+void CGameClient::ClientMessage(const char *pString)
+{
+	m_Chat.AddLine(-3, 0, pString);
+}
+
+void CGameClient::OnJoinInfo()
+{
+	m_EClient.OnConnect();
+}
+
+void CGameClient::RequestEClientInfo()
+{
+	m_EntityInfo.FetchEClientInfo();
+}
+
+void CGameClient::SetLastMovementTime()
+{
+	m_EClient.m_LastMovement = time_get();
+}
+
+int CGameClient::GetClientId(const char *pName)
+{
+	int ClientId;
+
+	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		if(!str_comp(pName, m_aClients[ClientId].m_aName))
+		{
+			return ClientId;
+		}
+	}
+	return -1;
+}
+
+const char *CGameClient::GetClientName(int ClientId)
+{
+	return m_aClients[ClientId].m_aName;
+}
+
+void CGameClient::OnServerBrowserUpdate()
+{
+	m_Menus.UpdateWarlistCache();
 }

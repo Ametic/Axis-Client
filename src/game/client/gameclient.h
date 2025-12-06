@@ -744,19 +744,6 @@ public:
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
 
-	// E-Client
-	void OnServerBrowserUpdate() override;
-
-	void ClientMessage(const char *pString) override;
-	void OnJoinInfo() override;
-	void SetLastMovementTime() override;
-
-	void RequestEClientInfo() override;
-
-	// Get ClientId by Player Name
-	int GetClientId(const char *pName) override;
-	const char *GetClientName(int ClientId) override;
-
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;
 
@@ -1011,6 +998,20 @@ private:
 
 	void OnSaveCodeNetMessage(const CNetMsg_Sv_SaveCode *pMsg);
 	void StoreSave(const char *pTeamMembers, const char *pGeneratedCode) const;
+
+public:
+	// E-Client
+	void OnServerBrowserUpdate() override;
+
+	void ClientMessage(const char *pString) override;
+	void OnJoinInfo() override;
+	void SetLastMovementTime() override;
+
+	void RequestEClientInfo() override;
+
+	// Get ClientId by Player Name
+	int GetClientId(const char *pName) override;
+	const char *GetClientName(int ClientId) override;
 };
 
 ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL);

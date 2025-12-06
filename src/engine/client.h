@@ -351,6 +351,8 @@ public:
 
 	// E-Client
 	virtual void DiscordRPCchange() = 0;
+
+	int m_FoxNetVersion = 0;
 };
 
 class IGameClient : public IInterface
@@ -391,15 +393,6 @@ public:
 	virtual void DummyResetInput() = 0;
 	virtual void Echo(const char *pString) = 0;
 
-	// E-Client
-	virtual void OnServerBrowserUpdate() = 0;
-	virtual void ClientMessage(const char *pString) = 0;
-	virtual void OnJoinInfo() = 0;
-	virtual void SetLastMovementTime() = 0;
-	virtual void RequestEClientInfo() = 0;
-	virtual int GetClientId(const char *pName) = 0;
-	virtual const char *GetClientName(int Id) = 0;
-
 	virtual bool CanDisplayWarning() const = 0;
 	virtual void RenderShutdownMessage() = 0;
 
@@ -417,6 +410,15 @@ public:
 	virtual void InitializeLanguage() = 0;
 
 	virtual void ForceUpdateConsoleRemoteCompletionSuggestions() = 0;
+
+	// E-Client
+	virtual void OnServerBrowserUpdate() = 0;
+	virtual void ClientMessage(const char *pString) = 0;
+	virtual void OnJoinInfo() = 0;
+	virtual void SetLastMovementTime() = 0;
+	virtual void RequestEClientInfo() = 0;
+	virtual int GetClientId(const char *pName) = 0;
+	virtual const char *GetClientName(int Id) = 0;
 };
 
 extern IGameClient *CreateGameClient();
