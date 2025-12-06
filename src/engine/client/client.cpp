@@ -2362,7 +2362,6 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 			if(Unpacker.Error() || Version < 0)
 				return;
 			m_FoxNetVersion = Version;
-			GameClient()->ClientMessage("Connected to FoxNet server.");
 		}
 	}
 	// the client handles only vital messages https://github.com/ddnet/ddnet/issues/11178
