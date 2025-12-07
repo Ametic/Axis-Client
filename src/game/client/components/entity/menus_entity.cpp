@@ -2726,7 +2726,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			FastInput.HSplitTop(HeaderHeight, &Button, &FastInput);
 			Ui()->DoLabel(&Button, Localize("Input"), HeaderSize, HeaderAlignment);
 			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInput, Localize("Fast Inputs (-20ms visual delay)"), &g_Config.m_ClFastInput, &FastInput, LineSize);
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInput, Localize("Fast Inputs (-20ms visual delay)"), &g_Config.m_ClFastInput, &FastInput, LineSize))
+					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
 
 				FastInput.HSplitTop(MarginSmall, nullptr, &FastInput);
 				if(g_Config.m_ClFastInput)

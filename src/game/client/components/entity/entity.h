@@ -58,6 +58,9 @@ class CEClient : public CComponent
 
 	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
 public:
 
 	bool m_SentKill;
@@ -105,7 +108,6 @@ public:
 
 	int64_t m_RainbowDelay;
 
-	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	void GoresMode();
 
 	void GoresModeSave();

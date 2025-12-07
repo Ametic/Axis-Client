@@ -351,7 +351,7 @@ public:
 
 	// E-Client
 	virtual void DiscordRPCchange() = 0;
-
+	virtual void SendFastInputsInfo(int Conn) = 0;
 	int m_FoxNetVersion = 0;
 };
 

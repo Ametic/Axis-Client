@@ -141,12 +141,6 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	
 	bool m_aInfoDisplay[NUM_DUMMIES] = {false, false};
 
-	// E-Client
-	static void ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData);
-	void DiscordRPCchange() override;
-	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
-	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
-
 	char m_aCmdConnect[256] = "";
 	char m_aCmdPlayDemo[IO_MAX_PATH_LENGTH] = "";
 	char m_aCmdEditMap[IO_MAX_PATH_LENGTH] = "";
@@ -303,9 +297,6 @@ public:
 	int SendMsg(int Conn, CMsgPacker *pMsg, int Flags) override;
 	// Send via the currently active client (main/dummy)
 	int SendMsgActive(CMsgPacker *pMsg, int Flags) override;
-
-	// send client info
-	void SendqxdInfo(int Conn);
 
 	void SendInfo(int Conn);
 	void SendEnterGame(int Conn);
@@ -558,6 +549,20 @@ public:
 	std::optional<int> ShowMessageBox(const IGraphics::CMessageBox &MessageBox) override;
 	void GetGpuInfoString(char (&aGpuInfo)[512]) override;
 	void SetLoggers(std::shared_ptr<ILogger> &&pFileLogger, std::shared_ptr<ILogger> &&pStdoutLogger);
+
+	// <E-Client
+private:
+	static void ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData);
+	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
+	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
+
+	void SendqxdInfo(int Conn);
+
+public:
+
+	void DiscordRPCchange() override;
+	void SendFastInputsInfo(int Conn) override;
+	// E-Client>
 };
 
 #endif

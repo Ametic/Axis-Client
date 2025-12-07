@@ -1,14 +1,20 @@
 ﻿
-#include <engine/console.h>
-#include <engine/shared/config.h>
+#include "entity.h"
 
-#include <game/client/gameclient.h>
-
+#include <base/log.h>
+#include <base/str.h>
 #include <base/system.h>
 
-#include "entity.h"
-#include <base/log.h>
+#include <engine/client.h>
+#include <engine/client/enums.h>
+#include <engine/config.h>
+#include <engine/console.h>
+#include <engine/shared/config.h>
+#include <engine/shared/protocol.h>
+
 #include <generated/protocol.h>
+
+#include <game/client/gameclient.h>
 
 void CEClient::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 {
@@ -46,7 +52,7 @@ void CEClient::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUse
 		pSelf->m_RainbowSat[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("E-Client","%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
+		log_info("E-Client", "%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
@@ -449,6 +455,30 @@ void CEClient::OnConsoleInit()
 	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Crash your own client");
 
 	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
+	Console()->Chain("ec_fast_input", ConchainFastInputs, this);
+}
+
+void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	if(pResult->NumArguments())
+	{
+		int GoresMode = pResult->GetInteger(0);
+
+		if(GoresMode)
+			pSelf->GoresModeSave();
+		else
+			pSelf->GoresModeRestore();
+	}
+}
+
+void CEClient::ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	if(pResult->NumArguments())
+		pSelf->Client()->SendFastInputsInfo(g_Config.m_ClDummy);
 }
 
 void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

@@ -246,21 +246,6 @@ void CEClient::GoresMode()
 	}
 }
 
-void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
-{
-	pfnCallback(pResult, pCallbackUserData);
-	CEClient *pSelf = (CEClient *)pUserData;
-	if(pResult->NumArguments())
-	{
-		int GoresMode = pResult->GetInteger(0);
-
-		if(GoresMode)
-			pSelf->GoresModeSave();
-		else
-			pSelf->GoresModeRestore();
-	}
-}
-
 void CEClient::GoresModeSave()
 {
 	int Key = g_Config.m_ClGoresModeKey;
