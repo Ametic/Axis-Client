@@ -5697,5 +5697,5 @@ const char *CGameClient::GetClientName(int ClientId)
 
 void CGameClient::OnServerBrowserUpdate()
 {
-	m_Menus.UpdateWarlistCache();
+	m_Menus.m_ScheduledUpdate = time_get() + time_freq() / 64.0f;
 }

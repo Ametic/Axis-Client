@@ -923,8 +923,8 @@ public:
 			return Result < 0 || (Result == 0 && str_comp_nocase(m_aClan, Other.m_aClan) < 0);
 		}
 	};
-
-	bool m_WarlistInitialized = false;
+	
+	int64_t m_ScheduledUpdate = 0;
 	std::vector<CWarlistCache> m_vWarlistCache;
 	const CWarlistCache *m_pRemoveEntry = nullptr;
 

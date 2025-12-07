@@ -1886,10 +1886,10 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	RenderServerbrowserToolBox(ToolBox);
 
 	// E-Client
-	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && !m_WarlistInitialized)
+	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && m_ScheduledUpdate >= 0 && m_ScheduledUpdate <= time_get())
 	{
 		UpdateWarlistCache();
-		m_WarlistInitialized = true;
+		m_ScheduledUpdate = -1;
 	}
 }
 
