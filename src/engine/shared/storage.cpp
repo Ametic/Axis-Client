@@ -112,8 +112,8 @@ public:
 		for(const char *pDir : COMMON_DIRS)
 			Success &= CreateFolder(pDir, TYPE_SAVE);
 
-		Success &= CreateFolder("Entity", TYPE_SAVE);
-		Success &= CreateFolder("Entity/MapConfigs", TYPE_SAVE);
+		Success &= CreateFolder("entity", TYPE_SAVE);
+		Success &= CreateFolder("entity/mapconfigs", TYPE_SAVE);
 
 		if(!Success)
 		{
