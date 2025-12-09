@@ -1,5 +1,7 @@
 
+#include <base/color.h>
 #include <base/math.h>
+#include <base/str.h>
 #include <base/system.h>
 
 #include <engine/graphics.h>
@@ -10,7 +12,12 @@
 #include <generated/protocol.h>
 
 #include <game/client/animstate.h>
+#include <game/client/components/binds.h>
 #include <game/client/components/chat.h>
+#include <game/client/components/countryflags.h>
+#include <game/client/components/menus.h>
+#include <game/client/components/skins.h>
+#include <game/client/components/tclient/statusbar.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/skin.h>
@@ -19,16 +26,8 @@
 #include <game/client/ui_scrollregion.h>
 #include <game/localization.h>
 
-#include <game/client/components/binds.h>
-#include <game/client/components/countryflags.h>
-#include <game/client/components/menus.h>
-#include <game/client/components/skins.h>
-
-#include <base/color.h>
 #include <string>
 #include <vector>
-#include <game/client/components/tclient/statusbar.h>
-#include <base/str.h>
 
 using namespace FontIcons;
 using namespace std::chrono_literals;
@@ -170,7 +169,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	if(s_CurTab == ENTITY_TAB_STATUSBAR)
 	{
 		RenderSettingsStatusbar(MainView);
-	}	
+	}
 	if(s_CurTab == ENTITY_TAB_BINDWHEEL)
 	{
 		RenderSettingsBindwheel(MainView);
@@ -258,7 +257,6 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 			memmove(Temp, Temp + 1, Len - 1);
 			Temp[Len - 1] = '\0';
 			str_format(aLine, sizeof(aLine), "•%s", Temp);
-
 		}
 
 		ContentView.HSplitTop(aLineHeight, &Label, &ContentView);
@@ -1018,7 +1016,7 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 	int HoveringIndex = -1;
 
 	float MouseDist = distance(Pos, Ui()->MousePos());
-	if(GameClient()->m_QuickActions.m_vBinds.empty()) 
+	if(GameClient()->m_QuickActions.m_vBinds.empty())
 	{
 		float Size = 20.0f;
 		TextRender()->Text(Pos.x - TextRender()->TextWidth(Size, "Empty") / 2.0f, Pos.y - Size / 2, Size, "Empty");
@@ -1335,7 +1333,6 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	Ui()->DoLabel(&Label, Localize("Use right mouse to swap with selected"), 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
 	Ui()->DoLabel(&Label, Localize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
-
 
 	CUIRect KeyLabel;
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
@@ -2322,7 +2319,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNotifyOnMove, "Notify When Player is Being Moved", &g_Config.m_ClNotifyOnMove, &Automation, LineSize);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, "Anti Mult Spawn Block", &g_Config.m_ClAntiSpawnBlock, &Automation, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, "AntiSpawn Block", &g_Config.m_ClAntiSpawnBlock, &Automation, LineSize);
 				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you Kill and get frozen");
 			}
 		}
@@ -2481,7 +2478,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				static CButtonContainer s_ReaderButtonGhost, s_ClearButtonGhost;
 				DoLine_KeyReader(GhostTools, s_ReaderButtonGhost, s_ClearButtonGhost, Localize("Toggle ghosts key"), "toggle tc_show_others_ghosts 0 1");
-
 			}
 		}
 	}
@@ -2502,7 +2498,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresMode, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresMode, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &GoresMode, LineSize);
-	
+
 			// Key Reader for Gores Mode
 			{
 				static CBindSlot s_GoresBind(g_Config.m_ClGoresModeKey, 0);
@@ -2771,7 +2767,6 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &Cosmetics, LineMargin);
 
-
 			static std::vector<const char *> s_EffectDropDownNames;
 			s_EffectDropDownNames = {Localize("No Effect"), Localize("Sparkle effect"), Localize("Fire Trail Effect"), Localize("Switch Effect")};
 			static CUi::SDropDownState s_EffectDropDownState;
@@ -2852,9 +2847,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 	/* Server-Side Rainbow */
 	{
-		CUIRect TeeRect;
 		ServerRainbow.HSplitTop(Margin, nullptr, &ServerRainbow);
-		ServerRainbow.HSplitTop(Margin, nullptr, &TeeRect);
 		ServerRainbow.HSplitTop(260.0f, &ServerRainbow, &PlayerIndicator);
 		if(s_ScrollRegion.AddRect(ServerRainbow))
 		{
@@ -2866,21 +2859,219 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, Localize("Enable Serverside Rainbow"), &g_Config.m_ClServerRainbow, &ServerRainbow, LineSize);
 
+			ColorHSLA Color(GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy]);
+			const char *apLabels[] = {Localize("Hue"), Localize("Sat."), Localize("Lht."), Localize("Alpha")};
+			const float SizePerEntry = 20.0f;
+			const float MarginPerEntry = 5.0f;
+			const float PreviewMargin = 2.5f;
+			const float PreviewHeight = 40.0f + 2 * PreviewMargin;
+			const float OffY = (SizePerEntry + MarginPerEntry) * 3 - PreviewHeight;
+
+			CUIRect Preview;
+			ServerRainbow.VSplitLeft(PreviewHeight, &Preview, &ServerRainbow);
+			Preview.HSplitTop(OffY / 2.0f, nullptr, &Preview);
+			Preview.HSplitTop(PreviewHeight, &Preview, nullptr);
+
+			auto &&RenderHueRect = [&](CUIRect *pColorRect) {
+				float CurXOff = pColorRect->x;
+				const float SizeColor = pColorRect->w / 6;
+
+				// red to yellow
+				{
+					IGraphics::CColorVertex aColorVertices[] = {
+						IGraphics::CColorVertex(0, 1, 0, 0, 1),
+						IGraphics::CColorVertex(1, 1, 1, 0, 1),
+						IGraphics::CColorVertex(2, 1, 0, 0, 1),
+						IGraphics::CColorVertex(3, 1, 1, 0, 1)};
+					Graphics()->SetColorVertex(aColorVertices, std::size(aColorVertices));
+
+					IGraphics::CFreeformItem Freeform(
+						CurXOff, pColorRect->y,
+						CurXOff + SizeColor, pColorRect->y,
+						CurXOff, pColorRect->y + pColorRect->h,
+						CurXOff + SizeColor, pColorRect->y + pColorRect->h);
+					Graphics()->QuadsDrawFreeform(&Freeform, 1);
+				}
+
+				// yellow to green
+				CurXOff += SizeColor;
+				{
+					IGraphics::CColorVertex aColorVertices[] = {
+						IGraphics::CColorVertex(0, 1, 1, 0, 1),
+						IGraphics::CColorVertex(1, 0, 1, 0, 1),
+						IGraphics::CColorVertex(2, 1, 1, 0, 1),
+						IGraphics::CColorVertex(3, 0, 1, 0, 1)};
+					Graphics()->SetColorVertex(aColorVertices, std::size(aColorVertices));
+
+					IGraphics::CFreeformItem Freeform(
+						CurXOff, pColorRect->y,
+						CurXOff + SizeColor, pColorRect->y,
+						CurXOff, pColorRect->y + pColorRect->h,
+						CurXOff + SizeColor, pColorRect->y + pColorRect->h);
+					Graphics()->QuadsDrawFreeform(&Freeform, 1);
+				}
+
+				CurXOff += SizeColor;
+				// green to turquoise
+				{
+					IGraphics::CColorVertex aColorVertices[] = {
+						IGraphics::CColorVertex(0, 0, 1, 0, 1),
+						IGraphics::CColorVertex(1, 0, 1, 1, 1),
+						IGraphics::CColorVertex(2, 0, 1, 0, 1),
+						IGraphics::CColorVertex(3, 0, 1, 1, 1)};
+					Graphics()->SetColorVertex(aColorVertices, std::size(aColorVertices));
+
+					IGraphics::CFreeformItem Freeform(
+						CurXOff, pColorRect->y,
+						CurXOff + SizeColor, pColorRect->y,
+						CurXOff, pColorRect->y + pColorRect->h,
+						CurXOff + SizeColor, pColorRect->y + pColorRect->h);
+					Graphics()->QuadsDrawFreeform(&Freeform, 1);
+				}
+
+				CurXOff += SizeColor;
+				// turquoise to blue
+				{
+					IGraphics::CColorVertex aColorVertices[] = {
+						IGraphics::CColorVertex(0, 0, 1, 1, 1),
+						IGraphics::CColorVertex(1, 0, 0, 1, 1),
+						IGraphics::CColorVertex(2, 0, 1, 1, 1),
+						IGraphics::CColorVertex(3, 0, 0, 1, 1)};
+					Graphics()->SetColorVertex(aColorVertices, std::size(aColorVertices));
+
+					IGraphics::CFreeformItem Freeform(
+						CurXOff, pColorRect->y,
+						CurXOff + SizeColor, pColorRect->y,
+						CurXOff, pColorRect->y + pColorRect->h,
+						CurXOff + SizeColor, pColorRect->y + pColorRect->h);
+					Graphics()->QuadsDrawFreeform(&Freeform, 1);
+				}
+
+				CurXOff += SizeColor;
+				// blue to purple
+				{
+					IGraphics::CColorVertex aColorVertices[] = {
+						IGraphics::CColorVertex(0, 0, 0, 1, 1),
+						IGraphics::CColorVertex(1, 1, 0, 1, 1),
+						IGraphics::CColorVertex(2, 0, 0, 1, 1),
+						IGraphics::CColorVertex(3, 1, 0, 1, 1)};
+					Graphics()->SetColorVertex(aColorVertices, std::size(aColorVertices));
+
+					IGraphics::CFreeformItem Freeform(
+						CurXOff, pColorRect->y,
+						CurXOff + SizeColor, pColorRect->y,
+						CurXOff, pColorRect->y + pColorRect->h,
+						CurXOff + SizeColor, pColorRect->y + pColorRect->h);
+					Graphics()->QuadsDrawFreeform(&Freeform, 1);
+				}
+
+				CurXOff += SizeColor;
+				// purple to red
+				{
+					IGraphics::CColorVertex aColorVertices[] = {
+						IGraphics::CColorVertex(0, 1, 0, 1, 1),
+						IGraphics::CColorVertex(1, 1, 0, 0, 1),
+						IGraphics::CColorVertex(2, 1, 0, 1, 1),
+						IGraphics::CColorVertex(3, 1, 0, 0, 1)};
+					Graphics()->SetColorVertex(aColorVertices, std::size(aColorVertices));
+
+					IGraphics::CFreeformItem Freeform(
+						CurXOff, pColorRect->y,
+						CurXOff + SizeColor, pColorRect->y,
+						CurXOff, pColorRect->y + pColorRect->h,
+						CurXOff + SizeColor, pColorRect->y + pColorRect->h);
+					Graphics()->QuadsDrawFreeform(&Freeform, 1);
+				}
+			};
+
+			auto &&RenderSaturationRect = [&](CUIRect *pColorRect, const ColorRGBA &CurColor) {
+				ColorHSLA LeftColor = color_cast<ColorHSLA>(CurColor);
+				ColorHSLA RightColor = color_cast<ColorHSLA>(CurColor);
+
+				LeftColor.s = 0.0f;
+				RightColor.s = 1.0f;
+
+				const ColorRGBA LeftColorRGBA = color_cast<ColorRGBA>(LeftColor);
+				const ColorRGBA RightColorRGBA = color_cast<ColorRGBA>(RightColor);
+
+				Graphics()->SetColor4(LeftColorRGBA, RightColorRGBA, RightColorRGBA, LeftColorRGBA);
+
+				IGraphics::CFreeformItem Freeform(
+					pColorRect->x, pColorRect->y,
+					pColorRect->x + pColorRect->w, pColorRect->y,
+					pColorRect->x, pColorRect->y + pColorRect->h,
+					pColorRect->x + pColorRect->w, pColorRect->y + pColorRect->h);
+				Graphics()->QuadsDrawFreeform(&Freeform, 1);
+			};
+
+			auto &&RenderLightingRect = [&](CUIRect *pColorRect, const ColorRGBA &CurColor) {
+				ColorHSLA LeftColor = color_cast<ColorHSLA>(CurColor);
+				ColorHSLA RightColor = color_cast<ColorHSLA>(CurColor);
+
+				LeftColor.l = ColorHSLA::DARKEST_LGT;
+				RightColor.l = 1.0f;
+
+				const ColorRGBA LeftColorRGBA = color_cast<ColorRGBA>(LeftColor);
+				const ColorRGBA RightColorRGBA = color_cast<ColorRGBA>(RightColor);
+
+				Graphics()->SetColor4(LeftColorRGBA, RightColorRGBA, RightColorRGBA, LeftColorRGBA);
+
+				IGraphics::CFreeformItem Freeform(
+					pColorRect->x, pColorRect->y,
+					pColorRect->x + pColorRect->w, pColorRect->y,
+					pColorRect->x, pColorRect->y + pColorRect->h,
+					pColorRect->x + pColorRect->w, pColorRect->y + pColorRect->h);
+				Graphics()->QuadsDrawFreeform(&Freeform, 1);
+			};
+
+			for(int i = 0; i < 3; i++)
+			{
+				CUIRect Button2, Label2;
+				ServerRainbow.HSplitTop(SizePerEntry, &Button2, &ServerRainbow);
+				ServerRainbow.HSplitTop(MarginPerEntry, nullptr, &ServerRainbow);
+				Button2.VSplitLeft(10.0f, nullptr, &Button2);
+				Button2.VSplitLeft(100.0f, &Label2, &Button2);
+
+				Button2.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 1.0f);
+
+				CUIRect Rail;
+				Button2.Margin(2.0f, &Rail);
+
+				char aBuf[32];
+				str_format(aBuf, sizeof(aBuf), "%s: %03d", apLabels[i], round_to_int(Color[i] * 255.0f));
+				Ui()->DoLabel(&Label2, aBuf, 14.0f, TEXTALIGN_ML);
+
+				ColorRGBA HandleColor;
+				Graphics()->TextureClear();
+				Graphics()->TrianglesBegin();
+				if(i == 0)
+				{
+					RenderHueRect(&Rail);
+					HandleColor = color_cast<ColorRGBA>(ColorHSLA(Color.h, 1.0f, 0.5f, 1.0f));
+				}
+				else if(i == 1)
+				{
+					RenderSaturationRect(&Rail, color_cast<ColorRGBA>(ColorHSLA(Color.h, 1.0f, 0.5f, 1.0f)));
+					HandleColor = color_cast<ColorRGBA>(ColorHSLA(Color.h, Color.s, 0.5f, 1.0f));
+				}
+				else if(i == 2)
+				{
+					RenderLightingRect(&Rail, color_cast<ColorRGBA>(ColorHSLA(Color.h, Color.s, 0.5f, 1.0f)));
+					HandleColor = color_cast<ColorRGBA>(ColorHSLA(Color.h, Color.s, Color.l, 1.0f).UnclampLighting(ColorHSLA::DARKEST_LGT));
+				}
+				Graphics()->TrianglesEnd();
+
+				Color[i] = Ui()->DoServerSideRainbowScrollbar(&Color[i], &Button2, Color[i], &HandleColor, i != 0);
+				GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy] = Color.s * 255.0f - 1;
+				GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy] = Color.l * 255.0f - 1;
+			}
+
+			ServerRainbow.VSplitLeft(-42, &Button, &ServerRainbow);
 			ServerRainbow.HSplitTop(2 * LineSize, &Button, &ServerRainbow);
 			Ui()->DoScrollbarOption(&GameClient()->m_EClient.m_RainbowSpeed, &GameClient()->m_EClient.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 5000, &CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
-			ServerRainbow.VSplitLeft(52, &Button, &ServerRainbow);
-			RenderHslaScrollbars(&ServerRainbow, &GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
-			ServerRainbow.VSplitLeft(-140, &Button, &ServerRainbow);
 
-			ServerRainbow.HSplitTop(-26, &Button, &ServerRainbow);
-			Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
-			ServerRainbow.HSplitTop(25, &Button, &ServerRainbow);
-			Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
+			ServerRainbow.VSplitLeft(-93, &Button, &ServerRainbow);
 			{
-				TeeRect.HSplitTop(80.0f, nullptr, &TeeRect);
-				TeeRect.HSplitTop(80.0f, &TeeRect, nullptr);
-				TeeRect.VSplitLeft(70.0f, &TeeRect, nullptr);
-
 				CTeeRenderInfo TeeRenderInfo;
 
 				bool PUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
@@ -2920,7 +3111,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClDummySkin));
 					TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 				}
-				RenderECTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
+				RenderECTee(MainView, Preview.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
 			}
 			ServerRainbow.VSplitLeft(88, &Button, &ServerRainbow);
 			DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], &ServerRainbow, LineSize);
@@ -3193,7 +3384,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		}
 	}
 
-		/* Tile Outlines */
+	/* Tile Outlines */
 	{
 		static float Offset = 0.0f;
 		TileOutlines.HSplitTop(Margin, nullptr, &TileOutlines);
@@ -3493,16 +3684,17 @@ void CMenus::RenderECTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 	float Distance = length(DeltaPosition);
 	float InteractionDistance = 20.0f;
 	vec2 TeeDirection = normalize(DeltaPosition);
-	int TeeEmote =  EMOTE_NORMAL;
+	int TeeEmote = EMOTE_NORMAL;
+	if(Distance < InteractionDistance)
+	{
+		CanDrag = true;
+		TeeEmote = EMOTE_HAPPY;
+		if(Draggable > 0)
+			Ui()->SetHotItem(nullptr);
+	}
+
 	if(Draggable > 0)
 	{
-		if(Distance < InteractionDistance)
-		{
-			CanDrag = true;
-			TeeEmote = EMOTE_HAPPY;
-			Ui()->SetHotItem(nullptr);
-		}
-
 		if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
 		{
 			vec2 Offset = vec2(0.0f, 2.5f);

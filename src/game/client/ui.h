@@ -562,6 +562,7 @@ public:
 	void ConvertMouseMove(float *pX, float *pY, IInput::ECursorType CursorType) const;
 	void UpdateTouchState(CTouchState &State) const;
 	void ResetMouseSlow() { m_MouseSlow = false; }
+	void SetMouseSlow() { m_MouseSlow = true; } // E-Client
 
 	bool ConsumeHotkey(EHotkey Hotkey);
 	void ClearHotkeys() { m_HotkeysPressed = 0; }
@@ -789,6 +790,9 @@ public:
 		bool m_Init = false;
 	};
 	int DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Num, SDropDownState &State);
+
+	// E-Client
+	float DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner, bool Draggable);
 };
 
 #endif
