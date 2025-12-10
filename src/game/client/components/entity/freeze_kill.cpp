@@ -31,16 +31,10 @@ void CFreezeKill::OnRender()
 		return;
 	}
 
-	// if map name isnt "Multeasymap", stop
-	if(g_Config.m_ClFreezeKillMultOnly)
-		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
-			return;
-
 	// debug
-
 	if(g_Config.m_ClFreezeKillDebug)
 	{
-		float a = (m_LastFreeze - time_get()) / 1000000000.0f;
+		float a = (m_LastFreeze - time_get()) / time_freq();
 
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "until kill: %f", a);

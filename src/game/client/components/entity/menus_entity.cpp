@@ -2137,7 +2137,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	// left side in settings menu
 
 	CUIRect Automation, FreezeKill, ChatSettings, GoresMode,
-		MenuSettings, AntiLatency, FrozenTeeHud, EntitySettings,
+		MenuSettings, AntiLatency, FrozenTeeHud,
 		FastInput, AntiPingSmoothing, GhostTools;
 	MainView.VSplitMid(&Automation, &GoresMode);
 
@@ -2558,7 +2558,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	{
 		static float Offset = 0.0f;
 		FreezeKill.HSplitTop(Margin, nullptr, &FreezeKill);
-		FreezeKill.HSplitTop(75.0f + Offset, &FreezeKill, &EntitySettings);
+		FreezeKill.HSplitTop(75.0f + Offset, &FreezeKill, &FrozenTeeHud);
 		if(s_ScrollRegion.AddRect(FreezeKill))
 		{
 			Offset = 0.0f;
@@ -2572,9 +2572,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 			if(g_Config.m_ClFreezeKill)
 			{
-				Offset += 105.0f;
+				Offset += 95.0f;
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Enable on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKill, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, Localize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &FreezeKill, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKill, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKill, LineSize);
@@ -2594,24 +2593,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, Localize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
 				}
 			}
-		}
-	}
-
-	/* Entity Settings */
-	{
-		EntitySettings.HSplitTop(Margin, nullptr, &EntitySettings);
-		EntitySettings.HSplitTop(90.0f, &EntitySettings, &FrozenTeeHud);
-		if(s_ScrollRegion.AddRect(EntitySettings))
-		{
-			EntitySettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			EntitySettings.VMargin(Margin, &EntitySettings);
-
-			EntitySettings.HSplitTop(HeaderHeight, &Button, &EntitySettings);
-			Ui()->DoLabel(&Button, Localize("Join Info"), HeaderSize, HeaderAlignment);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEnabledInfo, ("Display What Features Are On/Off on Join"), &g_Config.m_ClEnabledInfo, &EntitySettings, LineMargin);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClListsInfo, ("Display amount of players of default lists on Join"), &g_Config.m_ClListsInfo, &EntitySettings, LineMargin);
 		}
 	}
 

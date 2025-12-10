@@ -42,10 +42,6 @@ void CAntiSpawnBlock::OnRender()
 	if(m_SentKill)
 		Reset(STATE_IN_TEAM);
 
-	// if map name isnt "Multeasymap", stop
-	if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
-		return;
-
 	vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
 
 	if(GameClient()->RaceHelper()->IsNearStart(Pos, 2))

@@ -1,17 +1,23 @@
 #include "freezebars.h"
 
+#include <base/color.h>
+#include <base/system.h>
+#include <base/vmath.h>
+
+#include <engine/client.h>
+#include <engine/graphics.h>
+#include <engine/shared/config.h>
+#include <engine/shared/protocol.h>
+
 #include <game/client/gameclient.h>
+#include <game/gamecore.h>
+
+#include <algorithm>
 
 bool CFreezeBars::RenderKillBar()
 {
 	if(!g_Config.m_ClFreezeKill || !GameClient()->CurrentRaceTime())
 		return false;
-
-	if(g_Config.m_ClFreezeKillMultOnly)
-	{
-		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
-			return false;
-	}
 
 	int ClientId = GameClient()->m_Snap.m_LocalClientId;
 
@@ -49,7 +55,7 @@ bool CFreezeBars::RenderKillBar()
 void CFreezeBars::RenderFreezeBar(const int ClientId)
 {
 	if(!g_Config.m_ClShowFreezeBars)
-		   return;
+		return;
 
 	const float FreezeBarWidth = 64.0f;
 	const float FreezeBarHalfWidth = 32.0f;

@@ -72,7 +72,7 @@ public:
 
 	void SaveSkin();
 	void RestoreSkin();
-	void OnlineInfo(bool Integrate = false);
+	void OnlineInfo();
 
 	// Movement Notification if tabbed out
 	vec2 m_LastPos = vec2(0, 0);
