@@ -278,7 +278,6 @@ void CBinds::SetDefaults()
 	Bind(KEY_MOUSE_1, "+fire");
 	Bind(KEY_MOUSE_2, "+hook");
 	Bind(KEY_LSHIFT, "+emote");
-	Bind(KEY_Q, "+bindwheel");
 	Bind(KEY_RETURN, "+show_chat; chat all");
 	Bind(KEY_RIGHT, "spectate_next");
 	Bind(KEY_LEFT, "spectate_previous");
@@ -304,6 +303,9 @@ void CBinds::SetDefaults()
 	Bind(KEY_K, "kill");
 	Bind(KEY_Q, "say /spec");
 	Bind(KEY_P, "say /pause");
+
+	Bind(KEY_Q, "+bindwheel"); // TClient
+	Bind(KEY_Y, "+quickactions"); // E-Client
 
 	g_Config.m_ClDDRaceBindsSet = 0;
 	SetDDRaceBinds(false);
