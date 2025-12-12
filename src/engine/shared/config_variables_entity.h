@@ -49,11 +49,11 @@ MACRO_CONFIG_INT(ClOutlineWidthUnfreeze, ec_outline_width_unfreeze, 5, 1, 16, CF
 MACRO_CONFIG_INT(ClOutlineWidthSolid, ec_outline_width_solid, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of solid outline")
 MACRO_CONFIG_INT(ClOutlineWidthTele, ec_outline_width_tele, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of tele outline")
 MACRO_CONFIG_INT(ClOutlineWidthKill, ec_outline_width_kill, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of kill outline")
-MACRO_CONFIG_COL(ClOutlineColorFreeze, ec_outline_color_freeze, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Freeze outline color")
-MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ec_outline_color_unfreeze, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
-MACRO_CONFIG_COL(ClOutlineColorSolid, ec_outline_color_solid, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Solid outline color")
-MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Tele outline color")
-MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
+MACRO_CONFIG_COL(ClOutlineColorFreeze, ec_outline_color_freeze, 2097152251, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Freeze outline color")
+MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ec_outline_color_unfreeze, 2099380187, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
+MACRO_CONFIG_COL(ClOutlineColorSolid, ec_outline_color_solid, 2108620759, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Solid outline color")
+MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 2113893167, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Tele outline color")
+MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 2097217461, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
 
 // Fast Input
 MACRO_CONFIG_INT(ClFastInput, ec_fast_input, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction up to 20ms faster")
@@ -126,9 +126,9 @@ MACRO_CONFIG_INT(ClRenderCursorSpec, ec_cursor_in_spec, 50, 0, 100, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClPingNameCircle, ec_nameplate_ping_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a circle next to nameplate to indicate ping")
 
 // Indicator Variables
-MACRO_CONFIG_COL(ClIndicatorAlive, ec_indicator_alive, 255, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of alive tees in player indicator")
-MACRO_CONFIG_COL(ClIndicatorFreeze, ec_indicator_freeze, 65407, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of frozen tees in player indicator")
-MACRO_CONFIG_COL(ClIndicatorSaved, ec_indicator_dead, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of tees who is getting saved in player indicator")
+MACRO_CONFIG_COL(ClIndicatorAlive, ec_indicator_alive, 5636044, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of alive tees in player indicator")
+MACRO_CONFIG_COL(ClIndicatorFreeze, ec_indicator_freeze, 9725116, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of frozen tees in player indicator")
+MACRO_CONFIG_COL(ClIndicatorSaved, ec_indicator_dead, 3145695, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of tees who is getting saved in player indicator")
 MACRO_CONFIG_INT(ClIndicatorOffset, ec_indicator_offset, 42, 16, 200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(16-128) Offset of indicator position")
 MACRO_CONFIG_INT(ClIndicatorOffsetMax, ec_indicator_offset_max, 100, 16, 200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(16-128) Max indicator offset for variable offset setting")
 MACRO_CONFIG_INT(ClIndicatorVariableDistance, ec_indicator_variable_distance, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Indicator circles will be further away the further the tee is")
