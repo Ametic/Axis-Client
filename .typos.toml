@@ -14,6 +14,9 @@ extend-exclude = [
 	# tests with invalid words
 	"src/test/shell_execute_test.cpp",
 	"src/test/str_test.cpp",
+	# <E-Client
+	"src/engine/shared/config_variables_entity.h",
+	# E-Client>
 ]
 
 [default]

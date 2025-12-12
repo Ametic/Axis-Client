@@ -2727,7 +2727,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	CUIRect Label, Button;
 
 	// left side in settings menu
-	CUIRect Miscellaneous, Cosmetics, ServerRainbow, TileOutlines, DiscordRpc, ChatBubbles, PlayerIndicator, SweatMode;
+	CUIRect Miscellaneous, Cosmetics, ServerRainbow, TileOutlines, DiscordRpc, ChatBubbles, PlayerIndicator, BgDraw, SweatMode;
 	MainView.VSplitMid(&Cosmetics, &Miscellaneous);
 
 	/* Cosmetics */
@@ -3369,7 +3369,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	{
 		static float Offset = 0.0f;
 		TileOutlines.HSplitTop(Margin, nullptr, &TileOutlines);
-		TileOutlines.HSplitTop(g_Config.m_ClOutline ? 230.0f + Offset : 80.0f, &TileOutlines, &SweatMode);
+		TileOutlines.HSplitTop(g_Config.m_ClOutline ? 230.0f + Offset : 80.0f, &TileOutlines, &BgDraw);
 		if(s_ScrollRegion.AddRect(TileOutlines))
 		{
 			Offset = 0.0f;
@@ -3455,7 +3455,39 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		}
 	}
 
+	/* Background Draw */
+	{
+		BgDraw.HSplitTop(Margin, nullptr, &BgDraw);
+		BgDraw.HSplitTop(180.0f, &BgDraw, &SweatMode);
+		if(s_ScrollRegion.AddRect(BgDraw))
+		{
+			BgDraw.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			BgDraw.VMargin(Margin, &BgDraw);
+
+			BgDraw.HSplitTop(HeaderHeight, &Button, &BgDraw);
+
+			Ui()->DoLabel(&Button, Localize("Background Draw"), HeaderSize, HeaderAlignment);
+			BgDraw.HSplitTop(MarginSmall, nullptr, &BgDraw);
+			
+			static CButtonContainer s_BgDrawColor;
+			DoLine_ColorPicker(&s_BgDrawColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &BgDraw, Localize("Color"), &g_Config.m_TcBgDrawColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(CConfig::ms_TcBgDrawColor)), false);
+
+			BgDraw.HSplitTop(LineSize * 2.0f, &Button, &BgDraw);
+			if(g_Config.m_TcBgDrawFadeTime == 0)
+				Ui()->DoScrollbarOption(&g_Config.m_TcBgDrawFadeTime, &g_Config.m_TcBgDrawFadeTime, &Button, Localize("Time until strokes disappear"), 0, 600, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, Localize(" seconds (never)"));
+			else
+				Ui()->DoScrollbarOption(&g_Config.m_TcBgDrawFadeTime, &g_Config.m_TcBgDrawFadeTime, &Button, Localize("Time until strokes disappear"), 0, 600, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, Localize(" seconds"));
+
+			BgDraw.HSplitTop(LineSize * 2.0f, &Button, &BgDraw);
+			Ui()->DoScrollbarOption(&g_Config.m_TcBgDrawWidth, &g_Config.m_TcBgDrawWidth, &Button, Localize("Width"), 1, 50, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE);
+
+			static CButtonContainer s_ReaderButtonDraw, s_ClearButtonDraw;
+			DoLine_KeyReader(BgDraw, s_ReaderButtonDraw, s_ClearButtonDraw, Localize("Draw where mouse is"), "+bg_draw");
+		}
+	}
+
 	/* Sweat Mode */
+	if(g_Config.m_ClWarList)
 	{
 		SweatMode.HSplitTop(Margin, nullptr, &SweatMode);
 		SweatMode.HSplitTop(130.0f, &SweatMode, nullptr);
@@ -3492,6 +3524,8 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Ui()->DoEditBox(&s_Name, &Button, EditBoxFontSize);
 		}
 	}
+	else
+		SweatMode.HSplitTop(0, &SweatMode, nullptr);
 	s_ScrollRegion.End();
 }
 

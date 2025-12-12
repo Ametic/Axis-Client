@@ -72,22 +72,23 @@
 // Entity
 #include "components/entity/anti_spawn_block.h"
 #include "components/entity/chat_bubbles.h"
-#include "components/entity/quick_actions.h"
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
-#include "components/entity/mapconfig.h"
 #include "components/entity/info.h"
+#include "components/entity/mapconfig.h"
+#include "components/entity/quick_actions.h"
 
 // Tater
+#include "components/tclient/bg_draw.h"
 #include "components/tclient/bindchat.h"
 #include "components/tclient/bindwheel.h"
+#include "components/tclient/custom_communities.h"
 #include "components/tclient/outlines.h"
 #include "components/tclient/player_indicator.h"
 #include "components/tclient/rainbow.h"
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/statusbar.h"
 #include "components/tclient/warlist.h"
-#include "components/tclient/custom_communities.h"
 
 class CGameInfo
 {
@@ -216,6 +217,7 @@ public:
 	// T-Client
 	CBindChat m_Bindchat;
 	CBindWheel m_Bindwheel;
+	CBgDraw m_BgDraw;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;
 	CRainbow m_Rainbow;

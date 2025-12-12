@@ -847,6 +847,9 @@ bool CGameConsole::CInstance::IsInputHidden() const
 void CGameConsole::CInstance::SetSearching(bool Searching)
 {
 	m_Searching = Searching;
+
+	log_info("console", "%d %d", m_CurSelStart, m_CurSelEnd);
+
 	if(Searching)
 	{
 		m_Input.SetClipboardLineCallback(nullptr); // restore default behavior (replace newlines with spaces)
@@ -890,7 +893,6 @@ void CGameConsole::CInstance::UpdateSearch()
 	if(SearchChanged)
 	{
 		m_CurrentMatchIndex = -1;
-		m_HasSelection = false;
 	}
 
 	ITextRender *pTextRender = m_pGameConsole->Ui()->TextRender();
@@ -1315,7 +1317,7 @@ void CGameConsole::OnRender()
 		pConsole->m_BoundingBox = pConsole->m_Input.Render(&InputCursorRect, FONT_SIZE, TEXTALIGN_BL, Changed, Screen.w - 10.0f - x, LINE_SPACING);
 		if(pConsole->m_LastInputHeight == 0.0f && pConsole->m_BoundingBox.m_H != 0.0f)
 			pConsole->m_LastInputHeight = pConsole->m_BoundingBox.m_H;
-		if(pConsole->m_Input.HasSelection())
+		if(pConsole->m_Input.HasSelection() && !pConsole->m_Searching)
 			pConsole->m_HasSelection = false; // Clear console selection if we have a line input selection
 		
 		if(pConsole->m_LastInputHeight != pConsole->m_BoundingBox.m_H)

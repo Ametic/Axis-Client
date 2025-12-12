@@ -7,6 +7,8 @@
 #define MACRO_CONFIG_STR(Name, ScriptName, Len, Def, Save, Desc) ;
 #endif
 
+// ToDo: @qxdFox: every TClient feature should start with "Tc" and tc_ instead of entitys prefix
+
 // Auto Reply
 MACRO_CONFIG_STR(ClAutoReplyMsg, ec_auto_reply_msg, 255, "I'm currently tabbed out", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply when pinged in chat and ec_auto_reply is set to 1")
 MACRO_CONFIG_INT(ClTabbedOutMsg, ec_tabbed_out_msg, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let others know when pinged in chat that you are tabbed out")
@@ -366,7 +368,14 @@ MACRO_CONFIG_STR(ClStatusBarScheme, ec_statusbar_scheme, 16, "ac pf r", CFGFLAG_
 MACRO_CONFIG_INT(ClInfoUrlType, ec_info_url_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Url info.cpp should use (0 = Github, 1 = entity)")
 
 // Custom Communities
-MACRO_CONFIG_STR(ClCustomCommunitiesUrl, cl_custom_communities_url, 256, "https://raw.githubusercontent.com/SollyBunny/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https), empty to disable")
+MACRO_CONFIG_STR(ClCustomCommunitiesUrl, tc_custom_communities_url, 256, "https://raw.githubusercontent.com/SollyBunny/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https), empty to disable")
+
+// Bg Draw
+MACRO_CONFIG_INT(TcBgDrawWidth, tc_bg_draw_width, 5, 1, 50, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Width of background draw strokes")
+MACRO_CONFIG_INT(TcBgDrawFadeTime, tc_bg_draw_fade_time, 0, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Time until strokes disappear (0 = never)")
+MACRO_CONFIG_INT(TcBgDrawMaxItems, tc_bg_draw_max_items, 128, 0, 2048, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Maximum number of strokes")
+MACRO_CONFIG_COL(TcBgDrawColor, tc_bg_draw_color, 11893936, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of background draw strokes")
+MACRO_CONFIG_INT(TcBgDrawAutoSaveLoad, tc_bg_draw_auto_save_load, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically save and load background drawings")
 
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
