@@ -2581,14 +2581,15 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				if(g_Config.m_ClFreezeKillTeamClose)
 				{
+					Offset += 25.0f;
 					FreezeKill.HSplitTop(20.0f, &Button, &FreezeKill);
-					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 1, 25, &CUi::ms_LinearScrollbarScale, 0u, "");
+					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 8, 30, &CUi::ms_LinearScrollbarScale, 0u, " blocks");
 				}
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, Localize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &FreezeKill, LineSize);
 				if(g_Config.m_ClFreezeKillWaitMs)
 				{
-					Offset += 35.0f;
+					Offset += 25.0f;
 					FreezeKill.HSplitTop(2 * LineSize, &Button, &FreezeKill);
 					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, Localize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
 				}

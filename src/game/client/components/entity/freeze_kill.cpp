@@ -49,7 +49,7 @@ void CFreezeKill::OnRender()
 
 		vec2 Position = GameClient()->m_aClients[Local].m_RenderPos;
 		CGameClient::CClientData OtherTee = GameClient()->m_aClients[ClientId];
-		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
+		int Distance = g_Config.m_ClFreezeKillTeamDistance * 32;
 
 		// if tried to kill, stop
 		if(m_SentFreezeKill)
@@ -69,9 +69,13 @@ void CFreezeKill::OnRender()
 
 		// dont kill if teamate is in x * 2 blocks range
 
-		if(g_Config.m_ClFreezeKillTeamClose && !GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2] && !OtherTee.m_Solo && OtherTee.m_Team == GameClient()->m_aClients[Local].m_Team && ClientId != Local)
+		const bool Solo = OtherTee.m_Solo;
+		const bool Teammate = GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2];
+		const bool SameTeam = OtherTee.m_Team == GameClient()->m_aClients[Local].m_Team && !Solo;
+
+		if(g_Config.m_ClFreezeKillTeamClose && Teammate && SameTeam && ClientId != Local)
 		{
-			if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
+			if(distance(OtherTee.m_RenderPos, Position) < Distance)
 			{
 				if(!pCharacterOther->m_IsInFreeze)
 				{
