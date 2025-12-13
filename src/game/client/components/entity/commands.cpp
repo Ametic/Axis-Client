@@ -340,14 +340,14 @@ void CEClient::OnlineInfo()
 	for(const COnlineInfo &Info : OnlineInfos)
 	{
 		const int ActiveAmount = Info.m_ActiveAmount;
-		const int AfkAmount = ActiveAmount - Info.m_ActiveAmount;
+		const int AfkAmount = Info.m_Amount - Info.m_ActiveAmount;
 
 		if(ActiveAmount == 0)
 			continue;
 		str_format(aBuf, sizeof(aBuf), "│ %d %s", ActiveAmount, Info.m_aLabel);
 
 		if(AfkAmount > 0)
-			str_format(bBuf, sizeof(bBuf), " (%d afk)", AfkAmount);
+			str_format(bBuf, sizeof(bBuf), " (+%d afk)", AfkAmount);
 		str_append(aBuf, bBuf);
 
 		GameClient()->ClientMessage(aBuf);
