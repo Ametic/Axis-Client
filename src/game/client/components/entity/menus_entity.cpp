@@ -2765,6 +2765,16 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Cosmetics.HSplitTop(LineSize, &EffectDropDownRect, &Cosmetics);
 			const int EffectSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, EffectSelectedOld, s_EffectDropDownNames.data(), s_EffectDropDownNames.size(), s_EffectDropDownState);
 			Ui()->UpdatePopupMenuOffset(&s_EffectDropDownState.m_SelectionPopupContext, EffectDropDownRect.x, EffectDropDownRect.y);
+			
+			if(s_ScrollRegion.ClipRect())
+			{
+				const float y = EffectDropDownRect.y + 20.0f;
+				if(y < s_ScrollRegion.ClipRect()->y || y > (s_ScrollRegion.ClipRect()->y + s_ScrollRegion.ClipRect()->h))
+				{
+					Ui()->ClosePopupMenu(&s_EffectDropDownState.m_SelectionPopupContext);
+				}
+			}
+			
 			if(EffectSelectedOld != EffectSelectedNew)
 			{
 				g_Config.m_ClEffect = EffectSelectedNew;
@@ -2815,11 +2825,20 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Cosmetics.HSplitTop(LineSize, &RainbowDropDownRect, &Cosmetics);
 			const int RainbowSelectedNew = Ui()->DoDropDown(&RainbowDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
 			Ui()->UpdatePopupMenuOffset(&s_RainbowDropDownState.m_SelectionPopupContext, RainbowDropDownRect.x, RainbowDropDownRect.y);
+			
+			if(s_ScrollRegion.ClipRect())
+			{
+				const float y = RainbowDropDownRect.y + 20.0f;
+				if(y < s_ScrollRegion.ClipRect()->y || y > (s_ScrollRegion.ClipRect()->y + s_ScrollRegion.ClipRect()->h))
+				{
+					Ui()->ClosePopupMenu(&s_RainbowDropDownState.m_SelectionPopupContext);
+				}
+			}
+			
 			if(RainbowSelectedOld != RainbowSelectedNew)
 			{
 				g_Config.m_ClRainbowMode = RainbowSelectedNew + 1;
 				RainbowSelectedOld = RainbowSelectedNew;
-				dbg_msg("rainbow", "rainbow mode changed to %d", g_Config.m_ClRainbowMode);
 			}
 			Cosmetics.HSplitTop(MarginExtraSmall, nullptr, &Cosmetics);
 			Cosmetics.HSplitTop(LineSize, &Button, &Cosmetics);
@@ -3224,6 +3243,16 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					Ui()->DoLabel(&Label, Localize("Custom Font:"), FontSize, TEXTALIGN_ML);
 					const int FontSelectedNew = Ui()->DoDropDown(&FontDropDownRect, FontSelectedOld, s_FontDropDownNames.data(), s_FontDropDownNames.size(), s_FontDropDownState);
 					Ui()->UpdatePopupMenuOffset(&s_FontDropDownState.m_SelectionPopupContext, FontDropDownRect.x, FontDropDownRect.y);
+					
+					if(s_ScrollRegion.ClipRect())
+					{
+						const float y = FontDropDownRect.y + 20.0f;
+						if(y < s_ScrollRegion.ClipRect()->y || y > (s_ScrollRegion.ClipRect()->y + s_ScrollRegion.ClipRect()->h))
+						{
+							Ui()->ClosePopupMenu(&s_FontDropDownState.m_SelectionPopupContext);
+						}
+					}
+					
 					if(FontSelectedOld != FontSelectedNew)
 					{
 						str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
