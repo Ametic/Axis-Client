@@ -3649,7 +3649,6 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 vec2 CMenus::TeeEyeDirection(vec2 Pos)
 {
 	vec2 DeltaPosition = Ui()->MousePos() - Pos;
-	float Distance = length(DeltaPosition);
 	vec2 TeeDirection = normalize(DeltaPosition);
 
 	return TeeDirection;
