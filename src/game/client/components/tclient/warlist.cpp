@@ -10,6 +10,7 @@
 #include <game/client/gameclient.h>
 
 #include "warlist.h"
+#include <base/log.h>
 
 void CWarList::OnNewSnapshot()
 {
@@ -252,7 +253,7 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 
 	GameClient()->ClientMessage(aBuf);
 
-	AddWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_aReason, Entry.m_pWarType->m_aWarName);
+	AddWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_aReason, Entry.m_pWarType->m_aWarName, Entry.m_TempEntry);
 }
 
 void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
