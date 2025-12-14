@@ -254,14 +254,13 @@ MACRO_CONFIG_INT(ClAntiSpawnBlock, ec_anti_spawn_block, 0, 0, 1, CFGFLAG_CLIENT 
 
 // Freeze Kill
 MACRO_CONFIG_INT(ClFreezeKill, ec_freeze_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
-MACRO_CONFIG_INT(ClFreezeKillGrounded, ec_freeze_kill_grounded, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
+//MACRO_CONFIG_INT(ClFreezeKillGrounded, ec_freeze_kill_grounded, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
 MACRO_CONFIG_INT(ClFreezeKillIgnoreKillProt, ec_freeze_kill_ignore_kill_prot, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Ignore Kill protection when for auto freeze kill")
 MACRO_CONFIG_INT(ClFreezeKillOnlyFullFrozen, ec_freeze_kill_full_frozen, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only Starts Timer When Full Frozen")
 MACRO_CONFIG_INT(ClFreezeKillWaitMs, ec_freeze_kill_wait_ms, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Wait a Certain amount of time while frozen until you kill")
 MACRO_CONFIG_INT(ClFreezeKillMs, ec_freeze_kill_ms, 1000, 0, 10000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "time to wait before you kill")
-MACRO_CONFIG_INT(ClFreezeKillTeamClose, ec_freeze_kill_team_close, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Kill if a Teammate is Close enough")
-MACRO_CONFIG_INT(ClFreezeKillTeamDistance, ec_freeze_kill_team_dist, 12, 0, 25, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
-MACRO_CONFIG_INT(ClFreezeDontKillMoving, ec_freeze_dont_kill_moving, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
+MACRO_CONFIG_INT(ClFreezeKillTeamInView, ec_freeze_kill_team_in_view, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Kill if a Teammate is in your zoom range ")
+MACRO_CONFIG_INT(ClFreezeKillNotMoving, ec_freeze_kill_not_moving, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
 
 MACRO_CONFIG_INT(ClFreezeKillDebug, ec_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "debug")
 

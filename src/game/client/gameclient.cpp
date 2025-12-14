@@ -150,6 +150,7 @@ void CGameClient::OnConsoleInit()
 					      &m_FreezeBars,
 					      &m_DamageInd,
 					      &m_PlayerIndicator, // TClient
+					      &m_FreezeKill, // E-Client
 					      &m_CustomCommunities, // TClient
 					      &m_Hud,
 					      &m_Spectator,
@@ -176,7 +177,6 @@ void CGameClient::OnConsoleInit()
 					      // E-Client
 					      &m_EClient,
 					      &m_AntiSpawnBlock,
-					      &m_FreezeKill,
 					      &m_EntityInfo,
 					      &m_MapConfig,
 				      });

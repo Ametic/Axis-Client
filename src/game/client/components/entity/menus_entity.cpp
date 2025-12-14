@@ -2588,16 +2588,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				Offset += 95.0f;
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, Localize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &FreezeKill, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKill, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillNotMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeKillNotMoving, &FreezeKill, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKill, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKill, LineSize);
-
-				if(g_Config.m_ClFreezeKillTeamClose)
-				{
-					Offset += 25.0f;
-					FreezeKill.HSplitTop(20.0f, &Button, &FreezeKill);
-					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 8, 30, &CUi::ms_LinearScrollbarScale, 0u, " blocks");
-				}
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamInView, Localize("Dont Kill if Teammate is in View"), &g_Config.m_ClFreezeKillTeamInView, &FreezeKill, LineSize);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, Localize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &FreezeKill, LineSize);
 				if(g_Config.m_ClFreezeKillWaitMs)
