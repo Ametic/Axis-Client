@@ -288,7 +288,6 @@ void CEClient::OnConnect()
 	if(m_FirstLaunch && SentInfoMessage)
 	{
 		GameClient()->ClientMessage("╭──                 E-Client Info");
-		GameClient()->ClientMessage("│");
 		GameClient()->ClientMessage("│ Seems like it's your first time running the client!");
 		GameClient()->ClientMessage("│");
 		GameClient()->ClientMessage("│ To view a list of Default Chat Commands do \".help\"");
@@ -298,7 +297,6 @@ void CEClient::OnConnect()
 		GameClient()->ClientMessage("│ Chat Commands that start with \".\" are silent by default,");
 		GameClient()->ClientMessage("│ which means no one will see them.");
 		GameClient()->ClientMessage("│ Messages that start with \"!\" will be sent");
-		GameClient()->ClientMessage("│");
 		GameClient()->ClientMessage("╰───────────────────────");
 		SentInfoMessage = true;
 	}

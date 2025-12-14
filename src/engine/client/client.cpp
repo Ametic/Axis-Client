@@ -2297,7 +2297,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoin);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
 					}
-					if(g_Config.m_ClListsInfo && !m_aOnJoinInfo[CONN_MAIN])
+					if(!m_aOnJoinInfo[CONN_MAIN])
 					{
 						GameClient()->SetLastMovementTime();
 						if(m_aReceivedSnapshots[Conn] > 10)
