@@ -1461,7 +1461,6 @@ void CMenus::RenderSettings(CUIRect MainView)
 		if(DoButton_MenuTab(&s_aTabButtons[i], apTabs[i], g_Config.m_UiSettingsPage == i, &Button, IGraphics::CORNER_R, &m_aAnimatorsSettingsTab[i]))
 		{
 			g_Config.m_UiSettingsPage = i;
-			ResetTeePos = true;
 		}
 	}
 

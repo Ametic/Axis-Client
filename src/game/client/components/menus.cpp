@@ -612,7 +612,6 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENTNEWS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, &Active))
 		{
 			NewPage = PAGE_ECLIENTNEWS;
-			ResetTeePos = true;
 			g_Config.m_EcUnreadNews = false;
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("News"));
@@ -806,7 +805,6 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENTNEWS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, &Active))
 			{
 				NewPage = PAGE_ECLIENTNEWS;
-				ResetTeePos = true;
 				g_Config.m_EcUnreadNews = false;
 			}
 			GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("News"));
@@ -2599,6 +2597,7 @@ void CMenus::SetMenuPage(int NewPage)
 			RefreshBrowserTab(ForceRefresh);
 		}
 	}
+	m_ResetTeePos = true;
 }
 
 void CMenus::RefreshBrowserTab(bool Force)

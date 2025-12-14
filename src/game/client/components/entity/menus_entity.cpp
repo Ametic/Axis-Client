@@ -148,7 +148,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		if(DoButton_MenuTab(&s_aPageTabs[Tab], apTabNames[Tab], s_CurTab == Tab, &Button, Corners, nullptr, nullptr, nullptr, nullptr, 4.0f))
 		{
 			s_CurTab = Tab;
-			ResetTeePos = true;
 		}
 	}
 
@@ -409,8 +408,9 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		CTeeRenderInfo TeeRenderInfo;
 		TeeRenderInfo.Apply(GameClient()->m_Skins.Find("Catnoa"));
 		TeeRenderInfo.ApplyColors(true, 5374207, 12767844);
+		TeeRenderInfo.m_Size = TeeSize;
 
-		RenderECTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo, 2);
+		RenderDraggableTee(MainView, TeeRect.Center(), TeeEyeDirection(TeeRect.Center()), CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_NORMAL);
 	}
 }
 
@@ -450,8 +450,9 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 	const float OffsetTeeY = RealTeeSizeHalved;
 	const float FullHeightMinusTee = RealOffsetY - RealTeeSize;
 
-	struct SPreviewLine
+	class CPreviewLine
 	{
+	public:
 		int m_ClShowIdsChat = 0;
 		bool m_Team = false;
 		char m_aName[64] = "";
@@ -469,7 +470,7 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 		CTeeRenderInfo m_RenderInfo;
 	};
 
-	static std::vector<SPreviewLine> s_vLines;
+	static std::vector<CPreviewLine> s_vLines;
 
 	enum ELineFlag
 	{
@@ -496,7 +497,7 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 		PREVIEW_CLIENT
 	};
 	auto &&SetPreviewLine = [](int Index, int ClientId, const char *pName, const char *pText, int Flag, int Repeats) {
-		SPreviewLine *pLine;
+		CPreviewLine *pLine;
 		if((int)s_vLines.size() <= Index)
 		{
 			s_vLines.emplace_back();
@@ -1470,9 +1471,12 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		}
 		else
 		{
-			// TODO: stop misusing this function
 			// TODO: render the real skin with skin remembering component (to be added)
-			RenderDevSkin(EntryTypeRect.Center(), 35.0f, "default", "default", false, 0, 0, 0, false);
+			CTeeRenderInfo TeeInfo;
+			TeeInfo.Apply(GameClient()->m_Skins.Find("default"));
+			TeeInfo.m_Size = 35.0f;
+
+			RenderTee(EntryTypeRect.Center(), TeeEyeDirection(EntryTypeRect.Center()), CAnimState::GetIdle(), &TeeInfo, EMOTE_NORMAL);
 		}
 
 		if(str_comp(pEntry->m_aReason, "") != 0)
@@ -1825,7 +1829,8 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		TeeInfo.m_Size = 25.0f;
 		bool Paused = GameClient()->m_aClients[ClientId].m_Paused || GameClient()->m_aClients[ClientId].m_Spec;
 		const CAnimState *pAnimState = Paused ? CAnimState::GetSpec() : CAnimState::GetIdle();
-		RenderTools()->RenderTee(pAnimState, &TeeInfo, Paused ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRect.Center() + vec2(-1.0f, 2.5f));
+
+		RenderTee(TeeRect.Center() + vec2(-1.0f, 2.5f), TeeEyeDirection(TeeRect.Center()), pAnimState, &TeeInfo, Paused ? EMOTE_BLINK : EMOTE_NORMAL);
 	}
 	s_PlayerListBox.DoEnd();
 }
@@ -3056,6 +3061,8 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			{
 				CTeeRenderInfo TeeRenderInfo;
 
+				TeeRenderInfo.m_Size = 75.0f;
+
 				bool PUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 				int PBodyColor = g_Config.m_ClPlayerColorBody;
 				int PFeetColor = g_Config.m_ClPlayerColorFeet;
@@ -3093,7 +3100,8 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClDummySkin));
 					TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 				}
-				RenderECTee(MainView, Preview.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
+
+				RenderTee(Preview.Center() + vec2(0, 4), TeeEyeDirection(Preview.Center()), CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_NORMAL);
 			}
 			ServerRainbow.VSplitLeft(88, &Button, &ServerRainbow);
 			DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], &ServerRainbow, LineSize);
@@ -3560,48 +3568,6 @@ int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
 }
 
-void CMenus::RenderDevSkin(vec2 RenderPos, float Size, const char *pSkinName, const char *pBackupSkin, bool CustomColors, int FeetColor, int BodyColor, int Emote, bool Rainbow, ColorRGBA ColorFeet, ColorRGBA ColorBody)
-{
-	float DefTick = std::fmod(s_Time, 1.0f);
-
-	CTeeRenderInfo SkinInfo;
-	const CSkin *pSkin = GameClient()->m_Skins.Find(pSkinName);
-	if(str_comp(pSkin->GetName(), pSkinName) != 0)
-		pSkin = GameClient()->m_Skins.Find(pBackupSkin);
-
-	SkinInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
-	SkinInfo.m_ColorableRenderSkin = pSkin->m_ColorableSkin;
-	SkinInfo.m_SkinMetrics = pSkin->m_Metrics;
-	SkinInfo.m_CustomColoredSkin = CustomColors;
-	if(SkinInfo.m_CustomColoredSkin)
-	{
-		SkinInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSLA(BodyColor).UnclampLighting(ColorHSLA::DARKEST_LGT));
-		SkinInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSLA(FeetColor).UnclampLighting(ColorHSLA::DARKEST_LGT));
-		if(ColorFeet.a != 0.0f)
-		{
-			SkinInfo.m_ColorBody = ColorBody;
-			SkinInfo.m_ColorFeet = ColorFeet;
-		}
-	}
-	else
-	{
-		SkinInfo.m_ColorBody = ColorRGBA(1.0f, 1.0f, 1.0f);
-		SkinInfo.m_ColorFeet = ColorRGBA(1.0f, 1.0f, 1.0f);
-	}
-	if(Rainbow)
-	{
-		ColorRGBA Col = color_cast<ColorRGBA>(ColorHSLA(DefTick, 1.0f, 0.5f));
-		SkinInfo.m_ColorBody = Col;
-		SkinInfo.m_ColorFeet = Col;
-	}
-	SkinInfo.m_Size = Size;
-	const CAnimState *pIdleState = CAnimState::GetIdle();
-	vec2 OffsetToMid;
-	CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &SkinInfo, OffsetToMid);
-	vec2 TeeRenderPos(RenderPos.x, RenderPos.y + OffsetToMid.y);
-	RenderTools()->RenderTee(pIdleState, &SkinInfo, Emote, vec2(1.0f, 0.0f), TeeRenderPos);
-}
-
 void CMenus::RenderFontIcon(const CUIRect Rect, const char *pText, float Size, int Align)
 {
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
@@ -3679,74 +3645,81 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	return false;
 }
 
-void CMenus::RenderECTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable, float TeeSize, float Alpha)
+vec2 CMenus::TeeEyeDirection(vec2 Pos)
+{
+	vec2 DeltaPosition = Ui()->MousePos() - Pos;
+	float Distance = length(DeltaPosition);
+	vec2 TeeDirection = normalize(DeltaPosition);
+
+	return TeeDirection;
+}
+
+void CMenus::RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover)
 {
 	static bool OverrideTeePos = false;
 	static bool CanDrag = false;
 	static vec2 Pos = SpawnPos;
 
-	if(ResetTeePos || !OverrideTeePos || !Draggable)
-	{
+	if(m_ResetTeePos || !OverrideTeePos)
 		Pos = SpawnPos;
+	if(m_ResetTeePos)
+		m_ResetTeePos = false;
 
-		if(ResetTeePos)
-			ResetTeePos = false;
-	}
-
-	pInfo->m_Size = g_Config.m_ClFatSkins ? TeeSize - 20.0f : TeeSize;
-
-	// interactive tee: tee looking towards cursor, and it is happy when you touch it
-	vec2 DeltaPosition = Ui()->MousePos() - Pos;
-	float Distance = length(DeltaPosition);
-	float InteractionDistance = 20.0f;
-	vec2 TeeDirection = normalize(DeltaPosition);
-	int TeeEmote = EMOTE_NORMAL;
-	if(Distance < InteractionDistance)
+	if(length(Ui()->MousePos() - Pos) < pInfo->m_Size / 2.4f)
 	{
 		CanDrag = true;
-		TeeEmote = EMOTE_HAPPY;
-		if(Draggable > 0)
-			Ui()->SetHotItem(nullptr);
+		Ui()->SetHotItem(nullptr);
 	}
 
-	if(Draggable > 0)
+	if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
 	{
-		if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
-		{
-			vec2 Offset = vec2(0.0f, 2.5f);
-			Pos = Ui()->MousePos() - Offset;
+		vec2 Offset = vec2(0.0f, 2.5f);
+		Pos = Ui()->MousePos() - Offset;
 
-			TeeDirection = normalize(SpawnPos - Pos);
+		float MenuTop = MainView.y + 25.0f;
+		float MenuBottom = MainView.Size().y + 35.0f;
 
-			if(Draggable == 2)
-			{
-				float MenuTop = MainView.y + 25.0f;
-				float MenuBottom = MainView.Size().y + 35.0f;
+		float MenuLeft = MainView.x + 15.0f;
+		float MenuRight = MainView.Size().x + 10.0f;
 
-				float MenuLeft = MainView.x + 15.0f;
-				float MenuRight = MainView.Size().x + 10.0f;
+		if(Ui()->MousePos().y < MenuTop)
+			Pos.y = MenuTop - Offset.y;
+		if(Ui()->MousePos().y > MenuBottom)
+			Pos.y = MenuBottom - Offset.y;
 
-				if(Ui()->MousePos().y < MenuTop)
-					Pos.y = MenuTop - Offset.y;
-				if(Ui()->MousePos().y > MenuBottom)
-					Pos.y = MenuBottom - Offset.y;
+		if(Ui()->MousePos().x < MenuLeft)
+			Pos.x = MenuLeft;
+		if(Ui()->MousePos().x > MenuRight)
+			Pos.x = MenuRight;
 
-				if(Ui()->MousePos().x < MenuLeft)
-					Pos.x = MenuLeft;
-				if(Ui()->MousePos().x > MenuRight)
-					Pos.x = MenuRight;
-			}
-
-			CanDrag = true;
-			OverrideTeePos = true;
-		}
-		else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && OverrideTeePos && CanDrag)
-			OverrideTeePos = false;
-		else
-			CanDrag = false;
+		CanDrag = true;
+		OverrideTeePos = true;
 	}
+	else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && OverrideTeePos && CanDrag)
+		OverrideTeePos = false;
+	else
+		CanDrag = false;
 
+	RenderTee(Pos, TeeEyeDirection(Pos), pAnim, pInfo, EyeEmote, HappyHover);
+}
+
+void CMenus::RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover)
+{
+	if(g_Config.m_ClFatSkins)
+		pInfo->m_Size -= 20.0f;
+
+	int TeeEmote = EyeEmote;
+
+	if(HappyHover)
+	{
+		vec2 DeltaPosition = Ui()->MousePos() - Pos;
+		float Distance = length(DeltaPosition);
+		float InteractionDistance = pInfo->m_Size / 2.4f;
+		if(Distance < InteractionDistance)
+			TeeEmote = EMOTE_HAPPY;
+	}
 	RenderTools()->RenderTee(pAnim, pInfo, TeeEmote, TeeDirection, Pos);
+
 }
 
 bool CMenus::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)

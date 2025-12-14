@@ -190,7 +190,6 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	if(GameClient()->m_Menus.DoButton_Menu(&s_EClientVer, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, Color, 11.0f))
 	{
 		NewPage = CMenus::PAGE_ECLIENTNEWS;
-		GameClient()->m_Menus.ResetTeePos = true;
 		g_Config.m_EcUnreadNews = false;
 	}
 
