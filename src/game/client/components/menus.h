@@ -873,6 +873,8 @@ public:
 		char m_aGameType[16];
 		char m_aMap[MAX_MAP_LENGTH];
 
+		int m_ServerIndex;
+
 		char m_aCommunityId[32];
 
 		bool m_IsPlayer;
@@ -896,6 +898,7 @@ public:
 			str_copy(m_aGameType, pServer->m_aGameType);
 			str_copy(m_aMap, pServer->m_aMap);
 			str_copy(m_aCommunityId, pServer->m_aCommunityId);
+			m_ServerIndex = pServer->m_ServerIndex;
 			m_IsPlayer = pOnlineClient->m_Player;
 			m_IsAfk = pOnlineClient->m_Afk;
 			str_copy(m_aSkin, pOnlineClient->m_aSkin);

@@ -190,7 +190,7 @@ void CUIRect::DrawOutline(ColorRGBA Color) const
 	ms_pGraphics->LinesEnd();
 }
 
-void CUIRect::DrawOutline(ColorRGBA Color, float Rounding, int Corners) const
+void CUIRect::DrawOutline(ColorRGBA Color, int Corners, float Rounding) const
 {
 	const int NumSegments = 8;
 	const float AngleStep = (pi / 2.0f) / NumSegments;
@@ -253,7 +253,7 @@ void CUIRect::DrawOutline(ColorRGBA Color, float Rounding, int Corners) const
 	ms_pGraphics->LinesEnd();
 }
 
-void CUIRect::DrawSpecificOutline(ColorRGBA Color, float Rounding, int Corners, int Sides) const
+void CUIRect::DrawSpecificOutline(ColorRGBA Color, int Corners, int Sides, float Rounding) const
 {
 	const int NumSegments = 8;
 	const float AngleStep = (pi / 2.0f) / NumSegments;

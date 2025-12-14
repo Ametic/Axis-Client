@@ -499,10 +499,10 @@ void CPlayers::RenderPlayer(
 	float Alpha = 1.0f;
 	if(OtherTeam || ClientId < 0)
 		Alpha = g_Config.m_ClShowOthersAlpha / 100.0f;
-	else if(g_Config.m_ClShowOthersGhosts && !Local && !Spec)
-		Alpha = g_Config.m_ClPredGhostsAlpha / 100.0f;
+	else if(g_Config.m_TcShowOthersGhosts && !Local && !Spec)
+		Alpha = g_Config.m_TcPredGhostsAlpha / 100.0f;
 
-	if(!OtherTeam && g_Config.m_ClShowOthersGhosts && !Local && g_Config.m_ClUnpredOthersInFreeze && Client()->m_IsLocalFrozen && !Spec)
+	if(!OtherTeam && g_Config.m_TcShowOthersGhosts && !Local && g_Config.m_TcUnpredOthersInFreeze && Client()->m_IsLocalFrozen && !Spec)
 		Alpha = 1.0f;
 
 	if(ClientId == -2) // ghost
@@ -544,7 +544,7 @@ void CPlayers::RenderPlayer(
 	else
 	Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Intra);
 
-	if(g_Config.m_ClSwapGhosts && g_Config.m_ClShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(g_Config.m_TcSwapGhosts && g_Config.m_TcShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		if(ClientId >= 0)
 			Position = mix(
 				vec2(GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_X, GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_Y),
@@ -561,7 +561,7 @@ void CPlayers::RenderPlayer(
 
 	bool Stationary = Player.m_VelX <= 1 && Player.m_VelX >= -1;
 	bool InAir = !Collision()->CheckPoint(Player.m_X, Player.m_Y + 16);
-	if(g_Config.m_ClAntiPingImproved && !Local)
+	if(g_Config.m_TcAntiPingImproved && !Local)
 		InAir = !Collision()->CheckPoint(Position.x, Position.y + 16);
 	bool Running = Player.m_VelX >= 5000 || Player.m_VelX <= -5000;
 	bool WantOtherDir = (Player.m_Direction == -1 && Vel.x > 0) || (Player.m_Direction == 1 && Vel.x < 0);
@@ -978,7 +978,7 @@ void CPlayers::OnRender()
 		}
 
 		// TClient
-		if(g_Config.m_ClFreezeKatana > 0 && GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0)
+		if(g_Config.m_TcFreezeKatana > 0 && GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0)
 		{
 			GameClient()->m_aClients[i].m_RenderCur.m_Weapon = WEAPON_NINJA;
 			aRenderInfo[i].m_TeeRenderFlags &= ~TEE_NO_WEAPON;
