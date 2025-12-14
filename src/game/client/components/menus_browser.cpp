@@ -17,15 +17,13 @@
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
-#include <generated/client_data.h>
-
-constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f;
+constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // E-Client
 
 using namespace FontIcons;
 
 static constexpr ColorRGBA gs_HighlightedTextColor = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
 
-static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Afk, bool InSelectedServer, bool Inside)
+static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Inside)
 {
 	static const ColorRGBA COLORS[] = {ColorRGBA(0.5f, 1.0f, 0.5f), ColorRGBA(0.4f, 0.4f, 1.0f), ColorRGBA(0.75f, 0.75f, 0.75f)};
 	int i;
@@ -35,7 +33,7 @@ static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Afk, bool In
 		i = 1;
 	else
 		i = 2;
-	return (Afk ? COLORS_AFK[i] : COLORS[i]).WithAlpha(0.3f + (Inside ? 0.15f : 0.0f) + (InSelectedServer ? 0.12f : 0.0f));
+	return (COLORS[i]).WithAlpha(0.3f + (Inside ? 0.15f : 0.0f));
 }
 
 template<size_t N>
@@ -353,7 +351,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
 			}
 			else if(Id == COL_COMMUNITY)
-			{	
+			{
 				if(pCommunity != nullptr)
 				{
 					const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
@@ -1292,10 +1290,10 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 		CUIRect Skin, Name, Clan, Score, Flag;
 		Name = Item.m_Rect;
 
-		const ColorRGBA Color = PlayerBackgroundColor(CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER, CurrentClient.m_FriendState == IFriends::FRIEND_CLAN, CurrentClient.m_Afk, false, false);
+		ColorRGBA Color = PlayerBackgroundColor(CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER, CurrentClient.m_FriendState == IFriends::FRIEND_CLAN, false);
 		if(CurrentClient.m_Afk)
-			// E-Client ToDo: @qxdFox
-		
+			Color.a *= PLAYER_AFK_COLOR_ALPHA;
+
 		Name.Draw(Color, IGraphics::CORNER_ALL, 4.0f);
 		Name.VSplitLeft(1.0f, nullptr, &Name);
 		Name.VSplitLeft(34.0f, &Score, &Name);
@@ -1347,7 +1345,7 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 		if(CurrentClient.m_aSkin[0] != '\0')
 		{
 			const CTeeRenderInfo TeeInfo = GetTeeRenderInfo(vec2(Skin.w, Skin.h), CurrentClient.m_aSkin, CurrentClient.m_CustomSkinColors, CurrentClient.m_CustomSkinColorBody, CurrentClient.m_CustomSkinColorFeet);
-			const CAnimState *pIdleState = CAnimState::GetIdle();
+			const CAnimState *pIdleState = CurrentClient.m_Afk ? CAnimState::GetSpec() : CAnimState::GetIdle();
 			vec2 OffsetToMid;
 			CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
 			const vec2 TeeRenderPos = vec2(Skin.x + TeeInfo.m_Size / 2.0f, Skin.y + Skin.h / 2.0f + OffsetToMid.y);
@@ -1541,6 +1539,11 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				if(s_ScrollRegion.RectClipped(Rect))
 					continue;
 
+				Rect.y += 0.5f;
+				Rect.w -= 1.0f;
+				Rect.h -= 1.0f;
+				Rect.x += 0.5f;
+
 				const bool Inside = Ui()->HotItem() == Friend.ListItemId() || Ui()->HotItem() == Friend.RemoveButtonId() || Ui()->HotItem() == Friend.CommunityTooltipId() || Ui()->HotItem() == Friend.SkinTooltipId();
 				int ButtonResult = Ui()->DoButtonLogic(Friend.ListItemId(), 0, &Rect, BUTTONFLAG_LEFT);
 
@@ -1548,15 +1551,18 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				{
 					GameClient()->m_Tooltips.DoToolTip(Friend.ListItemId(), &Rect, Localize("Click to select server. Double click to join your friend."));
 				}
-				
+
 				// Compare unsorted server id of the friend with the unsorted id of the currently selected server
 				bool InSelectedServer = m_SelectedIndex >= 0 && Friend.ServerInfo() && Friend.ServerInfo()->m_ServerIndex == ServerBrowser()->SortedGet(m_SelectedIndex)->m_ServerIndex;
 
-				ColorRGBA Color = PlayerBackgroundColor(FriendType == FRIEND_PLAYER_ON, FriendType == FRIEND_CLAN_ON, FriendType == FRIEND_OFF ? true : Friend.IsAfk(), InSelectedServer, Inside);
+				ColorRGBA Color = PlayerBackgroundColor(FriendType == FRIEND_PLAYER_ON, FriendType == FRIEND_CLAN_ON, Inside);
 				if(FriendType == FRIEND_OFF ? true : Friend.IsAfk())
-					// E-Client ToDo: @qxdFox
-				
-				Rect.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
+					Color.a *= PLAYER_AFK_COLOR_ALPHA;
+
+				const float Rounding = 5.0f;
+				Rect.Draw(Color, IGraphics::CORNER_ALL, Rounding);
+				if(InSelectedServer)
+					Rect.DrawOutline(ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f), IGraphics::CORNER_ALL, Rounding);
 				Rect.Margin(2.0f, &Rect);
 
 				CUIRect RemoveButton, NameLabel, ClanLabel, InfoLabel;
@@ -1576,7 +1582,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				if(Friend.Skin()[0] != '\0')
 				{
 					const CTeeRenderInfo TeeInfo = GetTeeRenderInfo(vec2(Skin.w, Skin.h), Friend.Skin(), Friend.CustomSkinColors(), Friend.CustomSkinColorBody(), Friend.CustomSkinColorFeet());
-					const CAnimState *pIdleState = CAnimState::GetIdle();
+					const CAnimState *pIdleState = Friend.IsAfk() ? CAnimState::GetSpec() : CAnimState::GetIdle();
 					vec2 OffsetToMid;
 					CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
 					const vec2 TeeRenderPos = vec2(Skin.x + Skin.w / 2.0f, Skin.y + Skin.h * 0.55f + OffsetToMid.y);
@@ -2054,7 +2060,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 		return;
 
 	const float FontSize = 10.0f;
-	const float SpacingH = 2.0f; 
+	const float SpacingH = 2.0f;
 
 	CUIRect ExtraSpace;
 	List.HSplitTop(5.0f, &ExtraSpace, &List);
@@ -2097,7 +2103,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 
 		// Only render entries if extended
 		if(!s_aWarListExtended[WarlistType])
-		{ 
+		{
 			// Still add the space for the header
 			CUIRect Space;
 			List.HSplitTop(SpacingH, &Space, &List);
@@ -2124,13 +2130,22 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 			if(ScrollRegion.RectClipped(Rect))
 				continue;
 
+			Rect.y += 0.5f;
+			Rect.w -= 1.0f;
+			Rect.h -= 1.0f;
+			Rect.x += 0.5f;
+
 			const bool Inside = Ui()->HotItem() == Entry.ListItemId() || Ui()->HotItem() == Entry.RemoveButtonId() || Ui()->HotItem() == Entry.CommunityTooltipId() || Ui()->HotItem() == Entry.SkinTooltipId();
 			int ButtonResult = Ui()->DoButtonLogic(Entry.ListItemId(), 0, &Rect, BUTTONFLAG_LEFT);
+			bool InSelectedServer = m_SelectedIndex >= 0 && Entry.m_ServerIndex == ServerBrowser()->SortedGet(m_SelectedIndex)->m_ServerIndex;
 
 			ColorRGBA BgColor = Entry.m_pWarType ? Entry.m_pWarType->m_Color.WithAlpha(Inside ? 0.45f : 0.3f) : ColorRGBA(1, 1, 1, 0.3f);
 			if(Entry.m_IsAfk)
 				BgColor.a *= PLAYER_AFK_COLOR_ALPHA;
-			Rect.Draw(BgColor, IGraphics::CORNER_ALL, 5.0f);
+			const float Rounding = 5.0f;
+			Rect.Draw(BgColor, IGraphics::CORNER_ALL, Rounding);
+			if(InSelectedServer)
+				Rect.DrawOutline(ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f), IGraphics::CORNER_ALL, Rounding);
 			Rect.Margin(2.0f, &Rect);
 
 			CUIRect RemoveButton, NameLabel, ClanLabel, InfoLabel;
@@ -2149,7 +2164,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 			if(Entry.Skin()[0] != '\0')
 			{
 				const CTeeRenderInfo TeeInfo = GetTeeRenderInfo(vec2(Skin.w, Skin.h), Entry.Skin(), Entry.CustomSkinColors(), Entry.CustomSkinColorBody(), Entry.CustomSkinColorFeet());
-				const CAnimState *pIdleState = CAnimState::GetIdle();
+				const CAnimState *pIdleState = Entry.m_IsAfk ? CAnimState::GetSpec() : CAnimState::GetIdle();
 				vec2 OffsetToMid;
 				CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
 				const vec2 TeeRenderPos = vec2(Skin.x + Skin.w / 2.0f, Skin.y + Skin.h * 0.55f + OffsetToMid.y);
@@ -2227,7 +2242,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 					Connect(g_Config.m_UiServerAddress);
 				}
 			}
-		} 
+		}
 		// Space after each warlist type
 		{
 			CUIRect Space;
