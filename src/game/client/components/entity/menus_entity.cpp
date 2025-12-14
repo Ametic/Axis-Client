@@ -1490,11 +1490,19 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		EntryRect.HMargin(MarginExtraSmall, &EntryRect);
 		EntryRect.HSplitMid(&EntryRect, &WarType, MarginSmall);
 
+		if(pEntry->m_TempEntry)
+			str_append(aBuf, " ⏳");
+
 		Ui()->DoLabel(&EntryRect, aBuf, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(pEntry->m_pWarType->m_Color);
 		Ui()->DoLabel(&WarType, pEntry->m_pWarType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+		
+		if(pEntry->m_TempEntry)
+			GameClient()->m_Tooltips.DoToolTip(&s_vItemIds[i], &EntryRect, "Temporary Entry");
 	}
+
 	const int NewSelectedEntry = s_EntriesListBox.DoEnd();
 	if(SelectedOldEntry != NewSelectedEntry || (SelectedOldEntry >= 0 && Ui()->HotItem() == &s_vItemIds[NewSelectedEntry] && Ui()->MouseButtonClicked(0)))
 	{
