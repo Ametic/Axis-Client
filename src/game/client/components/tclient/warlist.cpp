@@ -248,7 +248,7 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 		str_copy(Entry.m_aName, pName);
 		str_format(aBuf, sizeof(aBuf), "added \"%s\" to %s'%s' list ", pName, Temp ? "Temp " : "", pWarType->m_aWarName);
 	}
-	if(!g_Config.m_ClWarListAllowDuplicates)
+	if(!g_Config.m_ClWarListAllowDuplicates && !Entry.m_TempEntry) // Don't remove duplicates for temp entries
 		RemoveWarEntryDuplicates(Entry.m_aName, Entry.m_aClan);
 
 	GameClient()->ClientMessage(aBuf);
