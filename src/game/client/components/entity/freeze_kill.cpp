@@ -48,7 +48,7 @@ void CFreezeKill::OnRender()
 		return;
 	}
 
-	if(!GameClient()->CurrentRaceTime())
+	if(!g_Config.m_ClFreezeKillBeforeStart && !GameClient()->CurrentRaceTime())
 	{
 		m_SentFreezeKill = false;
 		ResetTimer();
