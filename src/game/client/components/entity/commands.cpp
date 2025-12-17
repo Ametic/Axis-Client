@@ -279,7 +279,7 @@ void CEClient::OnlineInfo()
 			if(Client.ClientId() == GameClient()->m_Snap.m_LocalClientId)
 				continue;
 
-			if(Muted)
+			if(Muted && WarlistType == 1)
 				Mutes++;
 			if(Matches)
 			{
