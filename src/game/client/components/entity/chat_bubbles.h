@@ -1,7 +1,17 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_CHATBUBBLES_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_CHATBUBBLES_H
+
+#include <base/str.h>
+#include <base/vmath.h>
+
+#include <engine/shared/protocol.h>
+#include <engine/textrender.h>
+
 #include <game/client/component.h>
 #include <game/client/components/chat.h>
+
+#include <cstdint>
+#include <vector>
 
 constexpr float NameplateOffset = 10.0f;
 constexpr float CharacterMinOffset = 40.0f;
@@ -39,7 +49,7 @@ class CChatBubbles : public CComponent
 {
 	CChat *Chat() const;
 
-	std::vector<CBubbles> m_ChatBubbles[MAX_CLIENTS];
+	std::vector<CBubbles> m_avChatBubbles[MAX_CLIENTS];
 
 	void RenderCurInput(float y);
 	void RenderChatBubbles(int ClientId);
@@ -47,14 +57,13 @@ class CChatBubbles : public CComponent
 	float GetOffset(int ClientId);
 	float GetAlpha(int64_t Time);
 
-	void UpdateBubbleOffsets(int ClientId, float inputBubbleHeight = 0.0f);
+	void UpdateBubbleOffsets(int ClientId, float InputBubbleHeight = 0.0f);
 
 	void AddBubble(int ClientId, int Team, const char *pText);
 	void RemoveBubble(int ClientId, CBubbles Bubble);
 
 	float ShiftBubbles(int ClientId, vec2 Pos, float w);
 
-	void ExpireBubbles();
 	int m_UseChatBubbles = 0;
 
 	void Reset();

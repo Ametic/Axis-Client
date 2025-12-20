@@ -1,15 +1,23 @@
+#include "chat_bubbles.h"
+
+#include <base/color.h>
+#include <base/system.h>
+#include <base/vmath.h>
+
 #include <engine/client.h>
+#include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
 
+#include <generated/protocol.h>
+
 #include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
+#include <game/teamscore.h>
 
-#include <base/system.h>
-#include <base/vmath.h>
-
-#include "chat_bubbles.h"
+#include <algorithm>
+#include <cstdint>
 
 CChat *CChatBubbles::Chat() const
 {
@@ -40,14 +48,14 @@ void CChatBubbles::OnMessage(int MsgType, void *pRawMsg)
 	}
 }
 
-void CChatBubbles::UpdateBubbleOffsets(int ClientId, float inputBubbleHeight)
+void CChatBubbles::UpdateBubbleOffsets(int ClientId, float InputBubbleHeight)
 {
 	float Offset = 0.0f;
-	if(inputBubbleHeight > 0.0f)
-		Offset += inputBubbleHeight + MarginBetween;
+	if(InputBubbleHeight > 0.0f)
+		Offset += InputBubbleHeight + MarginBetween;
 
 	int FontSize = g_Config.m_ClChatBubbleSize;
-	for(CBubbles &aBubble : m_ChatBubbles[ClientId])
+	for(CBubbles &aBubble : m_avChatBubbles[ClientId])
 	{
 		if(!aBubble.m_TextContainerIndex.Valid() || aBubble.m_Cursor.m_FontSize != FontSize)
 		{
@@ -136,20 +144,20 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 
 	TextRender()->ColorParsing(pText, &pCursor, Color, &bubble.m_TextContainerIndex);
 
-	m_ChatBubbles[ClientId].insert(m_ChatBubbles[ClientId].begin(), bubble);
+	m_avChatBubbles[ClientId].insert(m_avChatBubbles[ClientId].begin(), bubble);
 
 	UpdateBubbleOffsets(ClientId);
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
-void CChatBubbles::RemoveBubble(int ClientId, CBubbles aBubble)
+void CChatBubbles::RemoveBubble(int ClientId, CBubbles Bubble)
 {
-	for(auto it = m_ChatBubbles[ClientId].begin(); it != m_ChatBubbles[ClientId].end(); ++it)
+	for(auto it = m_avChatBubbles[ClientId].begin(); it != m_avChatBubbles[ClientId].end(); ++it)
 	{
-		if(*it == aBubble)
+		if(*it == Bubble)
 		{
 			TextRender()->DeleteTextContainer(it->m_TextContainerIndex);
-			m_ChatBubbles[ClientId].erase(it);
+			m_avChatBubbles[ClientId].erase(it);
 			UpdateBubbleOffsets(ClientId);
 			return;
 		}
@@ -170,7 +178,7 @@ void CChatBubbles::RenderCurInput(float y)
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
-	
+
 	pCursor.SetPosition(vec2(0, 0));
 	pCursor.m_FontSize = FontSize;
 	pCursor.m_Flags = TEXTFLAG_RENDER;
@@ -205,9 +213,6 @@ void CChatBubbles::RenderCurInput(float y)
 
 void CChatBubbles::RenderChatBubbles(int ClientId)
 {
-	if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
-		return;
-
 	const float ShowTime = g_Config.m_ClChatBubbleShowTime / 100.0f;
 	int FontSize = g_Config.m_ClChatBubbleSize;
 	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
@@ -216,7 +221,7 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 	if(ClientId == GameClient()->m_Snap.m_LocalClientId)
 		RenderCurInput(BaseY);
 
-	for(CBubbles &aBubble : m_ChatBubbles[ClientId])
+	for(CBubbles &aBubble : m_avChatBubbles[ClientId])
 	{
 		float Alpha = 1.0f;
 		if(GameClient()->IsOtherTeam(ClientId))
@@ -288,7 +293,7 @@ float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
 		vec2 Position = GameClient()->m_aClients[i].m_RenderPos;
 		float BaseY = Position.y - GetOffset(i) - NameplateOffset;
 
-		for(auto &aBubble : m_ChatBubbles[i])
+		for(auto &aBubble : m_avChatBubbles[i])
 		{
 			if(aBubble.m_TextContainerIndex.Valid())
 			{
@@ -309,12 +314,6 @@ float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
 		}
 	}
 	return 0.0f;
-}
-
-void CChatBubbles::ExpireBubbles()
-{
-	if(m_ChatBubbles->empty())
-		return;
 }
 
 float CChatBubbles::GetAlpha(int64_t Time)
@@ -338,8 +337,8 @@ void CChatBubbles::OnRender()
 {
 	if(m_UseChatBubbles != g_Config.m_ClChatBubbles)
 	{
-		m_UseChatBubbles = g_Config.m_ClChatBubbles;
 		Reset();
+		m_UseChatBubbles = g_Config.m_ClChatBubbles;
 	}
 
 	if(!g_Config.m_ClChatBubbles)
@@ -359,6 +358,8 @@ void CChatBubbles::OnRender()
 		const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
 		if(!ClientData.m_Active || !ClientData.m_RenderInfo.Valid())
 			continue;
+		if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
+			continue;
 		RenderChatBubbles(ClientId);
 	}
 
@@ -367,18 +368,21 @@ void CChatBubbles::OnRender()
 
 void CChatBubbles::Reset()
 {
-	if(m_ChatBubbles->empty())
+	if(m_avChatBubbles->empty())
 		return;
 
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
-		for(auto &aBubble : m_ChatBubbles[ClientId])
+		for(auto &Bubble : m_avChatBubbles[ClientId])
 		{
-			if(aBubble.m_TextContainerIndex.Valid())
-				TextRender()->DeleteTextContainer(aBubble.m_TextContainerIndex);
-			aBubble.m_Cursor.m_FontSize = 0;
+			if(Bubble.m_TextContainerIndex.Valid())
+			{
+				TextRender()->DeleteTextContainer(Bubble.m_TextContainerIndex);
+				Bubble.m_TextContainerIndex = STextContainerIndex();
+			}
+			Bubble.m_Cursor.m_FontSize = 0;
 		}
-		m_ChatBubbles[ClientId].clear();
+		m_avChatBubbles[ClientId].clear();
 	}
 }
 
