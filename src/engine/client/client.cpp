@@ -2294,7 +2294,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 
 					if(g_Config.m_ClRunOnJoinConsole && m_aReceivedSnapshots[Conn] > g_Config.m_ClRunOnJoinDelay && !m_aCodeRunAfterJoinConsole[Conn])
 					{
-						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoin);
+						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoin, IConsole::CLIENT_ID_UNSPECIFIED);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
 					}
 					if(!m_aOnJoinInfo[CONN_MAIN])
@@ -5011,10 +5011,12 @@ int main(int argc, const char **argv)
 	pClient->InitInterfaces();
 
 	// execute config file
-	if(pStorage->FileExists(CONFIG_FILE, IStorage::TYPE_ALL))
+	pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
+	for(ConfigDomain ConfigDomain = ConfigDomain::START; ConfigDomain < ConfigDomain::NUM; ++ConfigDomain)
 	{
-		pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
-		if(!pConsole->ExecuteFile(CONFIG_FILE, IConsole::CLIENT_ID_UNSPECIFIED))
+		if(!pStorage->FileExists(s_aConfigDomains[ConfigDomain].m_aConfigPath, IStorage::TYPE_ALL))
+			continue;
+		if(!pConsole->ExecuteFile(s_aConfigDomains[ConfigDomain].m_aConfigPath, IConsole::CLIENT_ID_UNSPECIFIED))
 		{
 			char aError[2048];
 			snprintf(aError, sizeof(aError), "Failed to load config from '%s'.", s_aConfigDomains[ConfigDomain].m_aConfigPath);

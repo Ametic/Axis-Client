@@ -258,7 +258,7 @@ void CBindChat::ExecuteBind(int Bind, const char *pArgs)
 		str_append(aBuf, " ");
 		str_append(aBuf, pArgs);
 	}
-	Console()->ExecuteLine(aBuf);
+	Console()->ExecuteLine(aBuf, IConsole::CLIENT_ID_UNSPECIFIED);
 }
 
 bool CBindChat::CheckBindChat(const char *pText)

@@ -1,8 +1,13 @@
 #include "mapconfig.h"
+
+#include <base/str.h>
 #include <base/system.h>
+
 #include <engine/client.h>
-#include <engine/shared/config.h>
+#include <engine/console.h>
 #include <engine/storage.h>
+
+#include <string>
 
 constexpr char aMapConfigDir[] = "Entity/MapConfigs";
 
@@ -25,13 +30,13 @@ bool CMapConfig::GetConfigFile(const char *pMapName)
 
 	if(Storage()->FileExists(aBuf, Storage()->TYPE_ALL))
 	{
-		Console()->ExecuteFile(aBuf);
+		Console()->ExecuteFile(aBuf, IConsole::CLIENT_ID_UNSPECIFIED);
 		return true;
 	}
 	else if(str_comp(m_DefaultFile, "") != 0)
 	{
 		str_format(aBuf, sizeof(aBuf), "%s/%s.dflt", aMapConfigDir, m_DefaultFile);
-		Console()->ExecuteFile(aBuf);
+		Console()->ExecuteFile(aBuf, IConsole::CLIENT_ID_UNSPECIFIED);
 		return true;
 	}
 	else

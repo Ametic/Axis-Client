@@ -549,7 +549,7 @@ void CQuickActions::ExecuteBind(int Bind)
 
 	*pDst = '\0';
 
-	Console()->ExecuteLine(aCmd);
+	Console()->ExecuteLine(aCmd, IConsole::CLIENT_ID_UNSPECIFIED);
 }
 
 void CQuickActions::DrawDebugLines()
