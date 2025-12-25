@@ -270,14 +270,16 @@ void CEClient::OnlineInfo()
 		int AmountActive = 0;
 		for(const CGameClient::CClientData &Client : GameClient()->m_aClients)
 		{
-			bool Matches = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[WarlistType];
-			bool Muted = GameClient()->m_WarList.m_WarPlayers[Client.ClientId()].IsMuted;
 
 			if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 				continue;
 
 			if(Client.ClientId() == GameClient()->m_Snap.m_LocalClientId)
 				continue;
+
+			CWarDataCache &WarData = GameClient()->m_WarList.GetWarData(Client.ClientId());
+			bool Matches = WarData.m_WarGroupMatches[WarlistType];
+			bool Muted = WarData.IsMuted;
 
 			if(Muted && WarlistType == 1)
 				Mutes++;
