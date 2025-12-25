@@ -561,18 +561,12 @@ void CQuickActions::DrawDebugLines()
 
 	CGameClient::CClientData &Target = GameClient()->m_aClients[Id];
 
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	RenderTools()->MapScreenToGroup(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y, Layers()->GameGroup(), GameClient()->m_Camera.m_Zoom);
-
 	const IGraphics::CLineItem Test(Target.m_RenderPos.x, Target.m_RenderPos.y, TargetPos.x, TargetPos.y);
 
 	Graphics()->TextureClear();
 	Graphics()->LinesBegin();
 	Graphics()->LinesDraw(&Test, 1);
 	Graphics()->LinesEnd();
-
-	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
 void CQuickActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

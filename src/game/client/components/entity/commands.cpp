@@ -270,7 +270,6 @@ void CEClient::OnlineInfo()
 		int AmountActive = 0;
 		for(const CGameClient::CClientData &Client : GameClient()->m_aClients)
 		{
-
 			if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 				continue;
 

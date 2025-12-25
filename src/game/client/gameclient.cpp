@@ -142,15 +142,16 @@ void CGameClient::OnConsoleInit()
 					      &m_Players,
 					      &m_MapLayersForeground,
 					      &m_Outlines, // TClient
+					      &m_ChatBubbles, // E-Client
+					      &m_QuickActions, // E-Client
 					      &m_Particles.m_RenderExplosions,
 					      &m_NamePlates,
-					      &m_ChatBubbles, // E-Client
 					      &m_Particles.m_RenderExtra,
 					      &m_Particles.m_RenderGeneral,
+					      &m_FreezeKill, // E-Client
 					      &m_FreezeBars,
 					      &m_DamageInd,
 					      &m_PlayerIndicator, // TClient
-					      &m_FreezeKill, // E-Client
 					      &m_CustomCommunities, // TClient
 					      &m_Hud,
 					      &m_Spectator,
@@ -159,7 +160,6 @@ void CGameClient::OnConsoleInit()
 					      &m_Bindwheel, // TClient
 					      &m_WarList, // TClient
 					      &m_StatusBar, // TClient
-					      &m_QuickActions, // E-Client
 					      &m_InfoMessages,
 					      &m_Chat,
 					      &m_Broadcast,
