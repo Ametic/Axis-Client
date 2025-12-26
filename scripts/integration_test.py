@@ -683,7 +683,7 @@ def smoke_test(test_env):
 	""".strip().split("\n")
 		)
 	)
-	client1.wait_for_log_exact("chat/server: *** the end", timeout=3)
+	client1.wait_for_log_exact("server: *** the end", timeout=3)
 
 	server.command("stoprecord")
 	client1.command("stoprecord")
