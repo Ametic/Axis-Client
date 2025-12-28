@@ -106,7 +106,15 @@ private:
 		}
 		else if(Str == "players_connected")
 		{
-			return GameClient()->m_Snap.m_NumPlayers;
+			if(Client()->State() == IClient::STATE_ONLINE || Client()->State() == IClient::STATE_DEMOPLAYBACK)
+				return GameClient()->m_Snap.m_NumPlayers;
+			else
+			{
+				const CServerInfo *pServerInfo = GetServerInfo();
+				if(!pServerInfo)
+					return nullptr;
+				return pServerInfo->m_NumClients;
+			}
 		}
 		else if(Str == "players_cap")
 		{
