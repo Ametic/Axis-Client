@@ -143,7 +143,6 @@ void CGameClient::OnConsoleInit()
 					      &m_MapLayersForeground,
 					      &m_Outlines, // TClient
 					      &m_ChatBubbles, // E-Client
-					      &m_QuickActions, // E-Client
 					      &m_Particles.m_RenderExplosions,
 					      &m_NamePlates,
 					      &m_Particles.m_RenderExtra,
@@ -156,6 +155,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Hud,
 					      &m_Spectator,
 					      &m_Emoticon,
+					      &m_QuickActions, // E-Client
 					      &m_Bindchat, // TClient
 					      &m_Bindwheel, // TClient
 					      &m_WarList, // TClient
