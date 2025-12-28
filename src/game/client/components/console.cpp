@@ -849,8 +849,6 @@ void CGameConsole::CInstance::SetSearching(bool Searching)
 {
 	m_Searching = Searching;
 
-	log_info("console", "%d %d", m_CurSelStart, m_CurSelEnd);
-
 	if(Searching)
 	{
 		m_Input.SetClipboardLineCallback(nullptr); // restore default behavior (replace newlines with spaces)
