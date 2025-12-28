@@ -210,7 +210,7 @@ private:
 			if(!std::holds_alternative<int>(Arg))
 				return nullptr;
 			int Id = std::get<int>(Arg);
-			if(Id < 0 || Id > MAX_CLIENTS)
+			if(Id < 0 || Id >= MAX_CLIENTS)
 				return nullptr;
 			if(!GameClient()->m_aClients[Id].m_Active)
 				return nullptr;
@@ -223,13 +223,138 @@ private:
 			if(!std::holds_alternative<int>(Arg))
 				return nullptr;
 			int Id = std::get<int>(Arg);
-			if(Id < 0 || Id > MAX_CLIENTS)
+			if(Id < 0 || Id >= MAX_CLIENTS)
 				return nullptr;
 			if(!GameClient()->m_aClients[Id].m_Active)
 				return nullptr;
 			return GameClient()->m_aClients[Id].m_aClan;
 		}
+		// <E-Client
+		else if(Str == "client_id")
+		{
+			return GameClient()->m_aLocalIds[g_Config.m_ClDummy ? 1 : 0];
+		}
+		else if(Str == "dummy_id")
+		{
+			return GameClient()->m_aLocalIds[g_Config.m_ClDummy ? 0 : 1];
+		}
+		// E-Client>
+
 		throw std::string("No state with name '") + Str + std::string("'");
+	}
+	// <E-Client
+	CScriptingCtx::Any ClientInfo(const std::string &Str, const CScriptingCtx::Any &Arg)
+	{
+		if(!std::holds_alternative<int>(Arg))
+			return nullptr;
+		int ClientId = std::get<int>(Arg);
+
+		if(Str == "exists")
+		{
+			return GameClient()->m_aClients[ClientId].m_Active;
+		}
+
+		if(ClientId < 0 || ClientId >= MAX_CLIENTS)
+			return nullptr;
+
+		if(!GameClient()->m_aClients[ClientId].m_Active)
+			return nullptr;
+
+		if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+			return nullptr;
+
+		if(Str == "team")
+		{
+			return GameClient()->m_aClients[ClientId].m_Team;
+		}
+		else if(Str == "ddnet_team")
+		{
+			return GameClient()->m_Teams.Team(ClientId);
+		}
+		else if(Str == "name")
+		{
+			return GameClient()->m_aClients[ClientId].m_aName;
+		}
+		else if(Str == "clan")
+		{
+			return GameClient()->m_aClients[ClientId].m_aClan;
+		}
+		else if(Str == "skin_name")
+		{
+			return GameClient()->m_aClients[ClientId].m_aSkinName;
+		}
+		else if(Str == "skin_custom_color")
+		{
+			return GameClient()->m_aClients[ClientId].m_UseCustomColor;
+		}
+		else if(Str == "skin_color_feet")
+		{
+			return GameClient()->m_aClients[ClientId].m_ColorFeet;
+		}
+		else if(Str == "skin_color_body")
+		{
+			return GameClient()->m_aClients[ClientId].m_ColorBody;
+		}
+		else if(Str == "afk")
+		{
+			return GameClient()->m_aClients[ClientId].m_Afk;
+		}
+		else if(Str == "friend")
+		{
+			return GameClient()->m_aClients[ClientId].m_Friend;
+		}
+		else if(Str == "foe")
+		{
+			return GameClient()->m_aClients[ClientId].m_Foe;
+		}
+		else if(Str == "warlist_type")
+		{
+			for(size_t WarlistType = 0; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
+			{
+				bool Matches = GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[WarlistType];
+
+				if(Matches)
+					return (int)WarlistType;
+			}
+			return nullptr; // none
+		}
+		else if(Str == "warlist_type_name")
+		{
+			for(size_t WarlistType = 0; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
+			{
+				bool Matches = GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[WarlistType];
+
+				if(Matches)
+					return GameClient()->m_WarList.GetWarTypeName(ClientId);
+			}
+			return nullptr; // none
+		}
+		else if(Str == "muted")
+		{
+			return GameClient()->m_WarList.GetWarData(ClientId).IsMuted;
+		}
+		else if(Str == "auth_level")
+		{
+			return GameClient()->m_aClients[ClientId].m_AuthLevel; // 0 means not authed
+		}
+
+		throw std::string("No state with name '") + Str + std::string("'");
+	}
+	// E-Client>
+
+	
+	CScriptingCtx::Any ToLower(const std::string &Str)
+	{
+		std::string LowerStr = Str;
+		std::transform(LowerStr.begin(), LowerStr.end(), LowerStr.begin(), ::tolower);
+		return LowerStr;
+	}
+
+	CScriptingCtx::Any ToUpper(const std::string &Str)
+	{
+		std::string LowerStr = Str;
+		std::transform(LowerStr.begin(), LowerStr.end(), LowerStr.begin(), ::toupper);
+		return LowerStr;
 	}
 
 public:
@@ -241,11 +366,26 @@ public:
 			Console()->ExecuteLine(Str.c_str(), IConsole::CLIENT_ID_UNSPECIFIED);
 		});
 		m_ScriptingCtx.AddFunction("echo", [this](const std::string &Str) {
-			GameClient()->Echo(Str.c_str());
+			GameClient()->ClientMessage(Str.c_str());
 		});
 		m_ScriptingCtx.AddFunction("state", [this](const std::string &Str, const CScriptingCtx::Any &Arg) {
 			return State(Str, Arg);
 		});
+		// <E-Client
+
+		m_ScriptingCtx.AddFunction("to_lower", [this](const std::string &Str, const CScriptingCtx::Any &Arg) {
+			return ToLower(Str);
+		});
+
+		m_ScriptingCtx.AddFunction("to_upper", [this](const std::string &Str, const CScriptingCtx::Any &Arg) {
+			return ToUpper(Str);
+		});
+
+		m_ScriptingCtx.AddFunction("client_info", [this](const std::string &Str, const CScriptingCtx::Any &Arg) {
+			return ClientInfo(Str, Arg);
+		});
+
+		// E-Client>
 	}
 	void Run(const char *pFilename, const char *pArgs)
 	{

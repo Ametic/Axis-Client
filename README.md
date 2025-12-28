@@ -35,7 +35,7 @@ def myfunc(a, b, c) { // yeah it uses def for function definition idk
 	c // last statement returns like in rust
 }
 print(myfunc(1, 2, 3)) // prints "early"
-for (var i = 0; i < 10; i++) { // for loops (c style)
+for (var i = 0; i < 10; i = i+1) { // for loops (c style)
 	print(i) // auto converts to string, will throw if it cant
 }
 return "top level return"
@@ -45,6 +45,10 @@ Here is a list of states which are available:
 
 | Return type | Call | Description |
 | --- | -- | --- |
+| `string` | `to_lower(<string>)` | Converts the input string to lowercase. |
+| `string` | `to_upper(<string>)` | Converts the input string to uppercase. |
+| `int` | `state("client_id")` | Returns the current client ID. |
+| `int` | `state("dummy_id")` | Returns the dummy client ID if it's connected, else bogus data. |
 | `string` | `state("game_mode")` | Returns the current game mode name (e.g., “DM”, “TDM”, “CTF”). |
 | `bool` | `state("game_mode_pvp")` | Whether the current mode is PvP. |
 | `bool` | `state("game_mode_race")` | Whether the current mode is a race mode. |
@@ -66,6 +70,22 @@ Here is a list of states which are available:
 | `int` | `state("id", string Name)` | Finds and returns a client ID by player name (exact or case-insensitive match). |
 | `string` | `state("name", int Id)` | Returns the name of a player given their client ID. |
 | `string` | `state("clan", int Id)` | Returns the clan name of a player given their client ID. |
+| `bool` | `client_info("exists", int Id)` | Whether the ID exists. |
+| `int` | `client_info("team", int Id)` | Team of ID. |
+| `int` | `client_info("ddnet_team", int Id)` | DDRace team of ID. |
+| `string` | `client_info("name", int Id)` | Returns the name of a player given their client ID. |
+| `string` | `client_info("clan", int Id)` | Returns the clan name of a player given their client ID. |
+| `string` | `client_info("skin_name", int Id)` | Returns the skin name of a player given their client ID. |
+| `int` | `client_info("skin_custom_color", int Id)` | Returns the skin custom color of a player given their client ID. 
+| `int` | `client_info("skin_color_feet", int Id)` | Returns the skin feet color of a player given their client ID. |
+| `int` | `client_info("skin_color_body", int Id)` | Returns the skin body color of a player given their client ID. |
+| `bool` | `client_info("afk", int Id)` | Returns the skin body color of a player given their client ID. |
+| `bool` | `client_info("friend", int Id)` | Returns whether ID is a friend. |
+| `bool` | `client_info("foe", int Id)` | Returns whether ID is a foe. |
+| `int` | `client_info("warlist_type", int Id)` | Returns the warlist type if they have an entry. |
+| `string` | `client_info("warlist_type_name", int Id)` | Returns the warlist type name if they have an entry. |
+| `bool` | `client_info("muted", int Id)` | Returns whether the ID is muted |
+| `int` | `client_info("auth_level", int Id)` | Returns IDs auth level |
 
 ```js
 var what = include("thatscript.chai") // you can include other scripts, they use absolute paths from config dir
