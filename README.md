@@ -117,6 +117,10 @@ math.ceil(1)
 math.floor(1)
 math.round(1)
 math.abs(1)
+math.clamp(1, 1, 1)
+math.min(1, 1)
+math.max(1, 1)
+math.random(1, 10)
 ```
 
 ```js

@@ -9,7 +9,17 @@
 
 #define CHAISCRIPT_NO_THREADS
 #define CHAISCRIPT_NO_THREADS_WARNING
+#include <base/math.h>
+
+#include <malloc.h>
+
+#include <algorithm>
 #include <chaiscript.hpp>
+#include <cmath>
+#include <cstdlib>
+#include <exception>
+#include <functional>
+#include <string>
 
 static const auto NAMESPACE_RE = [](chaiscript::Namespace &Re) {
 	Re["compile"] = chaiscript::var(chaiscript::fun([](const std::string &s) {
@@ -42,6 +52,17 @@ static const auto NAMESPACE_MATH = [](chaiscript::Namespace &Math) {
 	Math["floor"] = chaiscript::var(chaiscript::fun([](double x) { return floor(x); }));
 	Math["round"] = chaiscript::var(chaiscript::fun([](double x) { return round(x); }));
 	Math["abs"] = chaiscript::var(chaiscript::fun([](double x) { return fabs(x); }));
+	Math["abs"] = chaiscript::var(chaiscript::fun([](int x) { return fabs(x); }));
+	// <E-Client
+	Math["clamp"] = chaiscript::var(chaiscript::fun([](double val, double min, double max) { return std::clamp(val, min, max); }));
+	Math["clamp"] = chaiscript::var(chaiscript::fun([](int val, int min, int max) { return std::clamp(val, min, max); }));
+	Math["min"] = chaiscript::var(chaiscript::fun([](double a, double b) { return std::min(a, b); }));
+	Math["min"] = chaiscript::var(chaiscript::fun([](int a, int b) { return std::min(a, b); }));
+	Math["max"] = chaiscript::var(chaiscript::fun([](double a, double b) { return std::max(a, b); }));
+	Math["max"] = chaiscript::var(chaiscript::fun([](int a, int b) { return std::max(a, b); }));
+	Math["random"] = chaiscript::var(chaiscript::fun([](double min, double max) { return (double)random_float((float)min, (float)max); }));
+	Math["random"] = chaiscript::var(chaiscript::fun([](int min, int max) { return min + rand() % (max - min + 1); }));
+	// E-Client>
 };
 
 static const char *ReadScript(IStorage *pStorage, const char *pFilename)

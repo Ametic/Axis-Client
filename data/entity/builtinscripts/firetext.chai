@@ -1,0 +1,57 @@
+import("math")
+
+var Input = args;
+
+def FlameWave(string, Randomizer) {
+    var Max = 6;
+
+    var len = string.size();
+
+    var OutStr = "";
+
+    var ColorF = 0;
+    if(Randomizer) {
+        ColorF = math.random(0, Max)
+    }
+
+    var Switch = false;
+    for(var i = 0; i < len; i+=1)
+    {  
+        ColorF = math.clamp(ColorF, 0, Max);
+
+        var c = string[i]; 
+        var a = 7 + (ColorF * 10);
+        var ColorArg = "";
+        if(a < 10) {
+            ColorArg = "00" + to_string(a);
+        } else if(a < 100) {
+            ColorArg = "0" + to_string(a);
+        } else {
+            ColorArg = to_string(args_sub);
+        }
+            
+        if(Switch) {
+            ColorF -= 1;
+        } else { 
+            ColorF += 1;
+        }
+
+        if(ColorF <= 0) {
+            Switch = false;
+        } else if(ColorF >= Max) {
+            Switch = true;
+        }
+
+        OutStr += "&" + to_string(ColorArg) + to_string(c);
+    }
+    return OutStr;
+}
+
+var FireText = to_string(FlameWave(Input, true));
+var size = FireText.size();
+if(size > 255) {
+    echo("String too long: " + to_string(size) + " characters");
+    return;
+}
+
+exec("say " + FireText);

@@ -1452,6 +1452,7 @@ set(EXPECTED_DATA
   emoticons.png
   entity/binds/.extra.cfg
   entity/binds/.help.cfg
+  entity/builtinscripts/firetext.chai
   entity/fonts/Cabin-Regular.ttf
   entity/fonts/ComicSansMS.ttf
   entity/fonts/GoogleSans-Regular.ttf

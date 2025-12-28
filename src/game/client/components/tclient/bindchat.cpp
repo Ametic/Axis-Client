@@ -251,6 +251,8 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("clanteam", "war_clan_index 0 2");
 	AddDefaultBind("delclanteam", "remove_war_clan_index 2");
 	AddDefaultBind("unclanteam", "remove_war_clan_index 2");
+
+	AddDefaultBind("firetext", "chai entity/builtinscripts/firetext.chai");
 }
 
 void CBindChat::OnInit()
@@ -296,7 +298,8 @@ bool CBindChat::ChatDoBinds(const char *pText)
 	for(const CBind &Bind : m_vBinds)
 	{
 		const bool SendsMessage = str_find(Bind.m_aCommand, "say") ||
-			str_find(Bind.m_aCommand, "reply_last");
+			str_find(Bind.m_aCommand, "reply_last") ||
+			str_find(Bind.m_aCommand, "chai");
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{
