@@ -83,6 +83,7 @@ void CBindChat::AddBind(const char *pName, const char *pCommand)
 	str_copy(Bind.m_aName, pName);
 	str_copy(Bind.m_aCommand, pCommand);
 	m_vBinds.push_back(Bind);
+	CacheChatCommands();
 	SortChatBinds();
 }
 
@@ -96,6 +97,8 @@ void CBindChat::AddBindDefault(const char *pName, const char *pCommand)
 	str_copy(Bind.m_aName, pName);
 	str_copy(Bind.m_aCommand, pCommand);
 	m_vBinds.push_back(Bind);
+	CacheChatCommands();
+	SortChatBinds();
 }
 
 void CBindChat::RemoveBindCommand(const char *pCommand)
@@ -107,6 +110,8 @@ void CBindChat::RemoveBindCommand(const char *pCommand)
 		if(str_comp(It->m_aCommand, pCommand) == 0)
 		{
 			m_vBinds.erase(It);
+			CacheChatCommands();
+			SortChatBinds();
 			return;
 		}
 	}
@@ -124,6 +129,7 @@ void CBindChat::RemoveBind(const char *pName)
 			return;
 		}
 	}
+	CacheChatCommands();
 	SortChatBinds();
 }
 
@@ -133,11 +139,15 @@ void CBindChat::RemoveBind(int Index)
 		return;
 	auto It = m_vBinds.begin() + Index;
 	m_vBinds.erase(It);
+	CacheChatCommands();
+	SortChatBinds();
 }
 
 void CBindChat::RemoveAllBinds()
 {
 	m_vBinds.clear();
+	CacheChatCommands();
+	SortChatBinds();
 }
 
 int CBindChat::GetBindNoDefault(const char *pCommand)
