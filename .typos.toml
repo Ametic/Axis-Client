@@ -16,6 +16,7 @@ extend-exclude = [
 	"src/test/str_test.cpp",
 	# <E-Client
 	"src/engine/shared/config_variables_entity.h",
+	"README.md",
 	# E-Client>
 ]
 

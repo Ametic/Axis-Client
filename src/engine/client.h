@@ -406,12 +406,14 @@ public:
 	virtual int TranslateSnap(class CSnapshot *pSnapDstSix, class CSnapshot *pSnapSrcSeven, int Conn, bool Dummy) = 0;
 	virtual void ProcessDemoSnapshot(class CSnapshot *pSnap) = 0;
 
-	virtual bool CheckNewInput() = 0;
 	virtual void InitializeLanguage() = 0;
 
 	virtual void ForceUpdateConsoleRemoteCompletionSuggestions() = 0;
 
 	// E-Client
+	virtual bool CheckNewInput() = 0;
+	virtual void SetConnectInfo(const NETADDR *pAddress) = 0;
+
 	virtual void OnServerBrowserUpdate() = 0;
 	virtual void ClientMessage(const char *pString) = 0;
 	virtual void OnJoinInfo() = 0;

@@ -290,7 +290,9 @@ if(NOT MSVC AND NOT HAIKU)
   endif()
 
   # Disable exceptions as DDNet does not use them.
-  add_cxx_compiler_flag_if_supported(OUR_FLAGS -fno-exceptions)
+  # Haha, but we need them -Tater
+  # Whatever that guy said -qxdFox
+  # add_cxx_compiler_flag_if_supported(OUR_FLAGS -fno-exceptions)
 
   # Inaccurate floating point numbers cause problems on mingw-w64-gcc when
   # compiling for x86, might cause problems elsewhere. So don't store floats
@@ -1883,7 +1885,7 @@ set(EXPECTED_DATA
   wordlist.txt
 )
 
-set_glob(DATA GLOB_RECURSE "cfg;frag;json;map;otf;png;rules;ttc;ttf;txt;vert;wv" data ${EXPECTED_DATA})
+set_glob(DATA GLOB_RECURSE "cfg;chai;frag;json;map;otf;png;rules;ttc;ttf;txt;vert;wv" data ${EXPECTED_DATA})
 
 ########################################################################
 # COPY DATA AND SHARED LIBS
@@ -2179,9 +2181,17 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
 )
 
 set_src(ENGINE_EXTERNAL GLOB src/engine/external
+  regex.cpp
+  regex.h
   spt.cpp
   spt.h
 )
+
+# ChaiScript
+file(GLOB_RECURSE ENGINE_EXTERNAL_CHAISCRIPT
+  "${PROJECT_SOURCE_DIR}/src/engine/external/chaiscript/*.hpp"
+)
+list(APPEND ENGINE_EXTERNAL ${ENGINE_EXTERNAL_CHAISCRIPT})
 
 set_src(ENGINE_GFX GLOB src/engine/gfx
   image.cpp
@@ -2411,8 +2421,6 @@ if(CLIENT)
     components/entity/freeze_kill.h 
     components/entity/info.cpp
     components/entity/info.h
-    components/entity/mapconfig.cpp
-    components/entity/mapconfig.h
     components/entity/menus_entity.cpp 
     components/entity/quick_actions.cpp
     components/entity/quick_actions.h
@@ -2496,6 +2504,10 @@ if(CLIENT)
     components/tclient/player_indicator.h
     components/tclient/rainbow.cpp
     components/tclient/rainbow.h
+    components/tclient/scripting.cpp
+    components/tclient/scripting.h
+    components/tclient/scripting/impl.cpp
+    components/tclient/scripting/impl.h
     components/tclient/skinprofiles.cpp
     components/tclient/skinprofiles.h
     components/tclient/statusbar.cpp
@@ -2745,8 +2757,17 @@ if(CLIENT)
   target_link_libraries(game-client ${LIBS_CLIENT})
 
   if(MSVC)
+    target_compile_options(game-client PRIVATE /bigobj) # TClient, required for ChaiScript
     target_link_options(game-client PRIVATE /ENTRY:mainCRTStartup)
   endif()
+
+  if(WIN32 AND NOT MSVC)
+    target_compile_options(game-client PRIVATE -Wa,-mbig-obj) # TClient, required for ChaiScript
+  endif()
+
+  # Silence warnings from ChaiScript
+  target_include_directories(game-client SYSTEM PRIVATE
+    ${PROJECT_SOURCE_DIR}/src/engine/external/chaiscript)
 
   target_include_directories(game-client SYSTEM PRIVATE
     ${FREETYPE_INCLUDE_DIRS}

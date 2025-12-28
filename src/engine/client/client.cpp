@@ -723,6 +723,15 @@ void CClient::Connect(const char *pAddress, const char *pPassword)
 	m_ConnectionId = RandomUuid();
 	ServerInfoRequest();
 
+	// TClient
+	// If user has manually specified password don't run autoexec
+	if(!m_SendPassword)
+	{
+		m_pGameClient->SetConnectInfo(&aConnectAddrs[0]);
+		m_pConsole->ExecuteLine(g_Config.m_ClExecuteOnConnect, IConsole::CLIENT_ID_UNSPECIFIED);
+	}
+	m_pGameClient->SetConnectInfo(nullptr);
+
 	if(m_SendPassword)
 	{
 		str_copy(m_aPassword, g_Config.m_Password);
@@ -2292,9 +2301,9 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 						m_aDidPostConnect[Conn] = true;
 					}
 
-					if(g_Config.m_ClRunOnJoinConsole && m_aReceivedSnapshots[Conn] > g_Config.m_ClRunOnJoinDelay && !m_aCodeRunAfterJoinConsole[Conn])
+					if(g_Config.m_ClRunOnJoinConsole[0] && m_aReceivedSnapshots[Conn] > g_Config.m_ClRunOnJoinConsoleDelay && !m_aCodeRunAfterJoinConsole[Conn])
 					{
-						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoin, IConsole::CLIENT_ID_UNSPECIFIED);
+						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoinConsole, IConsole::CLIENT_ID_UNSPECIFIED);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
 					}
 					if(!m_aOnJoinInfo[CONN_MAIN])

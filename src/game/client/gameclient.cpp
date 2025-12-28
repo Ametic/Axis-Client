@@ -171,6 +171,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Motd,
 					      &m_Menus,
 					      &m_Tooltips,
+					      &m_Scripting, // TClient
 					      &m_KeyBinder,
 					      &m_GameConsole,
 					      &m_MenuBackground,
@@ -178,7 +179,6 @@ void CGameClient::OnConsoleInit()
 					      &m_EClient,
 					      &m_AntiSpawnBlock,
 					      &m_EntityInfo,
-					      &m_MapConfig,
 				      });
 
 	// build the input stack
@@ -5672,6 +5672,20 @@ void CGameClient::StoreSave(const char *pTeamMembers, const char *pGeneratedCode
 	}
 	CsvWrite(File, std::size(SAVES_HEADER), apColumns);
 	io_close(File);
+}
+
+// E-Client | TClient
+void CGameClient::SetConnectInfo(const NETADDR *pAddress)
+{
+	m_ConnectServerInfo = std::nullopt;
+	if(!pAddress)
+		return;
+	const auto *pEntry = ServerBrowser()->Find(*pAddress);
+	if(!pEntry)
+		return;
+	m_ConnectServerInfo = pEntry->m_Info;
+	const CNetObj_GameInfoEx GameInfoEx = {.m_Version = 0};
+	m_GameInfo = GetGameInfo(&GameInfoEx, 0, &*m_ConnectServerInfo);
 }
 
 void CGameClient::ClientMessage(const char *pString)

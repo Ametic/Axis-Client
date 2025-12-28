@@ -2159,7 +2159,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		static float Offset = 0.0f;
 
 		Automation.VMargin(5.0f, &Automation);
-		Automation.HSplitTop(225.0f + Offset, &Automation, &ChatSettings);
+		Automation.HSplitTop(245.0f + Offset, &Automation, &ChatSettings);
 		if(s_ScrollRegion.AddRect(Automation))
 		{
 			Offset = 0.0f;
@@ -2216,7 +2216,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				{
 					{
 						const char *Name = g_Config.m_ClNotifyOnJoin ? "Notify on Join Name" : "Notify on Join";
-						float Length = TextRender()->TextBoundingBox(FontSize, "Notify on Join Name").m_W + 27.5f; // Give it some breathing room
+						float Length = TextRender()->TextBoundingBox(FontSize, "Notify on Join Name").m_W + 7.5f; // Give it some breathing room
 
 						Automation.HSplitTop(19.9f, &Button, &MainView);
 
@@ -2259,7 +2259,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				}
 				Automation.HSplitTop(25.0f, &Button, &Automation);
 				{
-					float Length = TextRender()->TextBoundingBox(FontSize, "Run on Join Console").m_W + 20.0f; // Give it some breathing room
+					const char *pN = "Execute before connect";
+					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
 
 					Automation.HSplitTop(20.0f, &Button, &MainView);
 
@@ -2268,12 +2269,35 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					Button.VSplitRight(0.0f, &Button, &MainView);
 
 					static CLineInput s_ReplyMsg;
-					s_ReplyMsg.SetBuffer(g_Config.m_ClRunOnJoinMsg, sizeof(g_Config.m_ClRunOnJoinMsg));
+					s_ReplyMsg.SetBuffer(g_Config.m_ClRunOnJoinConsole, sizeof(g_Config.m_ClRunOnJoinConsole));
 					s_ReplyMsg.SetEmptyText("Any Console Command");
 
-					if(DoButton_CheckBox(&g_Config.m_ClRunOnJoinConsole, "Run on Join Console", g_Config.m_ClRunOnJoinConsole, &Automation))
-						g_Config.m_ClRunOnJoinConsole ^= 1;
 					Ui()->DoEditBox(&s_ReplyMsg, &Button, EditBoxFontSize);
+
+					Automation.HSplitTop(3.0f, &Button, &Automation);
+					Ui()->DoLabel(&Automation, pN, 12.5f, TEXTALIGN_LEFT);
+					Automation.HSplitTop(-3.0f, &Button, &Automation);
+				}
+				Automation.HSplitTop(25.0f, &Button, &Automation);
+				{
+					const char *pN = "Execute on join";
+					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
+
+					Automation.HSplitTop(20.0f, &Button, &MainView);
+
+					Button.VSplitLeft(0.0f, 0, &Automation);
+					Button.VSplitLeft(Length, &Label, &Button);
+					Button.VSplitRight(0.0f, &Button, &MainView);
+
+					static CLineInput s_ReplyMsg;
+					s_ReplyMsg.SetBuffer(g_Config.m_ClRunOnJoinConsole, sizeof(g_Config.m_ClRunOnJoinConsole));
+					s_ReplyMsg.SetEmptyText("Any Console Command");
+
+					Ui()->DoEditBox(&s_ReplyMsg, &Button, EditBoxFontSize);
+
+					Automation.HSplitTop(3.0f, &Button, &Automation);
+					Ui()->DoLabel(&Automation, pN, 12.5f, TEXTALIGN_LEFT);
+					Automation.HSplitTop(-3.0f, &Button, &Automation);
 				}
 				Automation.HSplitTop(25.0f, &Button, &Automation);
 				{
