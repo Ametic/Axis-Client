@@ -415,8 +415,6 @@ ec_inform_update
 
 ec_chat_color_parsing
 
-perma_password
-
 ec_chat_bubbles
 ec_chat_bubble_size
 ec_chat_bubble_showtime

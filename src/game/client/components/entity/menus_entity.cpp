@@ -2269,7 +2269,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					Button.VSplitRight(0.0f, &Button, &MainView);
 
 					static CLineInput s_ReplyMsg;
-					s_ReplyMsg.SetBuffer(g_Config.m_ClRunOnJoinConsole, sizeof(g_Config.m_ClRunOnJoinConsole));
+					s_ReplyMsg.SetBuffer(g_Config.m_ClExecuteOnConnect, sizeof(g_Config.m_ClExecuteOnConnect));
 					s_ReplyMsg.SetEmptyText("Any Console Command");
 
 					Ui()->DoEditBox(&s_ReplyMsg, &Button, EditBoxFontSize);
