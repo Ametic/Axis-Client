@@ -1,0 +1,7 @@
+var InFreeze = state("in_freeze")
+
+if(InFreeze) {
+    exec("say /pause");
+} else {
+    exec("say /spec");
+}

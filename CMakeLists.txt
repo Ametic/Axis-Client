@@ -1453,6 +1453,7 @@ set(EXPECTED_DATA
   entity/binds/.extra.cfg
   entity/binds/.help.cfg
   entity/builtinscripts/firetext.chai
+  entity/builtinscripts/smartspec.chai
   entity/fonts/Cabin-Regular.ttf
   entity/fonts/ComicSansMS.ttf
   entity/fonts/GoogleSans-Regular.ttf

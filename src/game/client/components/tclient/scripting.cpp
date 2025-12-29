@@ -246,6 +246,10 @@ private:
 		{
 			return GameClient()->m_aLocalIds[g_Config.m_ClDummy ? 0 : 1];
 		}
+		else if(Str == "in_freeze")
+		{
+			return Client()->m_IsLocalFrozen;
+		}
 		// E-Client>
 
 		throw std::string("No state with name '") + Str + std::string("'");
