@@ -250,6 +250,14 @@ private:
 		{
 			return Client()->m_IsLocalFrozen;
 		}
+		else if(Str == "server_passworded")
+		{
+			const CServerInfo *pServerInfo = GetServerInfo();
+			if(!pServerInfo)
+				return nullptr;
+			const bool Passworded = (pServerInfo->m_Flags & SERVER_FLAG_PASSWORD) != 0;
+			return Passworded;
+		}
 		// E-Client>
 
 		throw std::string("No state with name '") + Str + std::string("'");

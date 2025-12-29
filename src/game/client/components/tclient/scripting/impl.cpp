@@ -11,8 +11,6 @@
 #define CHAISCRIPT_NO_THREADS_WARNING
 #include <base/math.h>
 
-#include <malloc.h>
-
 #include <algorithm>
 #include <chaiscript.hpp>
 #include <cmath>
