@@ -3310,6 +3310,8 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		}
 	}
 
+	
+#if defined(CONF_DISCORD)
 	/* Discord RPC */
 	{
 		DiscordRpc.HSplitTop(Margin, nullptr, &DiscordRpc);
@@ -3401,6 +3403,26 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			}
 		}
 	}
+	
+#else
+	/* Discord RPC */
+	{
+		DiscordRpc.HSplitTop(Margin, nullptr, &DiscordRpc);
+		DiscordRpc.HSplitTop(85.0f, &DiscordRpc, &ChatBubbles);
+		if(s_ScrollRegion.AddRect(DiscordRpc))
+		{
+			DiscordRpc.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			DiscordRpc.VMargin(Margin, &DiscordRpc);
+
+			DiscordRpc.HSplitTop(HeaderHeight, &Button, &DiscordRpc);
+			Ui()->DoLabel(&Button, Localize("Discord RPC"), HeaderSize, HeaderAlignment);
+			{
+				Ui()->DoLabel(&DiscordRpc, "You need to compile with -DDISCORD=ON to use discord rpc", FontSize, TEXTALIGN_ML);
+			}
+		}
+	}
+
+#endif
 
 	/* Chat Bubbles */
 	{
