@@ -42,25 +42,18 @@ class Log(namedtuple("Log", "timestamp level line")):
 		pass
 
 
-class LogParseError(namedtuple("LogParseError", "line")):
-	def raise_on_error(self, timeout_id):  # pylint: disable=unused-argument
-		Log.parse(self.line)
-		# The above should have raised an error.
-		raise RuntimeError("log line shouldn't parse")
-
-
 class Exit(namedtuple("Exit", "")):
-	def raise_on_error(self, timeout_id):  # pylint: disable=unused-argument
+	def raise_on_error(self, timeout_id):
 		pass
 
 
 class UncleanExit(namedtuple("UncleanExit", "reason")):
-	def raise_on_error(self, timeout_id):  # pylint: disable=unused-argument
+	def raise_on_error(self, timeout_id):
 		raise RuntimeError(f"unclean exit: {self.reason}")
 
 
 class TestTimeout(namedtuple("TestTimeout", "")):
-	def raise_on_error(self, timeout_id):  # pylint: disable=unused-argument
+	def raise_on_error(self, timeout_id):
 		raise TimeoutError("test timeout")
 
 
@@ -105,7 +98,7 @@ YELLOW = "\x1b[33m"
 
 
 class TestRunner:
-	def __init__(self, ddnet, ddnet_server, ddnet_mastersrv, repo_dir, test_dir, valgrind_memcheck, keep_tmpdirs, timeout_multiplier):
+	def __init__(self, ddnet, ddnet_server, ddnet_mastersrv, repo_dir, test_dir, show_full_output, valgrind_memcheck, keep_tmpdirs, timeout_multiplier):
 		self.ddnet = ddnet
 		self.ddnet_server = ddnet_server
 		self.ddnet_mastersrv = ddnet_mastersrv
@@ -113,6 +106,7 @@ class TestRunner:
 		self.data_dir = os.path.join(test_dir, "data")
 		self.test_dir = test_dir
 		self.extra_env_vars = {}
+		self.show_full_output = show_full_output
 		self.keep_tmpdirs = keep_tmpdirs
 		self.timeout_multiplier = timeout_multiplier
 		self.valgrind_memcheck = valgrind_memcheck
@@ -126,15 +120,22 @@ class TestRunner:
 			env = TestEnvironment(self, test.name, tmp_dir, timeout=test.timeout)
 			try:
 				test(env)
-			except Exception as e:  # pylint: disable=broad-exception-caught  # noqa: BLE001
+			except Exception as e:  # noqa: BLE001 blind-except
 				env.kill_all()
 				error = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+				error = error + env.format_valgrind_memcheck_errors()
+				error = error + env.format_stdout_stderr()
 				tmp_dir_cleanup = False
 			else:
 				env.kill_all()
 				error = None
 				if self.valgrind_memcheck:
-					error = env.check_valgrind_memcheck_errors()
+					error = env.format_valgrind_memcheck_errors()
+					if error:
+						error = error + env.format_stdout_stderr()
+						tmp_dir_cleanup = False
+					else:
+						error = None
 		finally:
 			if tmp_dir_cleanup:
 				shutil.rmtree(tmp_dir)
@@ -143,7 +144,6 @@ class TestRunner:
 
 	def run_tests(self, tests):
 		tests = list(tests)
-		# pylint: disable=consider-using-f-string
 		print("running {} test{}".format(len(tests), "s" if len(tests) != 1 else ""))
 		start = time()
 		failed = []
@@ -202,7 +202,6 @@ add_path {relpath(self.runner.data_dir, tmp_dir)}
 				"valgrind",
 				"--tool=memcheck",
 				"--gen-suppressions=all",
-				# pylint: disable=consider-using-f-string
 				"--suppressions={}".format(relpath(os.path.join(runner.repo_dir, "memcheck.supp"), self.tmp_dir)),
 				"--track-origins=yes",
 			]
@@ -212,16 +211,16 @@ add_path {relpath(self.runner.data_dir, tmp_dir)}
 		self.num_mastersrvs = 0
 		self.processes = []
 		self.run_id = uuid4()
-		self.full_stderrs = []
+		self.full_stdouts_stderrs = []
 		self.test_timeout_queue = Queue()
 		run_test_timeout_thread(f"{self.name}_timeout", self, self.test_timeout_queue, TimeoutParam(timeout, f"{self.name} test"))
 
 	def __del__(self):
 		self.kill_all()
 
-	def register_process(self, process, full_stderr):
+	def register_process(self, process, name, full_stdout, full_stderr):
 		self.processes.append(process)
-		self.full_stderrs.append(full_stderr)
+		self.full_stdouts_stderrs.append((name, full_stdout, full_stderr))
 
 	def register_events_queue(self, queue):
 		self.test_timeout_queue.put(queue)
@@ -243,10 +242,30 @@ add_path {relpath(self.runner.data_dir, tmp_dir)}
 		while self.processes:
 			self.processes.pop().wait()
 
-	def check_valgrind_memcheck_errors(self):
-		if any(any("== ERROR SUMMARY: " in line and "== ERROR SUMMARY: 0" not in line for line in stderr) for stderr in self.full_stderrs):
-			return "\n".join(line for stderr in self.full_stderrs for line in stderr if line.startswith("=="))
-		return None
+	def format_valgrind_memcheck_errors(self) -> str:
+		for name, _, stderr in self.full_stdouts_stderrs:
+			if any("== ERROR SUMMARY: " in line and "== ERROR SUMMARY: 0" not in line for line in stderr):
+				joined_errors = "\n".join(line for line in stderr if line.startswith("=="))
+				return f"--- valgrind memcheck: {name} ---\n{joined_errors}\n"
+		return ""
+
+	def format_stdout_stderr(self) -> str:
+		max_lines = 5
+		error = ""
+		for name, stdout, stderr in self.full_stdouts_stderrs:
+			if stdout:
+				if self.runner.show_full_output or len(stdout) <= max_lines:
+					joined_stdout = "\n".join(stdout)
+				else:
+					joined_stdout = f"({len(stdout) - max_lines} more lines)\n" + "\n".join(stdout[-max_lines:])
+				error = error + f"--- stdout: {name} ---\n{joined_stdout}\n"
+			if stderr:
+				if self.runner.show_full_output or len(stderr) <= max_lines:
+					joined_stderr = "\n".join(stderr)
+				else:
+					joined_stderr = f"({len(stderr) - max_lines} more lines)\n" + "\n".join(stderr[-max_lines:])
+				error = error + f"--- stderr: {name} ---\n{joined_stderr}\n"
+		return error
 
 
 def run_lines_thread(name, file, output_filename, output_list, output_queue):
@@ -254,18 +273,17 @@ def run_lines_thread(name, file, output_filename, output_list, output_queue):
 		output_file = None
 		for line in file:
 			if output_file is None:
-				# pylint: disable=consider-using-with
 				output_file = open(output_filename, "w", buffering=1, encoding="utf-8")  # line buffering
 			output_file.write(line)
 			line = line.rstrip("\r\n")
 			output_list.append(line)
 			if output_queue is not None:
 				try:
-					log = Log.parse(line)
+					output_queue.put(Log.parse(line))
 				except ValueError:
-					output_queue.put(LogParseError(line))
-				else:
-					output_queue.put(log)
+					# The client will sometimes print multiple log lines without timestamp and level, for example on assertion errors.
+					# We store log lines verbatim if they could not be parsed, so we can output the log lines on test failures.
+					output_queue.put(Log(timestamp=None, level=None, line=line))
 
 	Thread(name=name, target=thread, daemon=True).start()
 
@@ -315,13 +333,11 @@ def run_test_timeout_thread(name, test_env, input_queue, param):
 
 
 class Runnable:
-	# pylint: disable=dangerous-default-value
 	def __init__(self, test_env, name, args, *, extra_env_vars={}, log_is_stderr=False, allow_unclean_exit=False):  # noqa: B006 mutable-default-arguments
 		self.name = name
 		cur_env_vars = dict(os.environ)
 		intersection = set(cur_env_vars) & (set(test_env.runner.extra_env_vars) | set(extra_env_vars))
 		if intersection:
-			# pylint: disable=consider-using-f-string
 			raise ValueError("conflicting environment variable(s): {}".format(", ".join(sorted(intersection))))
 		new_env_vars = {**cur_env_vars, **test_env.runner.extra_env_vars, **extra_env_vars}
 		self.process = popen(
@@ -332,11 +348,11 @@ class Runnable:
 			stdout=subprocess.PIPE,
 			stderr=subprocess.PIPE,
 		)
-		stdout_wrapper = io.TextIOWrapper(self.process.stdout, encoding="utf-8", newline="\n")
-		stderr_wrapper = io.TextIOWrapper(self.process.stderr, encoding="utf-8", newline="\n")
+		stdout_wrapper = io.TextIOWrapper(self.process.stdout, encoding="utf-8")
+		stderr_wrapper = io.TextIOWrapper(self.process.stderr, encoding="utf-8")
 		self.full_stdout = []
 		self.full_stderr = []
-		test_env.register_process(self.process, self.full_stderr)
+		test_env.register_process(self.process, self.name, self.full_stdout, self.full_stderr)
 		self.events = Queue()
 		test_env.register_events_queue(self.events)
 		self.next_timeout_id = 0
@@ -396,26 +412,27 @@ class Runnable:
 				return
 
 
-def fifo_name(test_env, name):
+def fifo_name_path(test_env, name):
 	if os.name != "nt":
-		return os.path.join(test_env.tmp_dir, f"{name}.fifo")
+		fifo_name = f"{name}.fifo"
+		return (fifo_name, os.path.join(test_env.tmp_dir, fifo_name))
 	else:
-		return f"{test_env.name}_{test_env.run_id}_{name}"
+		pipe_name = f"{test_env.name}_{test_env.run_id}_{name}"
+		return (pipe_name, rf"\\.\pipe\{pipe_name}")
 
 
 def open_fifo(name):
 	if os.name != "nt":
 		name_arg = os.open(name, flags=os.O_WRONLY)
 	else:
-		name_arg = rf"\\.\pipe\{name}"
+		name_arg = name
 	return open(name_arg, "w", buffering=1, encoding="utf-8")  # line buffering
 
 
 class Client(Runnable):
-	# pylint: disable=dangerous-default-value
 	def __init__(self, test_env, extra_args=[]):  # noqa: B006 mutable-default-arguments
 		name = f"client{test_env.num_clients}"
-		self.fifo_name = fifo_name(test_env, name)
+		self.fifo_name, self.fifo_path = fifo_name_path(test_env, name)
 		# Delay opening the FIFO until the client has started, because it will
 		# block.
 		self.fifo = None
@@ -426,6 +443,7 @@ class Client(Runnable):
 				test_env.ddnet,
 				f"cl_input_fifo {self.fifo_name}",
 				"gfx_fullscreen 0",
+				"cl_save_settings 0",
 			]
 			+ extra_args,
 		)
@@ -433,7 +451,7 @@ class Client(Runnable):
 
 	def command(self, command):
 		if self.fifo is None:
-			self.fifo = open_fifo(self.fifo_name)
+			self.fifo = open_fifo(self.fifo_path)
 		self.fifo.write(f"{command}\n")
 
 	def exit(self):
@@ -444,10 +462,9 @@ class Client(Runnable):
 
 
 class Server(Runnable):
-	# pylint: disable=dangerous-default-value
 	def __init__(self, test_env, extra_args=[]):  # noqa: B006 mutable-default-arguments
 		name = f"server{test_env.num_servers}"
-		self.fifo_name = fifo_name(test_env, name)
+		self.fifo_name, self.fifo_path = fifo_name_path(test_env, name)
 		# Delay opening the FIFO until the server has started, because it will
 		# block.
 		self.fifo = None
@@ -465,18 +482,18 @@ class Server(Runnable):
 
 	def command(self, command):
 		if self.fifo is None:
-			self.fifo = open_fifo(self.fifo_name)
+			self.fifo = open_fifo(self.fifo_path)
 		self.fifo.write(f"{command}\n")
 
 	def next_event(self, timeout_id):
 		event = super().next_event(timeout_id)
 		if isinstance(event, Log):
 			if event.line.startswith("server: using port "):
-				self.port = int(event.line[len("server: using port ") :])  # pylint: disable=attribute-defined-outside-init
+				self.port = int(event.line[len("server: using port ") :])
 			elif event.line.startswith("server: | rcon password: '"):
-				_, self.rcon_password, _ = event.line.split("'")  # pylint: disable=attribute-defined-outside-init
+				_, self.rcon_password, _ = event.line.split("'")
 			elif event.line.startswith("teehistorian: recording to '"):
-				_, self.teehistorian_filename, _ = event.line.split("'")  # pylint: disable=attribute-defined-outside-init
+				_, self.teehistorian_filename, _ = event.line.split("'")
 		return event
 
 	def exit(self):
@@ -487,9 +504,25 @@ class Server(Runnable):
 
 
 class Mastersrv(Runnable):
-	# pylint: disable=dangerous-default-value
-	def __init__(self, test_env, extra_args=[]):  # noqa: B006 mutable-default-arguments
+	def __init__(self, test_env, extra_args=[], config=None, communities_json=None):  # noqa: B006 mutable-default-arguments
 		name = f"mastersrv{test_env.num_mastersrvs}"
+		if communities_json is not None:
+			communities_json_filename = f"{name}-communities.json"
+			with open(os.path.join(test_env.tmp_dir, communities_json_filename), "w", encoding="utf-8") as f:
+				f.write(communities_json)
+			config = config + f"""\
+[communities]
+json = {communities_json_filename!r}
+"""
+		if config is not None:
+			config_filename = f"{name}.toml"
+			with open(os.path.join(test_env.tmp_dir, config_filename), "w", encoding="utf-8") as f:
+				f.write(config)
+			extra_args = extra_args + [
+				"--config",
+				config_filename,
+			]
+
 		super().__init__(
 			test_env,
 			name,
@@ -510,7 +543,7 @@ class Mastersrv(Runnable):
 		event = super().next_event(timeout_id)
 		if isinstance(event, Log):
 			if event.line.startswith("warp::server: listening on http://[::]:"):
-				self.port = int(event.line[len("warp::server: listening on http://[::]:") :])  # pylint: disable=attribute-defined-outside-init
+				self.port = int(event.line[len("warp::server: listening on http://[::]:") :])
 		return event
 
 	def exit(self):
@@ -605,6 +638,20 @@ def client_can_connect(test_env):
 
 
 @test
+def client_can_connect_7(test_env):
+	client = test_env.client()
+	server = test_env.server()
+	wait_for_startup([client, server])
+	client.command(f"connect tw-0.7+udp://localhost:{server.port}")
+	server.wait_for_log_prefix("server: player has entered the game", timeout=10)
+	server.exit()
+	client.wait_for_log_exact("client: offline error='Server shutdown'")
+	client.exit()
+	server.wait_for_exit()
+	client.wait_for_exit()
+
+
+@test
 def open_editor(test_env):
 	client = test_env.client(["maps/coverage.map"])
 	client.wait_for_log_exact("editor/load: Loaded map 'maps/coverage.map'", timeout=10)
@@ -615,22 +662,25 @@ def open_editor(test_env):
 
 @test
 def smoke_test(test_env):
-	client1 = test_env.client(["logfile client1.log", "player_name client1"])
+	client1 = test_env.client(["logfile client1.log", "player_name client1", "cl_save_settings 1"])
 	server = test_env.server(["logfile server.log", "sv_demo_chat 1", "sv_map coverage", "sv_tee_historian 1"])
 	wait_for_startup([client1, server])
+	# Start client2 after client1 to avoid fetching resources twice.
+	# Wait for both clients to start to avoid flaky behavior due time required for the client to launch.
+	client2 = test_env.client(["logfile client2.log", "player_name client2"])
+	wait_for_startup([client2])
 
+	server.command("record server")
 	client1.command("debug 1")
 	client1.command("stdout_output_level 2; loglevel 2")
 	client1.command(f"connect localhost:{server.port}")
 	server.wait_for_log_prefix("server: player has entered the game", timeout=10)
-	server.command("record server")
 	client1.wait_for_log_exact("client: state change. last=2 current=3", timeout=10)
 	client1.command("stdout_output_level 0; loglevel 0")
 	client1.command("debug 0")
 	client1.command("record client1")
 
-	client2 = test_env.client(["logfile client2.log", "player_name client2", f"connect localhost:{server.port}"])
-	wait_for_startup([client2])
+	client2.command(f"connect localhost:{server.port}")
 	server.wait_for_log_prefix("server: player has entered the game", timeout=10)
 	for _ in range(5):
 		server.wait_for_log(
@@ -733,9 +783,10 @@ def smoke_test(test_env):
 
 	if not ranks:
 		raise AssertionError("no ranks found")
-	# TODO: why do the results under valgrind differ?
-	if not test_env.runner.valgrind_memcheck and ranks != expected_ranks:
-		raise AssertionError(f"unexpected ranks:\n{ranks}\n\n{expected_ranks}")
+	if ranks != expected_ranks:
+		ranks_string = "\n".join([str(rank) for rank in ranks])
+		expected_ranks_string = "\n".join([str(rank) for rank in expected_ranks])
+		raise AssertionError(f"unexpected ranks.\n\nactual:\n{ranks_string}\n\nexpected:\n{expected_ranks_string}")
 
 
 @test(requires_mastersrv=True)
@@ -803,6 +854,53 @@ def server_can_register_tw_0_7(test_env):
 	server_can_register_protocol(test_env, "tw0.7/ipv6", "7/ipv6", "tw-0.7+udp")
 
 
+@test(requires_mastersrv=True)
+def server_can_register_community(test_env):
+	CONFIG = """\
+[communities.tokens]
+ddvc_6DnZq51fypqX9ldrEFCF9aJdpi6wjgh6YA = "ddnet"
+"""
+	COMMUNITIES_JSON = """\
+[
+    {
+        "id": "ddnet",
+        "name": "DDraceNetwork",
+        "has_finishes": true,
+        "icon": {
+            "sha256": "267f137cd7fc4e3843e54b6e6bf664e50da77826abe1675d1d3e87a18a5952de",
+            "url": "https://info.ddnet.org/icons/ddnet.png"
+        },
+        "contact_urls": [
+            "https://discord.gg/ddracenetwork",
+            "https://ddnet.org/discord"
+        ]
+    }
+]
+"""
+	mastersrv = test_env.mastersrv(config=CONFIG, communities_json=COMMUNITIES_JSON)
+	wait_for_startup([mastersrv])
+	server = test_env.server([
+		"http_allow_insecure 1",
+		"sv_register tw0.6/ipv6",
+		"sv_register_community_token ddtc_6DnZq5Ix0J2kvDHbkPNtb6bsZxOVQg4ly2jw",
+		f"sv_register_url http://[::1]:{mastersrv.port}/ddnet/15/register",
+	])
+	wait_for_startup([server])
+	server.wait_for_log_suffix("successfully registered", timeout=5)
+	servers_json = mastersrv.servers_json()
+	if len(servers_json["servers"]) != 1 or servers_json["servers"][0]["info"]["map"]["name"] != "Tutorial" or len(servers_json["servers"][0]["addresses"]) != 1:
+		raise AssertionError(f"unexpected servers.json\n{servers_json}")
+	if servers_json["servers"][0]["community"] != "ddnet":
+		raise AssertionError(f"servers.json didn't have \"community\" key\n{servers_json}")
+	server.exit()
+	mastersrv.wait_for_log_prefix("mastersrv: successfully removed", timeout=5)
+	servers_json = mastersrv.servers_json()
+	if len(servers_json["servers"]) != 0:
+		raise AssertionError(f"unexpected servers.json\n{servers_json}")
+	mastersrv.exit()
+	mastersrv.wait_for_exit()
+
+
 EXE_SUFFIX = ""
 if os.name == "nt":
 	EXE_SUFFIX = ".exe"
@@ -811,10 +909,11 @@ if os.name == "nt":
 def main():
 	repo_dir = relpath(os.path.join(os.path.dirname(__file__), ".."))
 
-	import argparse  # pylint: disable=import-outside-toplevel
+	import argparse
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--keep-tmpdirs", action="store_true", help="keep temporary directories used for the tests")
+	parser.add_argument("--show-full-output", action="store_true", help="print the full stdout and stderr on test failures")
 	parser.add_argument("--test-mastersrv", action="store_true", help="enforce testing of mastersrv")
 	parser.add_argument("--timeout-multiplier", type=float, default=1, help="multiply all timeouts by this value")
 	parser.add_argument("--valgrind-memcheck", action="store_true", help="use valgrind's memcheck on client and server")
@@ -845,6 +944,7 @@ def main():
 		ddnet_mastersrv=ddnet_mastersrv,
 		repo_dir=repo_dir,
 		test_dir=args.builddir,
+		show_full_output=args.show_full_output,
 		valgrind_memcheck=args.valgrind_memcheck,
 		keep_tmpdirs=args.keep_tmpdirs,
 		timeout_multiplier=args.timeout_multiplier,
