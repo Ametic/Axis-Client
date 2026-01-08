@@ -76,9 +76,9 @@ Here is a list of states which are available:
 | `string` | `client_info("name", int Id)` | Returns the name of a player given their client ID. |
 | `string` | `client_info("clan", int Id)` | Returns the clan name of a player given their client ID. |
 | `string` | `client_info("skin_name", int Id)` | Returns the skin name of a player given their client ID. |
-| `int` | `client_info("skin_custom_color", int Id)` | Returns the skin custom color of a player given their client ID. 
-| `int` | `client_info("skin_color_feet", int Id)` | Returns the skin feet color of a player given their client ID. |
-| `int` | `client_info("skin_color_body", int Id)` | Returns the skin body color of a player given their client ID. |
+| `int` | `client_info("skin_custom_color", int Id)` | Returns the custom color of a player given their client ID. 
+| `int` | `client_info("skin_color_feet", int Id)` | Returns the feet color of a player given their client ID. |
+| `int` | `client_info("skin_color_body", int Id)` | Returns the body color of a player given their client ID. |
 | `bool` | `client_info("afk", int Id)` | Returns the skin body color of a player given their client ID. |
 | `bool` | `client_info("friend", int Id)` | Returns whether ID is a friend. |
 | `bool` | `client_info("foe", int Id)` | Returns whether ID is a foe. |
