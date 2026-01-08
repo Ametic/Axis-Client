@@ -489,6 +489,7 @@ protected:
 	void PopupConfirmChangeSelectedButton();
 	void PopupCancelChangeSelectedButton();
 	void PopupConfirmTurnOffEditor();
+	void PopupConfirmOpenWiki();
 	void RenderPlayers(CUIRect MainView);
 	void RenderServerInfo(CUIRect MainView);
 	void RenderServerInfoMotd(CUIRect Motd);

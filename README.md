@@ -49,24 +49,24 @@ Here is a list of states which are available:
 | `string` | `to_upper(<string>)` | Converts the input string to uppercase. |
 | `int` | `state("client_id")` | Returns the current client ID. |
 | `int` | `state("dummy_id")` | Returns the dummy client ID if it's connected, else bogus data. |
-| `string` | `state("game_mode")` | Returns the current game mode name (e.g., “DM”, “TDM”, “CTF”). |
+| `string` | `state("game_mode")` | Returns the current game mode name (e.g., ï¿½DMï¿½, ï¿½TDMï¿½, ï¿½CTFï¿½). |
 | `bool` | `state("game_mode_pvp")` | Whether the current mode is PvP. |
 | `bool` | `state("game_mode_race")` | Whether the current mode is a race mode. |
-| `bool` | `state("eye_wheel_allowed")` | Whether the “eye wheel” feature is allowed on this server. |
+| `bool` | `state("eye_wheel_allowed")` | Whether the ï¿½eye wheelï¿½ feature is allowed on this server. |
 | `bool` | `state("zoom_allowed")` | Whether camera zoom is allowed. |
 | `bool` | `state("dummy_allowed")` | Whether using a dummy client is allowed. |
 | `bool` | `state("dummy_connected")` | Whether the dummy client is currently connected. |
 | `bool` | `state("rcon_authed")` | Whether the client is authenticated with RCON (admin access). |
-| `int` | `state("team")` | The player’s current team number. |
-| `int` | `state("ddnet_team")` | The player’s DDNet team number. |
+| `int` | `state("team")` | The playerï¿½s current team number. |
+| `int` | `state("ddnet_team")` | The playerï¿½s DDNet team number. |
 | `string` | `state("map")` | The name of the current or connecting map. |
 | `string` | `state("server_ip")` | The IP address of the connected or connecting server. |
 | `int` | `state("players_connected")` | Number of currently connected players. |
 | `int` | `state("players_cap")` | Maximum number of players the server supports. |
-| `string` | `state("server_name")` | The server’s name. |
-| `string` | `state("community")` | The server’s community identifier. |
-| `string` | `state("location")` | The player’s approximate map location (“NW”, “C”, “SE”, etc.). |
-| `string` | `state("state")` | The client’s connection state (e.g., “online”, “offline”, “loading”, “demo”). |
+| `string` | `state("server_name")` | The serverï¿½s name. |
+| `string` | `state("community")` | The serverï¿½s community identifier. |
+| `string` | `state("location")` | The playerï¿½s approximate map location (ï¿½NWï¿½, ï¿½Cï¿½, ï¿½SEï¿½, etc.). |
+| `string` | `state("state")` | The clientï¿½s connection state (e.g., ï¿½onlineï¿½, ï¿½offlineï¿½, ï¿½loadingï¿½, ï¿½demoï¿½). |
 | `int` | `state("id", string Name)` | Finds and returns a client ID by player name (exact or case-insensitive match). |
 | `string` | `state("name", int Id)` | Returns the name of a player given their client ID. |
 | `string` | `state("clan", int Id)` | Returns the clan name of a player given their client ID. |
