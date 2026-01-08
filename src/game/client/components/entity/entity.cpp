@@ -326,12 +326,15 @@ void CEClient::NotifyOnMove()
 {
 	if(!g_Config.m_ClNotifyOnMove)
 		return;
+	if(Client()->State() != IClient::STATE_ONLINE)
+		return;
 	IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 	if(!pGraphics || !Graphics())
 		return;
-
 	const CNetObj_Character *pLocalChar = GameClient()->m_Snap.m_pLocalCharacter;
 	if(!pLocalChar)
+		return;
+	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
 		return;
 
 	int LocalId = GameClient()->m_Snap.m_LocalClientId;
