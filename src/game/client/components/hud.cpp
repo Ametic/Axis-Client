@@ -607,10 +607,10 @@ void CHud::RenderCursor()
 		CurWeapon = maximum(0, GameClient()->m_Snap.m_pLocalCharacter->m_Weapon % NUM_WEAPONS);
 		TargetPos = GameClient()->m_Controls.m_aTargetPos[g_Config.m_ClDummy];
 	}
-	else if(g_Config.m_ClRenderCursorSpec > 0 && GameClient()->m_Snap.m_SpecInfo.m_Active && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW)
+	else if(g_Config.m_ClCursorOpacitySpec > 0 && GameClient()->m_Snap.m_SpecInfo.m_Active && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW)
 	{
 		CurWeapon = 1;
-		Alpha = g_Config.m_ClRenderCursorSpec / 100.0f;
+		Alpha = g_Config.m_ClCursorOpacitySpec / 100.0f;
 		TargetPos = Center;
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_aSpriteWeaponCursors[CurWeapon]);
 	}
