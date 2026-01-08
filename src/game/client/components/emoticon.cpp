@@ -193,10 +193,27 @@ void CEmoticon::OnRender()
 
 	m_SelectedEmote = -1;
 	m_SelectedEyeEmote = -1;
-	if(length(m_SelectorMouse) > 110.0f)
-		m_SelectedEmote = (int)(SelectedAngle / (2 * pi) * (float)NUM_EMOTICONS);
-	else if(length(m_SelectorMouse) > 40.0f)
-		m_SelectedEyeEmote = (int)(SelectedAngle / (2 * pi) * (float)NUM_EMOTES);
+
+	const float NumEmoticons = (float)NUM_EMOTICONS;
+	const float NumEyeEmotes = (float)NUM_EMOTES;
+
+	if(length(m_SelectorMouse) > s_InnerOuterMouseBoundaryRadius)
+		m_SelectedEmote = (int)PositiveMod(std::round(SelectorAngle / (2.0f * pi) * NumEmoticons), NumEmoticons);
+	else if(length(m_SelectorMouse) > s_InnerMouseLimitRadius)
+		m_SelectedEyeEmote = (int)PositiveMod(std::round(SelectorAngle / (2.0f * pi) * NumEyeEmotes), NumEyeEmotes);
+
+	if(m_SelectedEmote != -1)
+	{
+		m_aAnimationTimeEmotes[m_SelectedEmote] += Client()->RenderFrameTime() * 2.0f; // To counteract earlier decrement
+		if(m_aAnimationTimeEmotes[m_SelectedEmote] >= ItemAnimationTime)
+			m_aAnimationTimeEmotes[m_SelectedEmote] = ItemAnimationTime;
+	}
+	if(m_SelectedEyeEmote != -1)
+	{
+		m_aAnimationTimeEyeEmotes[m_SelectedEyeEmote] += Client()->RenderFrameTime() * 2.0f; // To counteract earlier decrement
+		if(m_aAnimationTimeEyeEmotes[m_SelectedEyeEmote] >= ItemAnimationTime)
+			m_aAnimationTimeEyeEmotes[m_SelectedEyeEmote] = ItemAnimationTime;
+	}
 
 	const vec2 ScreenCenter = Screen.Center();
 

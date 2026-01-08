@@ -75,6 +75,9 @@ namespace DefaultConfig
 	/** Default value of the string config variable 'ScriptName' (see CConfig::m_##Name). */ \
 	static constexpr const char *const Name = Def;
 #include "config_variables.h"
+// <E-Client
+#include "config_variables_entity.h"
+// E-Client>
 #undef MACRO_CONFIG_INT
 #undef MACRO_CONFIG_COL
 #undef MACRO_CONFIG_STR
