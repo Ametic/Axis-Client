@@ -146,7 +146,7 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 	}
 	return str
 }))
-
+```
 # Setting Pages:
 
 ### Main Settings
@@ -177,6 +177,10 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 <img width="1667" height="987" alt="Info" src="https://github.com/user-attachments/assets/279e9cf8-4574-4ca5-974b-733ed8466e4d" />
 
 # Command List:
+
+> [!NOTE]
+> This is out of date
+
 ```
 votekick "<Name> <Reason>"
 

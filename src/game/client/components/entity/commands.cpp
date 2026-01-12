@@ -333,7 +333,6 @@ void CEClient::OnlineInfo()
 	GameClient()->ClientMessage("╭──         Online Info");
 
 	char aBuf[64] = "";
-	char bBuf[32] = "";
 	if(Mutes > 0)
 		str_format(aBuf, sizeof(aBuf), "│ %d Mutes", Mutes);
 	GameClient()->ClientMessage(aBuf);
@@ -345,6 +344,8 @@ void CEClient::OnlineInfo()
 
 		if(ActiveAmount == 0)
 			continue;
+		char bBuf[32] = "";
+
 		str_format(aBuf, sizeof(aBuf), "│ %d %s", ActiveAmount, Info.m_aLabel);
 
 		if(AfkAmount > 0)
