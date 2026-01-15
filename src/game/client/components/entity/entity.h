@@ -112,6 +112,7 @@ public:
 
 	void GoresModeSave();
 	void GoresModeRestore();
+	void ToggleGoresMode(bool Value);
 
 	int64_t m_JoinTeam;
 	void AutoJoinTeam();

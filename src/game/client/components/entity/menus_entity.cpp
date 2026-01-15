@@ -2532,7 +2532,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			GoresMode.HSplitTop(HeaderHeight, &Button, &GoresMode);
 			Ui()->DoLabel(&Button, Localize("Gores Mode"), HeaderSize, HeaderAlignment);
 
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresMode, LineSize);
+			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresMode, LineSize))
+				GameClient()->m_EClient.ToggleGoresMode(g_Config.m_ClGoresMode);
+
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresMode, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &GoresMode, LineSize);
 

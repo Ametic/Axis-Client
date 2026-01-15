@@ -276,6 +276,14 @@ void CEClient::GoresModeRestore()
 	GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
 }
 
+void CEClient::ToggleGoresMode(bool Value)
+{
+	if(Value)
+		GoresModeSave();
+	else
+		GoresModeRestore();
+}
+
 void CEClient::OnConnect()
 {
 	if(g_Config.m_ClDummy)

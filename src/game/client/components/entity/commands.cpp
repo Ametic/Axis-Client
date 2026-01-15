@@ -502,11 +502,7 @@ void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IC
 	if(pResult->NumArguments())
 	{
 		int GoresMode = pResult->GetInteger(0);
-
-		if(GoresMode)
-			pSelf->GoresModeSave();
-		else
-			pSelf->GoresModeRestore();
+		pSelf->ToggleGoresMode(GoresMode);
 	}
 }
 
