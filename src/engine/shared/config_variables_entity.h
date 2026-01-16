@@ -340,7 +340,7 @@ MACRO_CONFIG_INT(ClChatBubbleShowTime, ec_chat_bubble_showtime, 200, 200, 1000, 
 MACRO_CONFIG_INT(ClChatBubbleFadeOut, ec_chat_bubble_fadeout, 35, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it fades out")
 MACRO_CONFIG_INT(ClChatBubbleFadeIn, ec_chat_bubble_fadein, 15, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "how long it fades in")
 
-// MACRO_CONFIG_INT(ClChatBubblePushOut, ec_chat_bubble_push_out, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Experimental setting to push bubbles away from eachother")
+// MACRO_CONFIG_INT(ClChatBubblePushOut, ec_chat_bubble_push_out, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes sure chatbubbles dont overlap")
 
 // Quick Actions
 MACRO_CONFIG_INT(ClResetQuickActionMouse, ec_reset_quickaction_mouse, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reset position of mouse when opening the quickactions menu")

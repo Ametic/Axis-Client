@@ -19,6 +19,11 @@
 #include <algorithm>
 #include <cstdint>
 
+constexpr float NameplateOffset = 10.0f;
+constexpr float CharacterMinOffset = 40.0f;
+constexpr float MarginBetween = 1.0f;
+constexpr float LineWidth = 500.0f;
+
 CChat *CChatBubbles::Chat() const
 {
 	return &GameClient()->m_Chat;
@@ -54,31 +59,12 @@ void CChatBubbles::UpdateBubbleOffsets(int ClientId, float InputBubbleHeight)
 	if(InputBubbleHeight > 0.0f)
 		Offset += InputBubbleHeight + MarginBetween;
 
-	int FontSize = g_Config.m_ClChatBubbleSize;
-	for(CBubbles &aBubble : m_avChatBubbles[ClientId])
+	for(CBubble &Bubble : m_avChatBubbles[ClientId])
 	{
-		if(!aBubble.m_TextContainerIndex.Valid() || aBubble.m_Cursor.m_FontSize != FontSize)
-		{
-			if(aBubble.m_TextContainerIndex.Valid())
-			{
-				TextRender()->DeleteTextContainer(aBubble.m_TextContainerIndex);
-				aBubble.m_TextContainerIndex = STextContainerIndex();
-			}
-
-			CTextCursor Cursor;
-			Cursor.SetPosition(vec2(0, 0));
-			Cursor.m_FontSize = FontSize;
-			Cursor.m_Flags = TEXTFLAG_RENDER;
-
-			Cursor.m_LineWidth = 500.0f - FontSize * 2.0f;
-			TextRender()->CreateOrAppendTextContainer(aBubble.m_TextContainerIndex, &Cursor, aBubble.m_aText);
-			aBubble.m_Cursor.m_FontSize = FontSize;
-
-			TextRender()->ColorParsing(aBubble.m_aText, &Cursor, ColorRGBA(1.0f, 1.0f, 1.0f), &aBubble.m_TextContainerIndex);
-		}
-		STextBoundingBox BoundingBox = TextRender()->GetBoundingBoxTextContainer(aBubble.m_TextContainerIndex);
-		aBubble.m_TargetOffsetY = Offset;
-		Offset += BoundingBox.m_H + FontSize + MarginBetween;
+		SetupTextcontainer(Bubble);
+		STextBoundingBox BoundingBox = TextRender()->GetBoundingBoxTextContainer(Bubble.m_TextContainerIndex);
+		Bubble.m_TargetOffsetY = Offset;
+		Offset += BoundingBox.m_H + g_Config.m_ClChatBubbleSize + MarginBetween;
 	}
 }
 
@@ -110,20 +96,16 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 			return;
 	}
 
-	int FontSize = g_Config.m_ClChatBubbleSize;
-	CTextCursor pCursor;
+	CTextCursor Cursor;
 
 	// Create Text at default zoom
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
 
-	pCursor.SetPosition(vec2(0, 0));
-	pCursor.m_FontSize = FontSize;
-	pCursor.m_Flags = TEXTFLAG_RENDER;
-	pCursor.m_LineWidth = 500.0f - FontSize * 2.0f;
+	SetupTextCursor(Cursor);
 
-	CBubbles bubble(pText, pCursor, time_get());
+	CBubble bubble(pText, Cursor, time_get());
 
 	ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
 	if(Chat()->LineHighlighted(ClientId, pText))
@@ -142,7 +124,7 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 
 	TextRender()->TextColor(Color);
 
-	TextRender()->ColorParsing(pText, &pCursor, Color, &bubble.m_TextContainerIndex);
+	TextRender()->ColorParsing(pText, &Cursor, Color, &bubble.m_TextContainerIndex);
 
 	m_avChatBubbles[ClientId].insert(m_avChatBubbles[ClientId].begin(), bubble);
 
@@ -150,7 +132,7 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
-void CChatBubbles::RemoveBubble(int ClientId, CBubbles Bubble)
+void CChatBubbles::RemoveBubble(int ClientId, CBubble Bubble)
 {
 	for(auto it = m_avChatBubbles[ClientId].begin(); it != m_avChatBubbles[ClientId].end(); ++it)
 	{
@@ -166,12 +148,12 @@ void CChatBubbles::RemoveBubble(int ClientId, CBubbles Bubble)
 
 void CChatBubbles::RenderCurInput(float y)
 {
-	int FontSize = g_Config.m_ClChatBubbleSize;
+	const int FontSize = g_Config.m_ClChatBubbleSize;
 	const char *pText = Chat()->m_Input.GetString();
 	int LocalId = GameClient()->m_Snap.m_LocalClientId;
 	vec2 Position = GameClient()->m_aClients[LocalId].m_RenderPos;
 
-	CTextCursor pCursor;
+	CTextCursor Cursor;
 	STextContainerIndex TextContainerIndex;
 
 	// Create Text at default zoom
@@ -179,11 +161,9 @@ void CChatBubbles::RenderCurInput(float y)
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
 
-	pCursor.SetPosition(vec2(0, 0));
-	pCursor.m_FontSize = FontSize;
-	pCursor.m_Flags = TEXTFLAG_RENDER;
-	pCursor.m_LineWidth = 500.0f - FontSize * 2.0f;
-	TextRender()->CreateOrAppendTextContainer(TextContainerIndex, &pCursor, pText);
+	SetupTextCursor(Cursor);
+
+	TextRender()->CreateOrAppendTextContainer(TextContainerIndex, &Cursor, pText);
 
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 
@@ -214,106 +194,67 @@ void CChatBubbles::RenderCurInput(float y)
 void CChatBubbles::RenderChatBubbles(int ClientId)
 {
 	const float ShowTime = g_Config.m_ClChatBubbleShowTime / 100.0f;
-	int FontSize = g_Config.m_ClChatBubbleSize;
+	const int FontSize = g_Config.m_ClChatBubbleSize;
 	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	float BaseY = Position.y - GetOffset(ClientId) - NameplateOffset;
 
 	if(ClientId == GameClient()->m_Snap.m_LocalClientId)
 		RenderCurInput(BaseY);
 
-	for(CBubbles &aBubble : m_avChatBubbles[ClientId])
+	for(CBubble &Bubble : m_avChatBubbles[ClientId])
 	{
 		float Alpha = 1.0f;
 		if(GameClient()->IsOtherTeam(ClientId))
 			Alpha = g_Config.m_ClShowOthersAlpha / 100.0f;
 
-		Alpha *= GetAlpha(aBubble.m_Time);
+		Alpha *= GetAlpha(Bubble.m_Time);
 
-		if(aBubble.m_Time + time_freq() * ShowTime < time_get())
+		if(Bubble.m_Time + time_freq() * ShowTime < time_get())
 		{
-			RemoveBubble(ClientId, aBubble);
+			RemoveBubble(ClientId, Bubble);
 			continue;
 		}
 
 		if(Alpha <= 0.01f)
 			continue;
 
-		aBubble.m_OffsetY += (aBubble.m_TargetOffsetY - aBubble.m_OffsetY) * 0.05f / 10.0f;
+		//if(!g_Config.m_ClChatBubblePushOut)
+		//	Bubble.m_TargetPushOffset = vec2(0.0f, 0.0f);
 
-		if(!aBubble.m_TextContainerIndex.Valid() || aBubble.m_Cursor.m_FontSize != FontSize)
-		{
-			if(aBubble.m_TextContainerIndex.Valid())
-				TextRender()->DeleteTextContainer(aBubble.m_TextContainerIndex);
+		Bubble.m_OffsetY += (Bubble.m_TargetOffsetY - Bubble.m_OffsetY) * 0.05f / 10.0f;
 
-			CTextCursor Cursor;
-			Cursor.SetPosition(vec2(0, 0));
-			Cursor.m_FontSize = FontSize;
-			Cursor.m_Flags = TEXTFLAG_RENDER;
-			Cursor.m_LineWidth = 500.0f - FontSize * 2.0f;
-			TextRender()->CreateOrAppendTextContainer(aBubble.m_TextContainerIndex, &Cursor, aBubble.m_aText);
-			aBubble.m_Cursor.m_FontSize = FontSize;
-		}
+		Bubble.m_PushOffset.x += (Bubble.m_TargetPushOffset.x - Bubble.m_PushOffset.x) * 0.06f;
+		Bubble.m_PushOffset.y += (Bubble.m_TargetPushOffset.y - Bubble.m_PushOffset.y) * 0.06f;
+
+		SetupTextcontainer(Bubble);
 
 		ColorRGBA BgColor(0.0f, 0.0f, 0.0f, 0.25f * Alpha);
 		ColorRGBA TextColor(1, 1, 1, Alpha);
 		ColorRGBA OutlineColor(0.0f, 0.0f, 0.0f, 0.5f * Alpha);
 
-		if(aBubble.m_TextContainerIndex.Valid())
+		if(Bubble.m_TextContainerIndex.Valid())
 		{
-			STextBoundingBox BoundingBox = TextRender()->GetBoundingBoxTextContainer(aBubble.m_TextContainerIndex);
+			STextBoundingBox BoundingBox = TextRender()->GetBoundingBoxTextContainer(Bubble.m_TextContainerIndex);
 
 			float x = Position.x - (BoundingBox.m_W / 2.0f + g_Config.m_ClChatBubbleSize / 15.0f);
-			float y = BaseY - aBubble.m_OffsetY - BoundingBox.m_H - FontSize;
+			float y = BaseY - Bubble.m_OffsetY - BoundingBox.m_H - FontSize;
 
-			// float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
-			float PushBubble = 0;
+			x += Bubble.m_PushOffset.x;
+			y += Bubble.m_PushOffset.y;
 
-			Graphics()->DrawRect((x - FontSize / 2.0f) + PushBubble, y - FontSize / 2.0f,
+
+			Graphics()->DrawRect((x - FontSize / 2.0f), y - FontSize / 2.0f,
 				BoundingBox.m_W + FontSize * 1.20f, BoundingBox.m_H + FontSize,
 				BgColor, IGraphics::CORNER_ALL, g_Config.m_ClChatBubbleSize / 4.5f);
 
-			TextRender()->RenderTextContainer(aBubble.m_TextContainerIndex, TextColor, OutlineColor, x + PushBubble, y);
+			TextRender()->RenderTextContainer(Bubble.m_TextContainerIndex, TextColor, OutlineColor, x, y);
 		}
 	}
 }
 
-// @qxdFox ToDo:
-// have to store the bubbles position in CBubbles in order to do this properly
-float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
+void CChatBubbles::ShiftBubbles()
 {
-	// if(!g_Config.m_ClChatBubblePushOut)
-	return 0.0f;
-
-	for(int i = 0; i < MAX_CLIENTS; ++i)
-	{
-		if(i == ClientId)
-			continue;
-
-		int FontSize = g_Config.m_ClChatBubbleSize;
-		vec2 Position = GameClient()->m_aClients[i].m_RenderPos;
-		float BaseY = Position.y - GetOffset(i) - NameplateOffset;
-
-		for(auto &aBubble : m_avChatBubbles[i])
-		{
-			if(aBubble.m_TextContainerIndex.Valid())
-			{
-				STextBoundingBox BoundingBox = TextRender()->GetBoundingBoxTextContainer(aBubble.m_TextContainerIndex);
-
-				float Posx = Position.x - (BoundingBox.m_W / 2.0f + g_Config.m_ClChatBubbleSize / 15.0f);
-				float Posy = BaseY - aBubble.m_OffsetY - BoundingBox.m_H - FontSize;
-				float PosW = BoundingBox.m_W + FontSize * 1.20f;
-
-				if(Posy + BoundingBox.m_H + FontSize < Pos.y)
-					continue;
-				if(Posy > Pos.y + BoundingBox.m_H + FontSize)
-					continue;
-
-				if(Posx + PosW >= Pos.x && Pos.x + w >= Posx + PosW)
-					return Posx + PosW - Pos.x;
-			}
-		}
-	}
-	return 0.0f;
+	// @qxdFox: ToDo
 }
 
 float CChatBubbles::GetAlpha(int64_t Time)
@@ -356,6 +297,7 @@ void CChatBubbles::OnRender()
 			continue;
 		if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
 			continue;
+		ShiftBubbles();
 		RenderChatBubbles(ClientId);
 	}
 }
@@ -389,4 +331,34 @@ void CChatBubbles::OnStateChange(int NewState, int OldState)
 void CChatBubbles::OnWindowResize()
 {
 	Reset();
+}
+
+void CChatBubbles::SetupTextCursor(CTextCursor &Cursor)
+{
+	Cursor.SetPosition(vec2(0, 0));
+	Cursor.m_FontSize = g_Config.m_ClChatBubbleSize;
+	Cursor.m_Flags = TEXTFLAG_RENDER;
+	Cursor.m_LineWidth = LineWidth - Cursor.m_FontSize * 2.0f;
+}
+
+void CChatBubbles::SetupTextcontainer(CBubble &Bubble)
+{
+	const int FontSize = g_Config.m_ClChatBubbleSize;
+
+	if(!Bubble.m_TextContainerIndex.Valid() || Bubble.m_Cursor.m_FontSize != FontSize)
+	{
+		if(Bubble.m_TextContainerIndex.Valid())
+		{
+			TextRender()->DeleteTextContainer(Bubble.m_TextContainerIndex);
+			Bubble.m_TextContainerIndex = STextContainerIndex();
+		}
+
+		CTextCursor Cursor;
+		SetupTextCursor(Cursor);
+
+		TextRender()->CreateOrAppendTextContainer(Bubble.m_TextContainerIndex, &Cursor, Bubble.m_aText);
+		Bubble.m_Cursor.m_FontSize = FontSize;
+
+		TextRender()->ColorParsing(Bubble.m_aText, &Cursor, ColorRGBA(1.0f, 1.0f, 1.0f), &Bubble.m_TextContainerIndex);
+	}
 }

@@ -13,12 +13,9 @@
 #include <cstdint>
 #include <vector>
 
-constexpr float NameplateOffset = 10.0f;
-constexpr float CharacterMinOffset = 40.0f;
-constexpr float MarginBetween = 1.0f;
-
-struct CBubbles
+class CBubble
 {
+public:
 	char m_aText[MAX_LINE_LENGTH] = "";
 	int64_t m_Time = 0;
 
@@ -28,7 +25,10 @@ struct CBubbles
 	float m_OffsetY = 0.0f;
 	float m_TargetOffsetY = 0.0f;
 
-	CBubbles(const char *pText, CTextCursor pCursor, int64_t pTime)
+	vec2 m_PushOffset = vec2(0, 0);
+	vec2 m_TargetPushOffset = vec2(0, 0);
+
+	CBubble(const char *pText, CTextCursor pCursor, int64_t pTime)
 	{
 		str_copy(m_aText, pText, sizeof(m_aText));
 		m_Cursor = pCursor;
@@ -37,7 +37,7 @@ struct CBubbles
 		m_TargetOffsetY = 0.0f;
 	}
 
-	bool operator==(const CBubbles &Other) const
+	bool operator==(const CBubble &Other) const
 	{
 		bool MatchText = str_comp(m_aText, Other.m_aText) == 0 && str_comp(m_aText, "") != 0;
 		bool MatchTime = m_Time == Other.m_Time && m_Time > 0;
@@ -49,7 +49,7 @@ class CChatBubbles : public CComponent
 {
 	CChat *Chat() const;
 
-	std::vector<CBubbles> m_avChatBubbles[MAX_CLIENTS];
+	std::vector<CBubble> m_avChatBubbles[MAX_CLIENTS];
 
 	void RenderCurInput(float y);
 	void RenderChatBubbles(int ClientId);
@@ -60,13 +60,16 @@ class CChatBubbles : public CComponent
 	void UpdateBubbleOffsets(int ClientId, float InputBubbleHeight = 0.0f);
 
 	void AddBubble(int ClientId, int Team, const char *pText);
-	void RemoveBubble(int ClientId, CBubbles Bubble);
+	void RemoveBubble(int ClientId, CBubble Bubble);
 
-	float ShiftBubbles(int ClientId, vec2 Pos, float w);
+	void ShiftBubbles();
 
 	int m_UseChatBubbles = 0;
 
 	void Reset();
+
+	void SetupTextCursor(CTextCursor &Cursor);
+	void SetupTextcontainer(CBubble &Bubble);
 
 public:
 	virtual void OnMessage(int MsgType, void *pRawMsg) override;
