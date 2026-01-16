@@ -1,6 +1,21 @@
-var InFreeze = state("in_freeze")
 
-if(InFreeze) {
+def SlashPause {
+    var InFreeze = state("in_freeze")
+    var GameMode = state("game_mode")
+    var Community = state("community")
+
+    if(GameMode == "Gores" || GameMode == "gores" || Community == "foxnet") {
+        if(InFreeze) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return true;
+    }
+}
+
+if(SlashPause()) {
     exec("say /pause");
 } else {
     exec("say /spec");
