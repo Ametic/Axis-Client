@@ -3340,28 +3340,24 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					DiscordRpcSet = true;
 				}
 				if(DiscordRPC != g_Config.m_ClDiscordRPC)
-				{
-					m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
 					DiscordRPC = g_Config.m_ClDiscordRPC;
-				}
 
 				if(g_Config.m_ClDiscordRPC)
 				{
 					if(DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
 					{
-						// Ratelimit this so it doesn't get changed instantly every time you edit this
 						DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
-						m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
+						Client()->DiscordRPCchange();
 					}
 					else if(str_comp(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
 					{
 						str_copy(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-						m_RPC_Ratelimit = time_get() + time_freq() * 2.5f;
+						Client()->DiscordRPCchange();
 					}
 					else if(str_comp(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
 					{
 						str_copy(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
-						m_RPC_Ratelimit = time_get() + time_freq() * 2.5f;
+						Client()->DiscordRPCchange();
 					}
 				}
 

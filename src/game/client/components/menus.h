@@ -816,24 +816,6 @@ private:
 	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
 
 	// E-Client
-public:
-	int m_MenusRainbowColor;
-	int64_t m_RPC_Ratelimit;
-
-	/*
-	 *
-	 * If Draggable = 1 the Tee can be dragged to anywhere on the screen
-	 * If 2 its limited to the size of the big menu
-	 * If 3 its limited to the size of the settings menu (ToDo)
-	 *
-	 */
-
-	vec2 TeeEyeDirection(vec2 Pos);
-
-	void RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true);
-	void RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true);
-	bool m_ResetTeePos;
-
 	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsEntity(CUIRect MainView);
 	void RenderSettingsEClient(CUIRect MainView);
@@ -848,16 +830,7 @@ public:
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();
-	int DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake = false, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
-	void RenderFontIcon(const CUIRect Rect, const char *pText, float Size, int Align);
 
-	int DoButtonNoRect_FontIcon(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners = IGraphics::CORNER_ALL);
-	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
-
-	bool DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags = 0u, const char *pSuffix = "");
-	bool DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix);
-	bool DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CButtonContainer &ClearButton, const char *pName, const char *pCommand);
-	
 	// Warlist
 	class CWarlistCache
 	{
@@ -930,7 +903,6 @@ public:
 		}
 	};
 	
-	int64_t m_ScheduledUpdate = 0;
 	std::vector<CWarlistCache> m_vWarlistCache;
 	const CWarlistCache *m_pRemoveEntry = nullptr;
 
@@ -945,8 +917,37 @@ public:
 		return Count;
 	}
 
-	void UpdateWarlistCache();
 
 	void RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion);
+
+public:
+	int DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake = false, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
+	void RenderFontIcon(const CUIRect Rect, const char *pText, float Size, int Align);
+
+	int DoButtonNoRect_FontIcon(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners = IGraphics::CORNER_ALL);
+	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
+
+	bool DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags = 0u, const char *pSuffix = "");
+	bool DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix);
+	bool DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CButtonContainer &ClearButton, const char *pName, const char *pCommand);
+	
+
+	void UpdateWarlistCache();
+
+	int64_t m_ScheduledUpdate = 0;
+	int m_MenusRainbowColor;
+
+	/*
+	 *
+	 * If Draggable = 1 the Tee can be dragged to anywhere on the screen
+	 * If 2 its limited to the size of the big menu
+	 * If 3 its limited to the size of the settings menu (ToDo)
+	 *
+	 */
+	vec2 TeeEyeDirection(vec2 Pos);
+
+	void RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true);
+	void RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true);
+	bool m_ResetTeePos;
 };
 #endif

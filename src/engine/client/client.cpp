@@ -477,7 +477,6 @@ void CClient::DiscordRPCchange()
 	{
 		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
 	}
-	dbg_msg("E-Client", "Discord RPC reloaded");
 }
 
 // called when the map is loaded and we should init for a new round

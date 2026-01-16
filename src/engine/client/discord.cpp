@@ -30,6 +30,7 @@ class CDiscord : public IDiscord
 {
 	DiscordActivity m_Activity;
 	bool m_UpdateActivity = false;
+	int64_t m_LastActivityUpdate = 0;
 
 	IDiscordCore *m_pCore;
 	IDiscordActivityEvents m_ActivityEvents;
@@ -100,8 +101,16 @@ public:
 
 		if(m_pCore && m_Enabled)
 		{
+			// update every 5 seconds, rate limit is 5 updates per 20 seconds
+			if(m_UpdateActivity && time_get() > m_LastActivityUpdate + time_freq() * 5)
+			{
+				m_UpdateActivity = false;
+				m_LastActivityUpdate = time_get();
+
+				m_pActivityManager->update_activity(m_pActivityManager, &m_Activity, 0, 0);
+			}
+
 			m_pCore->run_callbacks(m_pCore);
-			m_pActivityManager->update_activity(m_pActivityManager, &m_Activity, 0, 0);
 		}
 	}
 	void ClearGameInfo(const char *pDetail) override

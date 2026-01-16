@@ -517,12 +517,6 @@ void CEClient::OnRender()
 {
 	UpdateRainbow();
 
-	if(GameClient()->m_Menus.m_RPC_Ratelimit < time_get() && (GameClient()->m_Menus.m_RPC_Ratelimit - time_get()) / time_freq() > -1)
-	{
-		Client()->DiscordRPCchange();
-		GameClient()->m_Menus.m_RPC_Ratelimit = -2;
-	}
-
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;
 
