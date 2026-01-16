@@ -2186,6 +2186,8 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
 )
 
 set_src(ENGINE_EXTERNAL GLOB src/engine/external
+  mumble.cpp
+  mumble.h
   regex.cpp
   regex.h
   spt.cpp
