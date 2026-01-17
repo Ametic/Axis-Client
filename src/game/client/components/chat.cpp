@@ -1551,26 +1551,23 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 					if(GameClient()->m_WarList.FindWarTypeWithName(aName) == 2)
 					{
-						str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", aOldName, aName);
+						str_format(aBuf, sizeof(aBuf), "'%s' changed their name to a Teammates ['%s']", aOldName, aName);
 						if(g_Config.m_ClAutoAddOnNameChange == 2)
 							GameClient()->ClientMessage(aBuf);
 					}
-					else
+					// Skip Wartype None
+					for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 					{
-						// Skip Wartype None
-						for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
-						{
-							if(IsFlagSet(g_Config.m_ClAutoAddFlags, WarlistType))
-								continue;
-							const char *pWarName = GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName;
+						if(IsFlagSet(g_Config.m_ClAutoAddFlags, WarlistType))
+							continue;
+						const char *pWarName = GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName;
 							
-							if(Cache.m_WarGroupMatches[WarlistType])
-							{
-								GameClient()->m_WarList.AddWarEntry(aName, "", aReason, pWarName, true);
-								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", aName, pWarName);
-								if(g_Config.m_ClAutoAddOnNameChange == 2)
-									GameClient()->ClientMessage(aBuf);
-							}
+						if(Cache.m_WarGroupMatches[WarlistType])
+						{
+							GameClient()->m_WarList.AddWarEntry(aName, "", aReason, pWarName, true);
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", aName, pWarName);
+							if(g_Config.m_ClAutoAddOnNameChange == 2)
+								GameClient()->ClientMessage(aBuf);
 						}
 					}
 					if(Cache.IsMuted)
