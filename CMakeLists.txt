@@ -2505,6 +2505,8 @@ if(CLIENT)
     components/tclient/bindwheel.h
     components/tclient/custom_communities.cpp
     components/tclient/custom_communities.h
+    components/tclient/mumble.cpp
+    components/tclient/mumble.h
     components/tclient/outlines.cpp
     components/tclient/outlines.h
     components/tclient/player_indicator.cpp

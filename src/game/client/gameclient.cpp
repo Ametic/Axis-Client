@@ -142,6 +142,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Players,
 					      &m_MapLayersForeground,
 					      &m_Outlines, // TClient
+					      &m_Mumble, // TClient
 					      &m_ChatBubbles, // E-Client
 					      &m_Particles.m_RenderExplosions,
 					      &m_NamePlates,

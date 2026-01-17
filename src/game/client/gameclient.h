@@ -121,6 +121,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include "components/tclient/mumble.h"
 
 class CGameInfo
 {
@@ -251,6 +252,7 @@ public:
 	CBgDraw m_BgDraw;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;
+	CMumble m_Mumble;
 	CRainbow m_Rainbow;
 	CSkinProfiles m_SkinProfiles;
 	CStatusBar m_StatusBar;
