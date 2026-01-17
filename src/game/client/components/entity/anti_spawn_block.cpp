@@ -23,7 +23,7 @@ void CAntiSpawnBlock::Reset(int State)
 
 void CAntiSpawnBlock::OnRender()
 {
-	int Local = GameClient()->m_Snap.m_LocalClientId;
+	int LocalId = GameClient()->m_Snap.m_LocalClientId;
 
 	if(!g_Config.m_ClAntiSpawnBlock)
 	{
@@ -46,7 +46,7 @@ void CAntiSpawnBlock::OnRender()
 
 	if(GameClient()->RaceHelper()->IsNearStart(Pos, 2))
 	{
-		if(GameClient()->m_Teams.Team(Local) != 0 && m_State == STATE_IN_TEAM)
+		if(GameClient()->m_Teams.Team(LocalId) != 0 && m_State == STATE_IN_TEAM)
 		{
 			GameClient()->m_Chat.SendChat(0, "/team 0");
 			m_State = STATE_TEAM_ZERO;
@@ -54,12 +54,16 @@ void CAntiSpawnBlock::OnRender()
 	}
 	else if(m_State == STATE_NONE)
 	{
+		if(GameClient()->m_Teams.Team(LocalId) != 0)
+		{
+			m_State = STATE_IN_TEAM;
+			return;
+		}
+
 		if(m_Delay < time_get())
 		{
 			GameClient()->m_Chat.SendChat(0, "/mc;team -1;lock"); // multi-command
 			m_Delay = time_get() + time_freq() * 2.5f;
 		}
-		if(GameClient()->m_Teams.Team(Local) != 0)
-			m_State = STATE_IN_TEAM;
 	}
 }

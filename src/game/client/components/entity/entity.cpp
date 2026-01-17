@@ -522,7 +522,6 @@ void CEClient::OnRender()
 
 	UpdateRainbow();
 	GoresMode();
-
 	if(m_SentKill)
 	{
 		GameClient()->m_AntiSpawnBlock.m_SentKill = true;
