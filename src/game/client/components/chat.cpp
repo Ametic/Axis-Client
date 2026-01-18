@@ -1542,15 +1542,16 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 				if(PlayerCid >= 0)
 				{
+					const CWarDataCache Cache = GameClient()->m_WarList.GetWarData(PlayerCid);
+					const CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(aNewName);
+					const CWarEntry *OldEntry = GameClient()->m_WarList.FindWarEntryWithName(aOldName);
+
+					if(ExistingEntry && OldEntry && ExistingEntry->m_pWarType == OldEntry->m_pWarType && str_comp(ExistingEntry->m_aName, aNewName) == 0)
+						return false; // Already exists with the new name
+
 					char aBuf[128];
-					CWarDataCache Cache = GameClient()->m_WarList.GetWarData(PlayerCid);
-					
 					char aReason[128] = "";
 					str_copy(aReason, aOldName);
-
-					CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(aNewName);
-					CWarEntry *OldEntry = GameClient()->m_WarList.FindWarEntryWithName(aOldName);
-
 					if(OldEntry && OldEntry->m_aReason[0] != '\0')
 						str_copy(aReason, OldEntry->m_aReason);
 
