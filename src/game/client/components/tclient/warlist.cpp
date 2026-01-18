@@ -518,28 +518,28 @@ void CWarList::RemoveWarType(const char *pType)
 	}
 }
 
-int CWarList::FindWarTypeWithName(const char *pName)
+CWarEntry *CWarList::FindWarEntryWithName(const char *pName)
 {
 	for(CWarEntry &Entry : m_vWarEntries)
 	{
 		if(str_comp(pName, Entry.m_aName) == 0 && str_comp(Entry.m_aName, "") != 0)
 		{
-			return Entry.m_pWarType->m_Index;
+			return &Entry;
 		}
 	}
-	return 0;
+	return nullptr;
 }
 
-int CWarList::FindWarTypeWithClan(const char *pClan)
+CWarEntry *CWarList::FindWarEntryWithClan(const char *pClan)
 {
 	for(CWarEntry &Entry : m_vWarEntries)
 	{
 		if(str_comp(pClan, Entry.m_aClan) == 0 && str_comp(Entry.m_aClan, "") != 0)
 		{
-			return Entry.m_pWarType->m_Index;
+			return &Entry;
 		}
 	}
-	return 0;
+	return nullptr;
 }
 
 char *CWarList::GetWarTypeName(int ClientId)

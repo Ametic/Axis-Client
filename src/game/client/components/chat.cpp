@@ -1515,29 +1515,28 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 		{
 			if(str_find_nocase(pLine, "' changed name to '"))
 			{
-				char aName[MAX_NAME_LENGTH];
+				char aNewName[MAX_NAME_LENGTH];
 				char aOldName[MAX_NAME_LENGTH];
 				{
 					const char *pName = str_find_nocase(pLine, " '");
 					const char *pOldName = str_find_nocase(pLine, "'");
 					const char *pNameLength = str_find_nocase(pLine, "' ");
 
-					int n = str_length(pName);
-					std::string s(pName);
-					s.erase(s.begin() + n - 1);
-					s.erase(s.begin());
-					s.erase(s.begin());
+					int Length = str_length(pName);
+					std::string sNewName(pName);
+					sNewName.erase(sNewName.begin() + Length - 1);
+					sNewName.erase(sNewName.begin());
+					sNewName.erase(sNewName.begin());
 
-					strcpy(aName, s.c_str());
+					str_copy(aNewName, sNewName.c_str(), sizeof(aNewName));
 
 					int nLength = str_length(pOldName) - str_length(pNameLength);
-					std::string oName(pOldName);
-					oName.erase(nLength);
-					oName.erase(oName.begin());
+					std::string sOldName(pOldName);
+					sOldName.erase(nLength);
+					sOldName.erase(sOldName.begin());
 
-					strcpy(aOldName, oName.c_str());
+					str_copy(aOldName, sOldName.c_str(), sizeof(aOldName));
 				}
-
 
 				int PlayerCid = GameClient()->GetClientId(aOldName);
 
@@ -1549,9 +1548,15 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					char aReason[128] = "";
 					str_copy(aReason, aOldName);
 
-					if(GameClient()->m_WarList.FindWarTypeWithName(aName) == 2)
+					CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(aNewName);
+					CWarEntry *OldEntry = GameClient()->m_WarList.FindWarEntryWithName(aOldName);
+
+					if(OldEntry && OldEntry->m_aReason[0] != '\0')
+						str_copy(aReason, OldEntry->m_aReason);
+
+					if(ExistingEntry && ExistingEntry->m_pWarType->m_Index == 2)
 					{
-						str_format(aBuf, sizeof(aBuf), "'%s' changed their name to a Teammates ['%s']", aOldName, aName);
+						str_format(aBuf, sizeof(aBuf), "'%s' changed their name to a Teammates ['%s']", aOldName, aNewName);
 						if(g_Config.m_ClAutoAddOnNameChange == 2)
 							GameClient()->ClientMessage(aBuf);
 					}
@@ -1564,16 +1569,16 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 							
 						if(Cache.m_WarGroupMatches[WarlistType])
 						{
-							GameClient()->m_WarList.AddWarEntry(aName, "", aReason, pWarName, true);
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", aName, pWarName);
+							GameClient()->m_WarList.AddWarEntry(aNewName, "", aReason, pWarName, true);
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", aNewName, pWarName);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->ClientMessage(aBuf);
 						}
 					}
 					if(Cache.IsMuted)
 					{
-						GameClient()->m_WarList.AddMute(aName, true, true);
-						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", aName);
+						GameClient()->m_WarList.AddMute(aNewName, true, true);
+						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", aNewName);
 						if(g_Config.m_ClAutoAddOnNameChange == 2)
 							GameClient()->ClientMessage(aBuf);
 					}

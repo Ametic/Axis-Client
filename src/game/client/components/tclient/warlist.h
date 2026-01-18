@@ -226,8 +226,8 @@ public:
 	void AddMute(const char *pName, bool Quiet, bool Temp = false);
 	void RemoveMute(const char *pName, bool Silent = false);
 
-	int FindWarTypeWithName(const char *pName);
-	int FindWarTypeWithClan(const char *pClan);
+	CWarEntry *FindWarEntryWithName(const char *pName);
+	CWarEntry *FindWarEntryWithClan(const char *pClan);
 	char *GetWarTypeName(int ClientId);
 
 	void AddWarEntry(const char *pName, const char *pClan, const char *pReason, const char *pType, bool Temp = false);
