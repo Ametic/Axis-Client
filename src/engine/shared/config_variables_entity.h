@@ -375,6 +375,10 @@ MACRO_CONFIG_INT(TcBgDrawAutoSaveLoad, ec_bg_draw_auto_save_load, 1, 0, 1, CFGFL
 // Timer
 MACRO_CONFIG_INT(TcShowLocalTimeSeconds, tc_show_local_time_seconds, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show local time in seconds")
 
+// Weapon in Freeze
+MACRO_CONFIG_INT(ClRenderWeaponsInFreeze, ec_render_weapons_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders players' weapons while frozen")
+
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 

@@ -24,6 +24,7 @@
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
 #include <game/mapitems.h>
+#include <base/log.h>
 
 static float CalculateHandAngle(vec2 Dir, float AngleOffset)
 {
@@ -634,7 +635,14 @@ void CPlayers::RenderPlayer(
 	// draw gun
 	if(Player.m_Weapon >= 0)
 	{
-		if(!(RenderInfo.m_TeeRenderFlags & TEE_NO_WEAPON))
+		bool FlagNoWeapon = RenderInfo.m_TeeRenderFlags & TEE_NO_WEAPON;
+		bool RenderWeapon = !FlagNoWeapon || g_Config.m_ClRenderWeaponsInFreeze;
+
+		float OriginalAlpha = Alpha;
+		if(RenderWeapon && FlagNoWeapon)
+			Alpha *= 0.2f;
+
+		if(RenderWeapon)
 		{
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 
@@ -814,6 +822,8 @@ void CPlayers::RenderPlayer(
 			case WEAPON_GRENADE: RenderHand(&RenderInfo, WeaponPosition, Direction, -pi / 2.0f, vec2(-4.0f, 7.0f), Alpha); break;
 			}
 		}
+
+		Alpha = OriginalAlpha;
 	}
 
 	// render the "shadow" tee
