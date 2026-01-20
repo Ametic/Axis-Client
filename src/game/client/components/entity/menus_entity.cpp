@@ -1680,6 +1680,29 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		CUIRect TypeRect, DeleteButton, HideButton;
 		Item.m_Rect.Margin(0.0f, &TypeRect);
 
+		if(Ui()->ActiveItem() == &s_vTypeItemIds[i])
+		{
+			// If dragging up/down the list, swap war types
+			if(Ui()->MouseButton(0))
+			{
+				int SwapIndex = -1;
+				if(Ui()->MouseY() < Item.m_Rect.y)
+					SwapIndex = i - 1;
+				else if(Ui()->MouseY() > Item.m_Rect.y + Item.m_Rect.h)
+					SwapIndex = i + 1; 
+				if(SwapIndex >= 0 && SwapIndex < (int)GameClient()->m_WarList.m_WarTypes.size())
+				{
+					CWarType *pSwapType = GameClient()->m_WarList.m_WarTypes[SwapIndex];
+					CWarType *pThisType = GameClient()->m_WarList.m_WarTypes[i];
+					if(pSwapType->m_Removable && pThisType->m_Removable)
+					{
+						std::swap(GameClient()->m_WarList.m_WarTypes[i], GameClient()->m_WarList.m_WarTypes[SwapIndex]);
+						Ui()->SetActiveItem(&s_vTypeItemIds[SwapIndex]);
+					}
+				}
+			}
+		}
+
 		if(pType->m_Removable)
 		{
 			TypeRect.VSplitRight(20.0f, &TypeRect, &DeleteButton);
