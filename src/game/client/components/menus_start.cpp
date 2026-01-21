@@ -187,7 +187,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
 	if(g_Config.m_EcUnreadNews)
 		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
-	if(GameClient()->m_Menus.DoButton_Menu(&s_EClientVer, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, Color, 11.0f))
+	if(GameClient()->m_Menus.DoButton_Menu(&s_EClientVer, Localize(CLIENT_NAME " v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, Color, 11.0f))
 	{
 		NewPage = CMenus::PAGE_ECLIENTNEWS;
 		g_Config.m_EcUnreadNews = false;
@@ -286,7 +286,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	if(g_Config.m_ClInformUpdate &&str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0)
 	{
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), Localize("E-Client v%s is out!"), GameClient()->m_EntityInfo.m_aVersionStr);
+		str_format(aBuf, sizeof(aBuf), Localize(CLIENT_NAME " v%s is out!"), GameClient()->m_EntityInfo.m_aVersionStr);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_MC);
 		CUIRect VersionButton;
