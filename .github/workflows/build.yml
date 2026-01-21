@@ -363,7 +363,7 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ddnet-android
+        name: E-Client-android
         path: artifacts
 
   build-emscripten:
@@ -424,5 +424,5 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ddnet-emscripten
+        name: E-Client-emscripten
         path: artifacts
