@@ -972,6 +972,8 @@ public:
 	void ResetMultiView();
 	int FindFirstMultiViewId();
 	void CleanMultiViewId(int ClientId);
+	int m_MapBestTimeSeconds;
+	int m_MapBestTimeMillis;
 
 	bool m_CanReceivePoints;
 

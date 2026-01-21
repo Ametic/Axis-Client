@@ -78,7 +78,6 @@ void CHud::OnReset()
 	m_FinishTimeLastReceivedTick = 0;
 	m_TimeCpLastReceivedTick = 0;
 	m_ShowFinishTime = false;
-	m_ServerRecord = -1.0f;
 	m_aPlayerRecord[0] = -1.0f;
 	m_aPlayerRecord[1] = -1.0f;
 	m_aPlayerSpeed[0] = 0;
@@ -1776,7 +1775,7 @@ void CHud::OnMessage(int MsgType, void *pRawMsg)
 		}
 		else if(MsgType == NETMSGTYPE_SV_RECORD || GameClient()->m_GameInfo.m_RaceRecordMessage)
 		{
-			m_ServerRecord = (float)pMsg->m_ServerTimeBest / 100;
+			// ignore m_ServerTimeBest, it's handled by the game client
 			m_aPlayerRecord[g_Config.m_ClDummy] = (float)pMsg->m_PlayerTimeBest / 100;
 		}
 	}
@@ -1879,25 +1878,185 @@ void CHud::RenderDDRaceEffects()
 
 void CHud::RenderRecord()
 {
-	if(m_ServerRecord > 0.0f)
+	if(GameClient()->m_MapBestTimeSeconds != FinishTime::UNSET && GameClient()->m_MapBestTimeSeconds != FinishTime::NOT_FINISHED_MILLIS)
 	{
 		char aBuf[64];
 		TextRender()->Text(5, 75, 6, Localize("Server best:"), -1.0f);
 		char aTime[32];
-		str_time_float(m_ServerRecord, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
-		str_format(aBuf, sizeof(aBuf), "%s%s", m_ServerRecord > 3600 ? "" : "   ", aTime);
+		int64_t TimeCentiseconds = static_cast<int64_t>(GameClient()->m_MapBestTimeSeconds) * 100 + static_cast<int64_t>(GameClient()->m_MapBestTimeMillis) / 10;
+		str_time(TimeCentiseconds, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+		str_format(aBuf, sizeof(aBuf), "%s%s", GameClient()->m_MapBestTimeSeconds > 3600 ? "" : "   ", aTime);
 		TextRender()->Text(53, 75, 6, aBuf, -1.0f);
 	}
 
-	const float PlayerRecord = m_aPlayerRecord[g_Config.m_ClDummy];
-	if(PlayerRecord > 0.0f)
+	if(GameClient()->m_ReceivedDDNetPlayerFinishTimes)
 	{
+		const int PlayerTimeSeconds = GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_FinishTimeSeconds;
+		if(PlayerTimeSeconds != FinishTime::NOT_FINISHED_MILLIS)
+		{
+			char aBuf[64];
+			TextRender()->Text(5, 82, 6, Localize("Personal best:"), -1.0f);
+			char aTime[32];
+			const int PlayerTimeMillis = GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_FinishTimeMillis;
+			int64_t TimeCentiseconds = static_cast<int64_t>(PlayerTimeSeconds) * 100 + static_cast<int64_t>(PlayerTimeMillis) / 10;
+			str_time(TimeCentiseconds, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+			str_format(aBuf, sizeof(aBuf), "%s%s", PlayerTimeSeconds > 3600 ? "" : "   ", aTime);
+			TextRender()->Text(53, 82, 6, aBuf, -1.0f);
+		}
+	}
+	else
+	{
+		const float PlayerRecord = m_aPlayerRecord[g_Config.m_ClDummy];
+		if(PlayerRecord > 0.0f)
+		{
+			char aBuf[64];
+			TextRender()->Text(5, 82, 6, Localize("Personal best:"), -1.0f);
+			char aTime[32];
+			str_time_float(PlayerRecord, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+			str_format(aBuf, sizeof(aBuf), "%s%s", PlayerRecord > 3600 ? "" : "   ", aTime);
+			TextRender()->Text(53, 82, 6, aBuf, -1.0f);
+		}
+	}
+}
+
+void CHud::FreezeHelpers()
+{
+	// render team in freeze text and last notify
+	if((g_Config.m_ClShowFrozenText > 0 || g_Config.m_ClShowFrozenHud > 0 || g_Config.m_ClNotifyWhenLast) && GameClient()->m_GameInfo.m_EntitiesDDRace)
+	{
+		int NumInTeam = 0;
+		int NumFrozen = 0;
+		int LocalTeamID = GameClient()->m_Snap.m_SpecInfo.m_Active == 1 && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId != -1 ?
+					  GameClient()->m_Teams.Team(GameClient()->m_Snap.m_SpecInfo.m_SpectatorId) :
+					  GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId);
+
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(!GameClient()->m_Snap.m_apPlayerInfos[i])
+				continue;
+
+			if(GameClient()->m_Teams.Team(i) == LocalTeamID)
+			{
+				NumInTeam++;
+				if(GameClient()->m_aClients[i].m_FreezeEnd > 0 || GameClient()->m_aClients[i].m_DeepFrozen)
+					NumFrozen++;
+			}
+		}
+
+		// Notify when last
+		if(g_Config.m_ClNotifyWhenLast)
+		{
+			if(NumInTeam > 1 && NumInTeam - NumFrozen == 1)
+			{
+				char aBuf[64];
+				str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClNotifyWhenLastText);
+				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClNotifyWhenLastColor)));
+				TextRender()->Text(170, 4, 14, aBuf, -1.0f);
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+			}
+		}
+		// Show freeze text
 		char aBuf[64];
-		TextRender()->Text(5, 82, 6, Localize("Personal best:"), -1.0f);
-		char aTime[32];
-		str_time_float(PlayerRecord, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
-		str_format(aBuf, sizeof(aBuf), "%s%s", PlayerRecord > 3600 ? "" : "   ", aTime);
-		TextRender()->Text(53, 82, 6, aBuf, -1.0f);
+		if(g_Config.m_ClShowFrozenText == 1)
+			str_format(aBuf, sizeof(aBuf), "%d / %d", NumInTeam - NumFrozen, NumInTeam);
+		else if(g_Config.m_ClShowFrozenText == 2)
+			str_format(aBuf, sizeof(aBuf), "%d / %d", NumFrozen, NumInTeam);
+		if(g_Config.m_ClShowFrozenText > 0)
+			TextRender()->Text(m_Width / 2 - TextRender()->TextWidth(10, aBuf, -1, -1.0f) / 2, 12, 10, aBuf, -1.0f);
+
+		// str_format(aBuf, sizeof(aBuf), "%d", GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_PrevPredicted.m_FreezeEnd);
+		// str_format(aBuf, sizeof(aBuf), "%d", g_Config.m_ClWhatsMyPing);
+		// TextRender()->Text(0, m_Width / 2 - TextRender()->TextWidth(0, 10, aBuf, -1, -1.0f) / 2, 20, 10, aBuf, -1.0f);
+		if(g_Config.m_ClShowFrozenHud > 0 && !GameClient()->m_Scoreboard.IsActive() && !(LocalTeamID == 0 && g_Config.m_ClFrozenHudTeamOnly))
+		{
+			CTeeRenderInfo FreezeInfo;
+			const CSkin *pSkin = GameClient()->m_Skins.Find("x_ninja");
+			FreezeInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
+			FreezeInfo.m_ColorableRenderSkin = pSkin->m_ColorableSkin;
+			FreezeInfo.m_BloodColor = pSkin->m_BloodColor;
+			FreezeInfo.m_SkinMetrics = pSkin->m_Metrics;
+			FreezeInfo.m_ColorBody = ColorRGBA(1, 1, 1);
+			FreezeInfo.m_ColorFeet = ColorRGBA(1, 1, 1);
+			FreezeInfo.m_CustomColoredSkin = false;
+
+			float progressiveOffset = 0.0f;
+			float TeeSize = g_Config.m_ClFrozenHudTeeSize;
+			int MaxTees = (int)(8.3 * (m_Width / m_Height) * 13.0f / TeeSize);
+			if(!g_Config.m_ClShowfps && !g_Config.m_ClShowpred)
+				MaxTees = (int)(9.5 * (m_Width / m_Height) * 13.0f / TeeSize);
+			int MaxRows = g_Config.m_ClFrozenMaxRows;
+			float StartPos = m_Width / 2 + 38.0f * (m_Width / m_Height) / 1.78;
+
+			int TotalRows = std::min(MaxRows, (NumInTeam + MaxTees - 1) / MaxTees);
+			Graphics()->TextureClear();
+			Graphics()->QuadsBegin();
+			Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.4f);
+			Graphics()->DrawRectExt(StartPos - TeeSize / 2, 0.0f, TeeSize * std::min(NumInTeam, MaxTees), TeeSize + 3.0f + (TotalRows - 1) * TeeSize, 5.0f, IGraphics::CORNER_B);
+			Graphics()->QuadsEnd();
+
+			bool Overflow = NumInTeam > MaxTees * MaxRows;
+
+			int NumDisplayed = 0;
+			int NumInRow = 0;
+			int CurrentRow = 0;
+
+			for(int OverflowIndex = 0; OverflowIndex < 1 + Overflow; OverflowIndex++)
+			{
+				for(int i = 0; i < MAX_CLIENTS && NumDisplayed < MaxTees * MaxRows; i++)
+				{
+					if(!GameClient()->m_Snap.m_apPlayerInfos[i])
+						continue;
+					if(GameClient()->m_Teams.Team(i) == LocalTeamID)
+					{
+						bool Frozen = false;
+						CTeeRenderInfo TeeInfo = GameClient()->m_aClients[i].m_RenderInfo;
+						if(GameClient()->m_aClients[i].m_FreezeEnd > 0 || GameClient()->m_aClients[i].m_DeepFrozen)
+						{
+							if(!g_Config.m_ClShowFrozenHudSkins)
+								TeeInfo = FreezeInfo;
+							Frozen = true;
+						}
+
+						if(Overflow && Frozen && OverflowIndex == 0)
+							continue;
+						if(Overflow && !Frozen && OverflowIndex == 1)
+							continue;
+
+						NumDisplayed++;
+						NumInRow++;
+						if(NumInRow > MaxTees)
+						{
+							NumInRow = 1;
+							progressiveOffset = 0.0f;
+							CurrentRow++;
+						}
+
+						TeeInfo.m_Size = TeeSize;
+						const CAnimState *pIdleState = CAnimState::GetIdle();
+						vec2 OffsetToMid;
+						RenderTools()->GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+						vec2 TeeRenderPos(StartPos + progressiveOffset, TeeSize * (0.7f) + CurrentRow * TeeSize);
+						float Alpha = 1.0f;
+						CNetObj_Character CurChar = GameClient()->m_aClients[i].m_RenderCur;
+						if(g_Config.m_ClShowFrozenHudSkins && Frozen)
+						{
+							Alpha = 0.6f;
+							TeeInfo.m_ColorBody.r *= 0.4;
+							TeeInfo.m_ColorBody.g *= 0.4;
+							TeeInfo.m_ColorBody.b *= 0.4;
+							TeeInfo.m_ColorFeet.r *= 0.4;
+							TeeInfo.m_ColorFeet.g *= 0.4;
+							TeeInfo.m_ColorFeet.b *= 0.4;
+						}
+						if(Frozen)
+							RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_PAIN, vec2(1.0f, 0.0f), TeeRenderPos, Alpha);
+						else
+							RenderTools()->RenderTee(pIdleState, &TeeInfo, CurChar.m_Emote, vec2(1.0f, 0.0f), TeeRenderPos);
+						progressiveOffset += TeeSize;
+					}
+				}
+			}
+		}
 	}
 }
 

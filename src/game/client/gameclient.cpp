@@ -630,9 +630,6 @@ void CGameClient::OnConnected()
 		// snap
 		Client()->Rcon("crashmeplx");
 
-		if(g_Config.m_ClAutoDemoOnConnect)
-			Client()->DemoRecorder_HandleAutoStart();
-
 		m_LocalServer.RconAuthIfPossible();
 	}
 }
@@ -718,6 +715,9 @@ void CGameClient::OnReset()
 	m_IsDummySwapping = false;
 	m_CharOrder.Reset();
 	std::fill(std::begin(m_aSwitchStateTeam), std::end(m_aSwitchStateTeam), -1);
+
+	m_MapBestTimeSeconds = FinishTime::UNSET;
+	m_MapBestTimeMillis = 0;
 
 	// m_MapBugs and m_aTuningList are reset in LoadMapSettings
 
@@ -1252,6 +1252,19 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 		const CNetMsg_Sv_SaveCode *pMsg = (CNetMsg_Sv_SaveCode *)pRawMsg;
 		OnSaveCodeNetMessage(pMsg);
 	}
+	else if(MsgId == NETMSGTYPE_SV_RECORD || MsgId == NETMSGTYPE_SV_RECORDLEGACY)
+	{
+		CNetMsg_Sv_Record *pMsg = static_cast<CNetMsg_Sv_Record *>(pRawMsg);
+		if(pMsg->m_ServerTimeBest > 0)
+		{
+			m_MapBestTimeSeconds = pMsg->m_ServerTimeBest / 100;
+			m_MapBestTimeMillis = (pMsg->m_ServerTimeBest % 100) * 10;
+		}
+		else if(m_MapBestTimeSeconds == FinishTime::UNSET)
+		{
+			// some PvP mods based on DDNet accidentally send a best time of 0, despite having no finished races
+		}
+	}
 }
 
 void CGameClient::OnStateChange(int NewState, int OldState)
@@ -1693,6 +1706,7 @@ void CGameClient::OnNewSnapshot()
 
 	bool FoundGameInfoEx = false;
 	bool GotSwitchStateTeam = false;
+	bool HasUnsetDDNetFinishTimes = false;
 	m_aSwitchStateTeam[g_Config.m_ClDummy] = -1;
 
 	for(auto &Client : m_aClients)
@@ -1785,8 +1799,8 @@ void CGameClient::OnNewSnapshot()
 					m_aClients[Item.m_Id].m_FinishTimeSeconds = pInfo->m_FinishTimeSeconds;
 					m_aClients[Item.m_Id].m_FinishTimeMillis = pInfo->m_FinishTimeMillis;
 
-					if(m_aClients[Item.m_Id].m_FinishTimeSeconds != FinishTime::UNSET)
-						m_ReceivedDDNetPlayerFinishTimes = true;
+					if(m_aClients[Item.m_Id].m_FinishTimeSeconds == FinishTime::UNSET)
+						HasUnsetDDNetFinishTimes = true;
 
 					if(Item.m_Id == m_Snap.m_LocalClientId && (m_aClients[Item.m_Id].m_Paused || m_aClients[Item.m_Id].m_Spec))
 					{
@@ -2025,6 +2039,12 @@ void CGameClient::OnNewSnapshot()
 					m_aSwitchStateTeam[g_Config.m_ClDummy] = -1;
 				GotSwitchStateTeam = true;
 			}
+			else if(Item.m_Type == NETOBJTYPE_MAPBESTTIME)
+			{
+				const CNetObj_MapBestTime *pMapBestTimeData = static_cast<const CNetObj_MapBestTime *>(Item.m_pData);
+				m_MapBestTimeSeconds = pMapBestTimeData->m_MapBestTimeSeconds;
+				m_MapBestTimeMillis = pMapBestTimeData->m_MapBestTimeMillis;
+			}
 		}
 	}
 
@@ -2100,6 +2120,9 @@ void CGameClient::OnNewSnapshot()
 		// update foe state
 		m_aClients[i].m_Foe = !(i == m_Snap.m_LocalClientId || !m_Snap.m_apPlayerInfos[i] || !Foes()->IsFriend(m_aClients[i].m_aName, m_aClients[i].m_aClan, true));
 	}
+
+	// check if we received all finish times
+	m_ReceivedDDNetPlayerFinishTimes = m_ReceivedDDNetPlayer && !HasUnsetDDNetFinishTimes;
 
 	// sort player infos by name
 	mem_copy(m_Snap.m_apInfoByName, m_Snap.m_apPlayerInfos, sizeof(m_Snap.m_apInfoByName));
@@ -5059,7 +5082,7 @@ void CGameClient::LoadMapSettings()
 {
 	IEngineMap *pMap = Kernel()->RequestInterface<IEngineMap>();
 
-	m_MapBugs = CMapBugs::Create(Client()->GetCurrentMap(), pMap->MapSize(), pMap->Sha256());
+	m_MapBugs = CMapBugs::Create(Client()->GetCurrentMap(), pMap->Size(), pMap->Sha256());
 
 	// Reset Tunezones
 	for(int TuneZone = 0; TuneZone < TuneZone::NUM; TuneZone++)
