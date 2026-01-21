@@ -59,16 +59,15 @@ void CEntityInfo::ResetEClientInfoTask()
 
 void CEntityInfo::FetchEClientInfo()
 {
-    if(m_pEClientInfoTask && !m_pEClientInfoTask->Done())
-        return;
-    const char *aUrl = ECLIENT_INFO_URL[g_Config.m_ClInfoUrlType];
+	if(m_pEClientInfoTask && !m_pEClientInfoTask->Done())
+		return;
+	const char *aUrl = ECLIENT_INFO_URL[g_Config.m_ClInfoUrlType];
 
-    m_pEClientInfoTask = HttpGetFile(aUrl, Storage(), ECLIENT_INFO_FILE, IStorage::TYPE_SAVE);
-    m_pEClientInfoTask->Timeout(CTimeout{10000, 0, 500, 10});
-    m_pEClientInfoTask->IpResolve(IPRESOLVE::V4);
-    m_pEClientInfoTask->ExpectSha256(SHA256_ZEROED);
-    m_pEClientInfoTask->SkipByFileTime(false);
-    Http()->Run(m_pEClientInfoTask);
+	m_pEClientInfoTask = HttpGetFile(aUrl, Storage(), ECLIENT_INFO_FILE, IStorage::TYPE_SAVE);
+	m_pEClientInfoTask->Timeout(CTimeout{10000, 0, 500, 10});
+	m_pEClientInfoTask->IpResolve(IPRESOLVE::V4);
+	m_pEClientInfoTask->SkipByFileTime(false);
+	Http()->Run(m_pEClientInfoTask);
 }
 
 typedef std::tuple<int, int, int> EcVersion;
