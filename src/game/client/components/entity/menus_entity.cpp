@@ -1138,11 +1138,16 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, Localize("Use left mouse to select"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabel(&Label, "Use left mouse to select", 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, Localize("Use right mouse to swap with selected"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabel(&Label, "Use right mouse to swap with selected", 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, Localize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabel(&Label, "Use middle mouse select without copy", 14.0f, TEXTALIGN_ML);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, "To use the name of the target player do \"%s\"", 14.0f, TEXTALIGN_ML);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, "To get the Client Id do \"%d\"", 14.0f, TEXTALIGN_ML);
 
 	// RenderTee
 	{
