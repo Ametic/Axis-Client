@@ -14,13 +14,13 @@ public:
 		STATE_TEAM_ZERO,
 	};
 
-	bool m_SentKill;
 	int m_State;
 
 	void Reset(int State = -1);
 
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
+	virtual void OnSelfDeath() override { Reset(); }
 };
 
 #endif

@@ -74,6 +74,7 @@
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
+#include "components/entity/map_overview.h"
 #include "components/entity/quick_actions.h"
 
 // Tater
@@ -82,6 +83,7 @@
 #include "components/tclient/bindchat.h"
 #include "components/tclient/bindwheel.h"
 #include "components/tclient/custom_communities.h"
+#include "components/tclient/mumble.h"
 #include "components/tclient/outlines.h"
 #include "components/tclient/player_indicator.h"
 #include "components/tclient/rainbow.h"
@@ -121,7 +123,6 @@
 #include <memory>
 #include <optional>
 #include <vector>
-#include "components/tclient/mumble.h"
 
 class CGameInfo
 {
@@ -241,10 +242,11 @@ public:
 	// Entity
 	CEClient m_EClient;
 	CChatBubbles m_ChatBubbles;
-	CQuickActions m_QuickActions;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CEntityInfo m_EntityInfo;
+	CMapOverview m_MapOverview;
+	CQuickActions m_QuickActions;
 
 	// T-Client
 	CBindChat m_Bindchat;
@@ -757,6 +759,7 @@ public:
 
 	int LastRaceTick() const;
 	int CurrentRaceTime() const;
+	bool StartedRace() const { return m_LastRaceTick != -1; }
 
 	bool IsTeamPlay() const { return m_Snap.m_pGameInfoObj && m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS; }
 
@@ -1050,6 +1053,8 @@ public:
 	void SetConnectInfo(const NETADDR *pAddress) override;
 
 	// E-Client
+	void OnSelfDeath() override;
+
 	void OnServerBrowserUpdate() override;
 
 	void ClientMessage(const char *pString) override;
@@ -1060,7 +1065,7 @@ public:
 
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
-	const char *GetClientName(int ClientId) override;
+	const char *GetClientName(int ClientId) override { return m_aClients[ClientId].m_aName; }
 };
 
 ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL);

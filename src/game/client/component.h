@@ -300,6 +300,11 @@ public:
 	{
 		return false;
 	}
+
+	// <E-Client
+	virtual void OnSelfDeath()
+	{
+	}
 };
 
 #endif

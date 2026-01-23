@@ -414,6 +414,8 @@ public:
 	virtual bool CheckNewInput() = 0;
 	virtual void SetConnectInfo(const NETADDR *pAddress) = 0;
 
+	virtual void OnSelfDeath() = 0;
+
 	virtual void OnServerBrowserUpdate() = 0;
 	virtual void ClientMessage(const char *pString) = 0;
 	virtual void OnJoinInfo() = 0;

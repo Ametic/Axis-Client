@@ -153,6 +153,7 @@ void CGameClient::OnConsoleInit()
 					      &m_DamageInd,
 					      &m_PlayerIndicator, // TClient
 					      &m_CustomCommunities, // TClient
+					      &m_MapOverview, // E-Client
 					      &m_Hud,
 					      &m_Spectator,
 					      &m_Emoticon,
@@ -5710,9 +5711,10 @@ int CGameClient::GetClientId(const char *pName)
 	return -1;
 }
 
-const char *CGameClient::GetClientName(int ClientId)
+void CGameClient::OnSelfDeath()
 {
-	return m_aClients[ClientId].m_aName;
+	for(auto &pComponent : m_vpAll)
+		pComponent->OnSelfDeath();
 }
 
 void CGameClient::OnServerBrowserUpdate()

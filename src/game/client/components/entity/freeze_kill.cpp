@@ -36,7 +36,7 @@ void CFreezeKill::OnRender()
 	}
 
 	// Don't render if not race gamemode or in demo
-	if(!GameClient()->m_GameInfo.m_Race || Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() != IClient::STATE_ONLINE)
 	{
 		ResetTimer();
 		return;
@@ -48,7 +48,7 @@ void CFreezeKill::OnRender()
 		return;
 	}
 
-	if(!g_Config.m_ClFreezeKillBeforeStart && !GameClient()->CurrentRaceTime())
+	if(!g_Config.m_ClFreezeKillBeforeStart && !GameClient()->StartedRace())
 	{
 		m_SentFreezeKill = false;
 		ResetTimer();

@@ -378,6 +378,10 @@ MACRO_CONFIG_INT(TcShowLocalTimeSeconds, tc_show_local_time_seconds, 1, 0, 1, CF
 // Weapon in Freeze
 MACRO_CONFIG_INT(ClRenderWeaponsInFreeze, ec_render_weapons_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders players' weapons while frozen")
 
+// Map Overview
+MACRO_CONFIG_INT(ClMapOverview, ec_map_overview, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable map overview")
+MACRO_CONFIG_INT(ClMapOverviewSpectatingOnly, ec_map_overview_spectating_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable map overview only when spectating")
+MACRO_CONFIG_INT(ClMapOverviewOpacity, ec_map_overview_opacity, 15, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Opacity of the map overview")
 
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet

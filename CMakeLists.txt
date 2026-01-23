@@ -2438,6 +2438,8 @@ if(CLIENT)
     components/entity/freeze_kill.h 
     components/entity/info.cpp
     components/entity/info.h
+    components/entity/map_overview.cpp
+    components/entity/map_overview.h 
     components/entity/menus_entity.cpp 
     components/entity/quick_actions.cpp
     components/entity/quick_actions.h

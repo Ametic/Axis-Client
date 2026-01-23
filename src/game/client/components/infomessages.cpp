@@ -15,6 +15,7 @@
 #include <game/client/prediction/entities/character.h>
 #include <game/client/prediction/gameworld.h>
 #include <game/localization.h>
+#include <base/str.h>
 
 static constexpr float ROW_HEIGHT = 46.0f;
 static constexpr float FONT_SIZE = 36.0f;
@@ -148,7 +149,10 @@ void CInfoMessages::CreateTextContainersIfNotCreated(CInfoMsg &InfoMsg)
 		{
 			Color = g_Config.m_ClKillMessageHighlightColor;
 			if(!str_comp(InfoMsg.m_aVictimName, g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName))
-				GameClient()->m_EClient.m_SentKill = true;
+			{
+				// Could be abused by servers
+				GameClient()->OnSelfDeath();
+			}
 		}
 		else
 		{

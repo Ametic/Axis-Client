@@ -18,7 +18,6 @@ void CAntiSpawnBlock::Reset(int State)
 		GameClient()->m_Chat.SendChat(0, "/team 0");
 
 	m_State = STATE_NONE;
-	m_SentKill = false;
 }
 
 void CAntiSpawnBlock::OnRender()
@@ -38,9 +37,6 @@ void CAntiSpawnBlock::OnRender()
 			Reset();
 		return;
 	}
-
-	if(m_SentKill)
-		Reset(STATE_IN_TEAM);
 
 	vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
 

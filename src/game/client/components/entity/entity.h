@@ -62,8 +62,6 @@ class CEClient : public CComponent
 	static void ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 public:
-
-	bool m_SentKill;
 	int m_KillCount;
 
 	void Votekick(const char *pName, const char *pReason);
@@ -134,6 +132,7 @@ private:
 	virtual void OnStateChange(int NewState, int OldState) override;
 	virtual void OnNewSnapshot() override;
 	virtual void OnShutdown() override;
+	virtual void OnSelfDeath() override;
 };
 
 #endif
