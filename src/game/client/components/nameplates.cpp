@@ -1149,6 +1149,9 @@ void CNamePlates::OnRender()
 		// Only render name plates for active characters
 		if(GameClient()->m_Snap.m_aCharacters[i].m_Active)
 		{
+			if(GameClient()->m_aClients[i].m_IsVolleyBall)
+				continue;
+
 			const vec2 RenderPos = GameClient()->m_aClients[i].m_RenderPos;
 			RenderNamePlateGame(RenderPos, pInfo, 1.0f);
 		}

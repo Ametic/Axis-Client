@@ -393,6 +393,22 @@ void CEClient::NotifyOnMove()
 	m_LastPos = LocalPos;
 }
 
+void CEClient::UpdateVolleyball()
+{
+	bool IsVolleyBall = false;
+	if(g_Config.m_EcVolleyBallBetterBall > 0 && g_Config.m_EcVolleyBallBetterBallSkin[0] != '\0')
+	{
+		if(g_Config.m_EcVolleyBallBetterBall > 1)
+			IsVolleyBall = true;
+		else
+			IsVolleyBall = str_startswith_nocase(Client()->GetCurrentMap(), "volleyball");
+	};
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		Client.m_IsVolleyBall = IsVolleyBall && Client.m_DeepFrozen;
+	}
+}
+
 void CEClient::UpdateRainbow()
 {
 	static bool m_RainbowWasOn = false;
@@ -499,6 +515,7 @@ void CEClient::OnInit()
 void CEClient::OnNewSnapshot()
 {
 	NotifyOnMove();
+	UpdateVolleyball();
 }
 
 void CEClient::OnStateChange(int NewState, int OldState)

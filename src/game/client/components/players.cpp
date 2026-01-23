@@ -163,6 +163,10 @@ void CPlayers::RenderHookCollLine(
 	const CNetObj_Character *pPlayerChar,
 	int ClientId)
 {
+	// TClient
+	if(ClientId >= 0 && GameClient()->m_aClients[ClientId].m_IsVolleyBall)
+		return;
+
 	CNetObj_Character Prev;
 	CNetObj_Character Player;
 	Prev = *pPrevChar;
@@ -589,6 +593,44 @@ void CPlayers::RenderPlayer(
 	vec2 Vel = mix(vec2(Prev.m_VelX / 256.0f, Prev.m_VelY / 256.0f), vec2(Player.m_VelX / 256.0f, Player.m_VelY / 256.0f), Intra);
 
 	GameClient()->m_Flow.Add(Position, Vel * 100.0f, 10.0f);
+
+	// TClient
+	if(ClientId >= 0 && GameClient()->m_aClients[ClientId].m_IsVolleyBall)
+	{
+		// Update
+		const float Delta = Client()->IntraGameTickSincePrev(g_Config.m_ClDummy);
+		auto &ClientData = GameClient()->m_aClients[ClientId];
+
+		vec2 TempVel = Vel;
+		TempVel.x *= 0.65f;
+		TempVel.y *= 0.25f;
+
+		ClientData.m_VolleyBallAngle += length(TempVel * Delta * g_Config.m_EcVolleyBallSpinSpeed * 0.00001);
+		if(ClientData.m_VolleyBallAngle < 0.0f)
+			ClientData.m_VolleyBallAngle += 2.0f * pi;
+		else if(ClientData.m_VolleyBallAngle > 2.0f * pi)
+			ClientData.m_VolleyBallAngle -= 2.0f * pi;
+		// Render
+		const CSkin *pSkin = GameClient()->m_Skins.Find(g_Config.m_EcVolleyBallBetterBallSkin);
+		if(!pSkin)
+			return;
+		const float Size = pRenderInfo->m_Size * 1.2f;
+		Graphics()->TextureSet(pSkin->m_OriginalSkin.m_BodyOutline);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(ColorRGBA(1.0f, 1.0f, 1.0f, Alpha));
+		IEngineGraphics::CQuadItem QuadOutline{Position.x, Position.y, Size, Size};
+		Graphics()->QuadsSetRotation(ClientData.m_VolleyBallAngle);
+		Graphics()->QuadsDraw(&QuadOutline, 1);
+		Graphics()->QuadsEnd();
+		Graphics()->TextureSet(pSkin->m_OriginalSkin.m_Body);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(ColorRGBA(1.0f, 1.0f, 1.0f, Alpha));
+		Graphics()->QuadsSetRotation(ClientData.m_VolleyBallAngle);
+		IEngineGraphics::CQuadItem Quad{Position.x, Position.y, Size, Size};
+		Graphics()->QuadsDraw(&Quad, 1);
+		Graphics()->QuadsEnd();
+		return;
+	}
 
 	RenderInfo.m_GotAirJump = Player.m_Jumped & 2 ? false : true;
 

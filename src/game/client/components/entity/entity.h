@@ -75,6 +75,7 @@ public:
 	// Movement Notification if tabbed out
 	vec2 m_LastPos = vec2(0, 0);
 	void NotifyOnMove();
+	void UpdateVolleyball();
 
 	// Rainbow
 	void UpdateRainbow();
