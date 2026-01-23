@@ -551,6 +551,7 @@ public:
 		// TClient
 		vec2 m_ImprovedPredPos = vec2(0, 0);
 		vec2 m_PrevImprovedPredPos = vec2(0, 0);
+		bool m_ValidAntipingSmooth = false;
 		// vec2 m_DebugVector = vec2(0, 0);
 		// vec2 m_DebugVector2 = vec2(0, 0);
 		// vec2 m_DebugVector3 = vec2(0, 0);

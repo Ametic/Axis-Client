@@ -2855,10 +2855,7 @@ void CGameClient::OnPredict()
 		{
 			if(!m_Snap.m_aCharacters[i].m_Active || !m_aLastActive[i])
 			{
-				m_aClients[i].m_PrevImprovedPredPos = m_aClients[i].m_PrevPredicted.m_Pos;
-				m_aClients[i].m_ImprovedPredPos = m_aClients[i].m_Predicted.m_Pos;
-				m_aClients[i].m_aSmoothStart[0] = m_aClients[i].m_aSmoothStart[1] = 0;
-				m_aClients[i].m_aSmoothLen[0] = m_aClients[i].m_aSmoothLen[1] = 0;
+				m_aClients[i].m_ValidAntipingSmooth = false;
 				continue;
 			}
 
@@ -2879,112 +2876,91 @@ void CGameClient::OnPredict()
 
 			vec2 PrevPredPos = pChar->GetCore().m_Pos;
 
-			// Use the latest valid stored tick for this player to avoid reading uninitialized slots.
-			auto FindValidTickAtOrBefore = [&](int t) -> int {
-				for(int off = 0; off < 200; ++off)
-				{
-					const int tt = t - off;
-					if(tt < 0)
-						break;
-					if(m_aClients[i].m_aPredTick[tt % 200] == tt)
-						return tt;
-				}
-				return -1;
-			};
+			// Cursed hack to get the game tick consistently
+			int GameTick = Client()->GameTick(g_Config.m_ClDummy) + (int)Client()->IntraGameTick(g_Config.m_ClDummy);
+			static int s_PrevGameTick = 0;
+			if(s_PrevGameTick == GameTick)
+				GameTick++;
+			s_PrevGameTick = Client()->GameTick(g_Config.m_ClDummy) + (int)Client()->IntraGameTick(g_Config.m_ClDummy);
 
-			// The most advanced predicted tick we have (for others).
-			const int HeadTick = FindValidTickAtOrBefore(FinalTickOthers);
-			if(HeadTick < 0)
-			{
-				// Not enough data for this client, fall back safely.
-				m_aClients[i].m_PrevImprovedPredPos = m_aClients[i].m_PrevPredicted.m_Pos;
-				m_aClients[i].m_ImprovedPredPos = m_aClients[i].m_Predicted.m_Pos;
-				continue;
-			}
-			int PrevHeadTick = FindValidTickAtOrBefore(HeadTick - 1);
-			if(PrevHeadTick < 0)
-				PrevHeadTick = HeadTick;
-
-			vec2 ServerPos = m_aClients[i].m_aPredPos[HeadTick % 200];
-			vec2 PrevServerPos = m_aClients[i].m_aPredPos[PrevHeadTick % 200];
+			vec2 ServerPos = m_aClients[i].m_aPredPos[GameTick % 200];
+			vec2 PrevServerPos = m_aClients[i].m_aPredPos[(GameTick - 1) % 200];
 
 			vec2 PredDir = normalize(PredPos - ServerPos);
 			vec2 LastDir = normalize(PrevPredPos - ServerPos);
 
-			// Build a robust bounding box over recent valid samples.
-			vec2 MaxPos(0, 0), MinPos(0, 0);
-			bool BoundsInit = false;
-			const int PredStartTick = HeadTick;
-			const int HistoryStartTick = std::max(0, HeadTick - 25); // ~0.5s at 50Hz
-
-			for(int Tick = HistoryStartTick; Tick <= PredStartTick; ++Tick)
+			vec2 MaxPos = vec2(0, 0);
+			vec2 MinPos = vec2(0, 0);
+			bool FoundBoundingBox = false;
+			// Get a bounding box for our final prediction position to minimize going through walls
+			for(int Tick = GameTick - 1; Tick <= FinalTickOthers; Tick++)
 			{
 				if(m_aClients[i].m_aPredTick[Tick % 200] != Tick)
 					continue;
-				const vec2 Pos = m_aClients[i].m_aPredPos[Tick % 200];
-				if(!BoundsInit)
+				vec2 Pos = m_aClients[i].m_aPredPos[Tick % 200];
+				if(!FoundBoundingBox)
 				{
-					MaxPos = MinPos = Pos;
-					BoundsInit = true;
+					MaxPos = Pos;
+					MinPos = Pos;
+					FoundBoundingBox = true;
 				}
 				else
 				{
-					MaxPos.x = std::max(MaxPos.x, Pos.x);
-					MaxPos.y = std::max(MaxPos.y, Pos.y);
-					MinPos.x = std::min(MinPos.x, Pos.x);
-					MinPos.y = std::min(MinPos.y, Pos.y);
+					MaxPos.x = std::max(Pos.x, MaxPos.x);
+					MaxPos.y = std::max(Pos.y, MaxPos.y);
+					MinPos.x = std::min(Pos.x, MinPos.x);
+					MinPos.y = std::min(Pos.y, MinPos.y);
 				}
 			}
-			if(!BoundsInit)
-			{
-				// No history at all; use current server position to avoid (0,0) clamps.
-				MaxPos = MinPos = ServerPos;
-				BoundsInit = true;
-			}
-
-			// Average motion over valid pairs only.
+			int PredStartTick = GameTick;
+			int HistoryStartTick = PredStartTick - (FinalTickOthers - PredStartTick);
+			HistoryStartTick = std::max(1, HistoryStartTick);
 			vec2 HistoryVector = vec2(0, 0);
 			float HistoryDistance = 0.0f;
-			int PairCount = 0;
-			for(int Tick = HistoryStartTick + 1; Tick <= PredStartTick; ++Tick)
+			int HistoryCount = 0;
+			// Find the average history vector
+			for(int Tick = HistoryStartTick; Tick <= PredStartTick; Tick++)
 			{
-				const int T0 = Tick - 1;
-				if(m_aClients[i].m_aPredTick[Tick % 200] != Tick || m_aClients[i].m_aPredTick[T0 % 200] != T0)
+				if(m_aClients[i].m_aPredTick[Tick % 200] != Tick || m_aClients[i].m_aPredTick[(Tick - 1) % 200] != Tick - 1)
 					continue;
-				const vec2 D = m_aClients[i].m_aPredPos[Tick % 200] - m_aClients[i].m_aPredPos[T0 % 200];
-				HistoryVector += D;
-				HistoryDistance += length(D);
-				++PairCount;
+				vec2 DirVector = m_aClients[i].m_aPredPos[Tick % 200] - m_aClients[i].m_aPredPos[(Tick - 1) % 200];
+				HistoryVector += DirVector;
+				HistoryDistance += length(DirVector);
+				HistoryCount++;
 			}
 
-			if(PairCount > 0)
+			bool ValidRecentPositions = m_aClients[i].m_aPredTick[GameTick % 200] == GameTick && m_aClients[i].m_aPredTick[(GameTick - 1) % 200] == GameTick - 1;
+			// Not enough history data
+			if(!ValidRecentPositions || !FoundBoundingBox || HistoryCount == 0 || HistoryDistance <= 0.0f || GameTick <= 0)
 			{
-				HistoryVector /= (float)PairCount;
-				HistoryVector = normalize(HistoryVector);
+				m_aClients[i].m_PrevImprovedPredPos = PrevPredPos;
+				m_aClients[i].m_ImprovedPredPos = PredPos;
+				continue;
+			}
+
+			HistoryVector = HistoryVector / HistoryCount;
+			HistoryVector = normalize(HistoryVector);
+			float Variance = 0.0f;
+			// Find the variance over the history window
+			if(length(HistoryVector) > 0.0f)
+			{
+				for(int Tick = HistoryStartTick; Tick <= PredStartTick; Tick++)
+				{
+					if(m_aClients[i].m_aPredTick[Tick % 200] != Tick || m_aClients[i].m_aPredTick[(Tick - 1) % 200] != Tick - 1)
+						continue;
+					vec2 DirVector = m_aClients[i].m_aPredPos[Tick % 200] - m_aClients[i].m_aPredPos[(Tick - 1) % 200];
+					vec2 Diff = normalize(DirVector) - HistoryVector;
+					Variance += dot(Diff, Diff);
+				}
+				Variance /= HistoryCount;
 			}
 			else
 			{
-				HistoryVector = vec2(0, 0);
+				Variance = 0.0f;
 			}
-
-			float Variance = 0.0f;
-			if(length(HistoryVector) > 0.0f && PairCount > 0)
-			{
-				for(int Tick = HistoryStartTick + 1; Tick <= PredStartTick; ++Tick)
-				{
-					const int T0 = Tick - 1;
-					if(m_aClients[i].m_aPredTick[Tick % 200] != Tick || m_aClients[i].m_aPredTick[T0 % 200] != T0)
-						continue;
-					const vec2 D = m_aClients[i].m_aPredPos[Tick % 200] - m_aClients[i].m_aPredPos[T0 % 200];
-					const vec2 Diff = normalize(D) - HistoryVector;
-					Variance += dot(Diff, Diff);
-				}
-				Variance /= (float)PairCount;
-			}
-
 			float Sigma = 1.5f; // Can be adjusted
-			float SigmaScale = HistoryDistance > 0.0f ? length(PredPos - ServerPos) / HistoryDistance : 0.0f;
-			if(SigmaScale > 0.0f)
+			float SigmaScale = length(PredPos - ServerPos) / HistoryDistance;
+			if(SigmaScale > 0)
 				Sigma /= SigmaScale;
 			float TrustFactor = std::max(0.0f, 1.0f - (std::sqrt(Variance) / Sigma));
 			vec2 TrustedVector = HistoryVector;
@@ -3014,8 +2990,10 @@ void CGameClient::OnPredict()
 			// Decompose prediction vector into 2 components based on the trusted vector
 			vec2 PredVector = PredPos - ServerPos;
 			vec2 Forward = normalize(TrustedVector);
-			float DotPf = Forward == vec2(0, 0) ? 0.0f : std::max(0.0f, dot(normalize(PredVector), Forward));
-			vec2 ConfidenceParallel = DotPf == 0.0f ? vec2(0, 0) : Forward * DotPf * length(PredVector);
+			float DotPf = std::max(0.0f, dot(normalize(PredVector), Forward));
+			vec2 ConfidenceParallel = Forward * DotPf * length(PredVector);
+			if(DotPf == 0.0f)
+				ConfidenceParallel = vec2(0, 0);
 			vec2 ConfidencePerp = PredVector - ConfidenceParallel;
 
 			if(!g_Config.m_TcAntiPingStableDirection)
@@ -3024,7 +3002,7 @@ void CGameClient::OnPredict()
 			vec2 ConfidenceVector = ConfidenceParallel * std::max(TrustFactor, NewConfidence) + ConfidencePerp * NewConfidence;
 
 			// Minor safe guard against insane predictions
-			if(length(ConfidenceVector) > HistoryDistance && HistoryDistance > 0.0f)
+			if(length(ConfidenceVector) > HistoryDistance)
 				ConfidenceVector = mix(normalize(ConfidenceVector) * HistoryDistance, ConfidenceVector, NewConfidence);
 
 			vec2 ConfidencePos = ServerPos + ConfidenceVector;
@@ -3039,6 +3017,7 @@ void CGameClient::OnPredict()
 			{
 				m_aClients[i].m_PrevImprovedPredPos = m_aClients[i].m_ImprovedPredPos;
 			}
+			m_aClients[i].m_ValidAntipingSmooth = true;
 		}
 	}
 	// Copy the current pred world so on the next tick we have the "previous" pred world to advance and test against
@@ -4093,10 +4072,10 @@ void CGameClient::UpdateRenderedCharacters()
 				vec2(m_aClients[i].m_RenderPrev.m_X, m_aClients[i].m_RenderPrev.m_Y),
 				vec2(m_aClients[i].m_RenderCur.m_X, m_aClients[i].m_RenderCur.m_Y),
 				m_aClients[i].m_IsPredicted ? Client()->PredIntraGameTick(g_Config.m_ClDummy) : Client()->IntraGameTick(g_Config.m_ClDummy));
-			
-				if(g_Config.m_TcRemoveAnti)
+
+			if(g_Config.m_TcRemoveAnti)
 				Pos = GetFreezePos(i);
-				
+
 			if(i == m_Snap.m_LocalClientId || (PredictDummy() && i == m_aLocalIds[!g_Config.m_ClDummy]))
 			{
 				m_aClients[i].m_IsPredictedLocal = true;
@@ -4113,28 +4092,11 @@ void CGameClient::UpdateRenderedCharacters()
 				m_aClients[i].m_RenderPrev.m_Angle = m_Snap.m_aCharacters[i].m_Prev.m_Angle;
 				m_aClients[i].m_RenderCur.m_Angle = m_Snap.m_aCharacters[i].m_Cur.m_Angle;
 
-				// Detect first frame after reappear (no fresh predicted sample for this tick, or was inactive last tick)
-				const int CurPredTick = Client()->PredGameTick(g_Config.m_ClDummy);
-				const bool HasPredSampleThisTick = m_aClients[i].m_aPredTick[CurPredTick % 200] == CurPredTick;
-				const bool JustReappeared = !m_aLastActive[i] || !HasPredSampleThisTick;
-
-				// Classic smoothing only if we have continuous samples
-				if(g_Config.m_ClAntiPingSmooth && !JustReappeared)
+				if(g_Config.m_ClAntiPingSmooth)
 					Pos = GetSmoothPos(i);
 
-				// Improved smoothing: skip on reappear, hard-reset to unpredicted; otherwise blend
-				if(g_Config.m_TcAntiPingImproved)
-				{
-					if(JustReappeared || distance(m_aClients[i].m_ImprovedPredPos, UnpredPos) > 400.0f)
-					{
-						m_aClients[i].m_PrevImprovedPredPos = UnpredPos;
-						m_aClients[i].m_ImprovedPredPos = UnpredPos;
-					}
-					else
-					{
-						Pos = mix(m_aClients[i].m_PrevImprovedPredPos, m_aClients[i].m_ImprovedPredPos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
-					}
-				}
+				if(g_Config.m_TcAntiPingImproved && m_aClients[i].m_ValidAntipingSmooth)
+					Pos = mix(m_aClients[i].m_PrevImprovedPredPos, m_aClients[i].m_ImprovedPredPos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
 
 				if(g_Config.m_TcRemoveAnti && m_pClient->m_IsLocalFrozen)
 					Pos = GetFreezePos(i);
