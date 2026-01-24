@@ -2788,7 +2788,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	CUIRect Label, Button;
 
 	// left side in settings menu
-	CUIRect Miscellaneous, Cosmetics, ServerRainbow, TileOutlines, DiscordRpc, ChatBubbles, PlayerIndicator, BgDraw, SweatMode;
+	CUIRect Miscellaneous, Cosmetics, Trails, ServerRainbow, TileOutlines, DiscordRpc, ChatBubbles, PlayerIndicator, BgDraw, SweatMode;
 	MainView.VSplitMid(&Cosmetics, &Miscellaneous);
 
 	/* Cosmetics */
@@ -2797,7 +2797,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		static float Offset = 0.0f;
 
 		Cosmetics.VMargin(5.0f, &Cosmetics);
-		Cosmetics.HSplitTop(235.0f + Offset, &Cosmetics, &ServerRainbow);
+		Cosmetics.HSplitTop(235.0f + Offset, &Cosmetics, &Trails);
 		if(s_ScrollRegion.AddRect(Cosmetics))
 		{
 			Offset = 0.0f;
@@ -2903,6 +2903,58 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			}
 			Cosmetics.HSplitTop(MarginExtraSmall, nullptr, &Cosmetics);
 			Cosmetics.HSplitTop(MarginSmall, nullptr, &Cosmetics);
+		}
+	}
+
+	/* Trails */
+	{
+		static float Offset = 0.0f;
+		Trails.HSplitTop(Margin, nullptr, &Trails);
+		Trails.HSplitTop(205.0f + Offset, &Trails, &ServerRainbow);
+		if(s_ScrollRegion.AddRect(Trails))
+		{
+			Offset = 0.0f;
+			Trails.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			Trails.VMargin(Margin, &Trails);
+
+			Trails.HSplitTop(HeaderHeight, &Button, &Trails);
+			Ui()->DoLabel(&Button, Localize("Tee Trails"), HeaderSize, HeaderAlignment);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrail, Localize("Enable tee trails"), &g_Config.m_EcTeeTrail, &Trails, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailOthers, Localize("Show other tees' trails"), &g_Config.m_EcTeeTrailOthers, &Trails, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailFade, Localize("Fade trail alpha"), &g_Config.m_EcTeeTrailFade, &Trails, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailTaper, Localize("Taper trail width"), &g_Config.m_EcTeeTrailTaper, &Trails, LineSize);
+
+			Trails.HSplitTop(MarginExtraSmall, nullptr, &Trails);
+			std::vector<const char *> vTrailDropDownNames;
+			vTrailDropDownNames = {Localize("Solid"), Localize("Tee"), Localize("Rainbow"), Localize("Speed")};
+			static CUi::SDropDownState s_TrailDropDownState;
+			static CScrollRegion s_TrailDropDownScrollRegion;
+			s_TrailDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_TrailDropDownScrollRegion;
+			int TrailSelectedOld = g_Config.m_EcTeeTrailColorMode - 1;
+			CUIRect TrailDropDownRect;
+			Trails.HSplitTop(LineSize, &TrailDropDownRect, &Trails);
+			const int TrailSelectedNew = Ui()->DoDropDown(&TrailDropDownRect, TrailSelectedOld, vTrailDropDownNames.data(), vTrailDropDownNames.size(), s_TrailDropDownState);
+			if(TrailSelectedOld != TrailSelectedNew)
+			{
+				g_Config.m_EcTeeTrailColorMode = TrailSelectedNew + 1;
+			}
+			Trails.HSplitTop(MarginSmall, nullptr, &Trails);
+
+			static CButtonContainer s_TeeTrailColor;
+			if(g_Config.m_EcTeeTrailColorMode == CTrails::COLORMODE_SOLID)
+			{
+				DoLine_ColorPicker(&s_TeeTrailColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &Trails, Localize("Tee trail color"), &g_Config.m_EcTeeTrailColor, ColorRGBA(1.0f, 1.0f, 1.0f), false);
+				Offset = ColorPickerLineSize + ColorPickerLineSpacing;
+			}
+
+			Trails.HSplitTop(LineSize, &Button, &Trails);
+			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailWidth, &g_Config.m_EcTeeTrailWidth, &Button, Localize("Trail width"), 0, 20);
+			Trails.HSplitTop(LineSize, &Button, &Trails);
+			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailLength, &g_Config.m_EcTeeTrailLength, &Button, Localize("Trail length"), 0, 200);
+			Trails.HSplitTop(LineSize, &Button, &Trails);
+			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailAlpha, &g_Config.m_EcTeeTrailAlpha, &Button, Localize("Trail alpha"), 0, 100);
+
 		}
 	}
 

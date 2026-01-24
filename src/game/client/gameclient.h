@@ -90,6 +90,7 @@
 #include "components/tclient/scripting.h"
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/statusbar.h"
+#include "components/tclient/trails.h"
 #include "components/tclient/warlist.h"
 #include "ui.h"
 
@@ -258,6 +259,7 @@ public:
 	CRainbow m_Rainbow;
 	CSkinProfiles m_SkinProfiles;
 	CStatusBar m_StatusBar;
+	CTrails m_Trails;
 	CWarList m_WarList;
 	CScripting m_Scripting;
 	CCustomCommunities m_CustomCommunities;
