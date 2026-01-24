@@ -13,6 +13,10 @@ Add scripts to your config dir then run them with `chai [scriptname] [args]`
 > [!CAUTION]
 > There are no runtime restrictions, you can easily `while (true) {}` yourself or run out of memory, be careful!
 
+<details>
+
+<summary>chai script capabilities</summary>
+
 ```js
 var a // Declare a variable
 a = 1 // Set it
@@ -147,6 +151,9 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 	return str
 }))
 ```
+
+</details>
+
 # Setting Pages:
 
 ### Main Settings
