@@ -171,6 +171,8 @@ public:
 	bool m_NoSkinChangeForFrozen;
 
 	bool m_DDRaceTeam;
+
+	bool m_PredictEvents;
 };
 
 class CSnapEntities
@@ -753,6 +755,7 @@ public:
 	unsigned int m_DummyFire;
 	bool m_ReceivedDDNetPlayer;
 	bool m_ReceivedDDNetPlayerFinishTimes;
+	bool m_ReceivedDDNetPlayerFinishTimesMillis;
 
 	class CTeamsCore m_Teams;
 
@@ -979,6 +982,7 @@ public:
 	void CleanMultiViewId(int ClientId);
 	int m_MapBestTimeSeconds;
 	int m_MapBestTimeMillis;
+	char m_aMapDescription[512];
 
 	bool m_CanReceivePoints;
 
@@ -997,6 +1001,7 @@ private:
 	void UpdatePrediction();
 	void UpdateSpectatorCursor();
 	void UpdateRenderedCharacters();
+	void HandlePredictedEvents(int Tick);
 
 	int m_aLastUpdateTick[MAX_CLIENTS] = {0};
 	void DetectStrongHook();
