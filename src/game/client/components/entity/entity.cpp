@@ -259,6 +259,8 @@ void CEClient::GoresModeSave()
 
 	const CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
 	const char *pBind = GameClient()->m_Binds.GetKeyBinding(BindSlot.m_ModifierMask, BindSlot.m_Key);
+	if(!pBind)
+		return;
 	str_copy(g_Config.m_ClGoresModeSaved, pBind);
 
 	GameClient()->m_Binds.Bind(Key, "+fire;+prevweapon");

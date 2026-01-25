@@ -102,16 +102,12 @@ CKeyBinder::CKeyReaderResult CKeyBinder::DoKeyReader(CButtonContainer *pReaderBu
 	CUIRect KeyReaderButton, ClearButton;
 	pRect->VSplitRight(pRect->h, &KeyReaderButton, &ClearButton);
 
-	const int ButtonResult = Ui()->DoButtonLogic(pReaderButton, 0, &KeyReaderButton, BUTTONFLAG_LEFT | BUTTONFLAG_RIGHT);
+	const int ButtonResult = Ui()->DoButtonLogic(pReaderButton, 0, &KeyReaderButton, BUTTONFLAG_LEFT);
 	if(ButtonResult == 1 || Activate)
 	{
 		m_pKeyReaderId = pReaderButton;
 		m_TakeKey = true;
 		m_Key = std::nullopt;
-	}
-	else if(ButtonResult == 2)
-	{
-		Result.m_Bind = CBindSlot(KEY_UNKNOWN, KeyModifier::NONE);
 	}
 
 	if(m_pKeyReaderId == pReaderButton && m_Key.has_value())
