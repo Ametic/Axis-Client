@@ -258,6 +258,14 @@ private:
 			const bool Passworded = (pServerInfo->m_Flags & SERVER_FLAG_PASSWORD) != 0;
 			return Passworded;
 		}
+		else if(Str == "player_name")
+		{
+			return g_Config.m_PlayerName;
+		}
+		else if(Str == "dummy_name")
+		{
+			return g_Config.m_ClDummyName;
+		}
 		// E-Client>
 
 		throw std::string("No state with name '") + Str + std::string("'");

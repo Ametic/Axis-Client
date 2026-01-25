@@ -74,6 +74,8 @@ Here is a list of states which are available:
 | `int` | `state("id", string Name)` | Finds and returns a client ID by player name (exact or case-insensitive match). |
 | `string` | `state("name", int Id)` | Returns the name of a player given their client ID. |
 | `string` | `state("clan", int Id)` | Returns the clan name of a player given their client ID. |
+| `string` | `state("player_name")` | Returns the value of config player_name. |
+| `string` | `state("dummy_name")` | Returns the value of config dummy_name. |
 | `bool` | `client_info("exists", int Id)` | Whether the ID exists. |
 | `int` | `client_info("team", int Id)` | Team of ID. |
 | `int` | `client_info("ddnet_team", int Id)` | DDRace team of ID. |
