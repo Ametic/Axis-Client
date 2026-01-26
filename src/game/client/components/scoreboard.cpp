@@ -442,7 +442,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	const bool TrueMilliseconds = GameClient()->m_ReceivedDDNetPlayerFinishTimesMillis;
 	const int NumPlayers = CountEnd - CountStart;
 	const bool LowScoreboardWidth = Scoreboard.w < 350.0f;
-	const bool CanReceivePoints = GameClient()->m_CanReceivePoints && g_Config.m_ClScoreboardPoints;
 
 	bool Race7 = Client()->IsSixup() && pGameInfoObj && pGameInfoObj->m_GameFlags & protocol7::GAMEFLAG_RACE;
 
