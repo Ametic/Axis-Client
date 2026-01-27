@@ -608,9 +608,12 @@ void CServerBrowser::Filter()
 		}
 	}
 
-	std::stable_sort(m_vCommunities.begin(), m_vCommunities.end(), [](const CCommunity &Lhs, const CCommunity &Rhs) {
-		return Lhs.NumPlayers() > Rhs.NumPlayers();
-	});
+	if(m_vCommunities.size() > 1)
+	{
+		std::stable_sort(m_vCommunities.begin(), m_vCommunities.end() - 1, [](const CCommunity &Lhs, const CCommunity &Rhs) {
+			return Lhs.NumPlayers() > Rhs.NumPlayers();
+		});
+	}
 }
 
 int CServerBrowser::SortHash() const
