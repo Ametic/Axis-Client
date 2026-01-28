@@ -2750,7 +2750,8 @@ void CGameClient::OnPredict()
 					m_Effects.AirJump(Pos, 1.0f, 1.0f);
 		}
 
-		HandlePredictedEvents(Tick);
+		if(Tick <= FinalTickRegular)
+			HandlePredictedEvents(Tick);
 	}
 
 	if(g_Config.m_TcFastInput)
