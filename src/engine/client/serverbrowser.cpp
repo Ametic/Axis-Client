@@ -2378,7 +2378,7 @@ void CExcludedCommunityTypeFilterList::Save(IConfigManager *pConfigManager) cons
 void CServerBrowser::CleanFilters()
 {
 	// Keep filters if we failed to load any communities
-	if(Communities().empty())
+	if(Communities().empty() || !m_LoadedCustomCommunities)
 		return;
 	FavoriteCommunitiesFilter().Clean(Communities());
 	CommunitiesFilter().Clean(Communities());
