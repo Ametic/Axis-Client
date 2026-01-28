@@ -139,6 +139,7 @@ void CChatBubbles::RemoveBubble(int ClientId, CBubble Bubble)
 		if(*it == Bubble)
 		{
 			TextRender()->DeleteTextContainer(it->m_TextContainerIndex);
+			it->m_TextContainerIndex.Reset();
 			m_avChatBubbles[ClientId].erase(it);
 			UpdateBubbleOffsets(ClientId);
 			return;
@@ -304,9 +305,6 @@ void CChatBubbles::OnRender()
 
 void CChatBubbles::Reset()
 {
-	if(m_avChatBubbles->empty())
-		return;
-
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
 		for(auto &Bubble : m_avChatBubbles[ClientId])
@@ -314,7 +312,7 @@ void CChatBubbles::Reset()
 			if(Bubble.m_TextContainerIndex.Valid())
 			{
 				TextRender()->DeleteTextContainer(Bubble.m_TextContainerIndex);
-				Bubble.m_TextContainerIndex = STextContainerIndex();
+				Bubble.m_TextContainerIndex.Reset();
 			}
 			Bubble.m_Cursor.m_FontSize = 0;
 		}
@@ -350,7 +348,7 @@ void CChatBubbles::SetupTextcontainer(CBubble &Bubble)
 		if(Bubble.m_TextContainerIndex.Valid())
 		{
 			TextRender()->DeleteTextContainer(Bubble.m_TextContainerIndex);
-			Bubble.m_TextContainerIndex = STextContainerIndex();
+			Bubble.m_TextContainerIndex.Reset();
 		}
 
 		CTextCursor Cursor;
