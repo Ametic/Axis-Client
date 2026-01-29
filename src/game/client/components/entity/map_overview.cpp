@@ -110,7 +110,10 @@ void CMapOverview::OnRender()
 		return;
 
 	if(!GameClient()->StartedRace())
+	{
+		Reset();
 		return;
+	}
 	
 	const vec2 Pos = mix(vec2(GameClient()->m_aClients[LocalId].m_RenderPrev.m_X, GameClient()->m_aClients[LocalId].m_RenderPrev.m_Y), vec2(GameClient()->m_aClients[LocalId].m_RenderCur.m_X, GameClient()->m_aClients[LocalId].m_RenderCur.m_Y), 0);
 
