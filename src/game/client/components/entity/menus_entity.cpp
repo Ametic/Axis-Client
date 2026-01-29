@@ -9,6 +9,7 @@
 #include <engine/storage.h>
 #include <engine/textrender.h>
 
+#include <generated/client_data.h>
 #include <generated/protocol.h>
 
 #include <game/client/animstate.h>
@@ -1505,7 +1506,6 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		Ui()->DoLabel(&WarType, pEntry->m_pWarType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
-		
 		if(pEntry->m_TempEntry)
 			GameClient()->m_Tooltips.DoToolTip(&s_vItemIds[i], &EntryRect, "Temporary Entry");
 	}
@@ -1696,7 +1696,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 				if(Ui()->MouseY() < Item.m_Rect.y)
 					SwapIndex = i - 1;
 				else if(Ui()->MouseY() > Item.m_Rect.y + Item.m_Rect.h)
-					SwapIndex = i + 1; 
+					SwapIndex = i + 1;
 				if(SwapIndex >= 0 && SwapIndex < (int)GameClient()->m_WarList.m_WarTypes.size())
 				{
 					CWarType *pSwapType = GameClient()->m_WarList.m_WarTypes[SwapIndex];
@@ -1865,10 +1865,15 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		TeeInfo.m_Size = 25.0f;
+		vec2 TeeEyeDir = TeeEyeDirection(TeeRect.Center());
 		bool Paused = GameClient()->m_aClients[ClientId].m_Paused || GameClient()->m_aClients[ClientId].m_Spec;
-		const CAnimState *pAnimState = Paused ? CAnimState::GetSpec() : CAnimState::GetIdle();
-
-		RenderTee(TeeRect.Center() + vec2(-1.0f, 2.5f), TeeEyeDirection(TeeRect.Center()), pAnimState, &TeeInfo, Paused ? EMOTE_BLINK : EMOTE_NORMAL);
+		CAnimState AnimState;
+		AnimState.Set(&g_pData->m_aAnimations[ANIM_BASE], 0.0f);
+		if(Paused)
+			AnimState.Add(&g_pData->m_aAnimations[TeeEyeDir.x < 0 ? ANIM_SIT_LEFT : ANIM_SIT_RIGHT], 0.0f, 1.0f);
+		else
+			AnimState.Add(&g_pData->m_aAnimations[ANIM_IDLE], 0.0f, 1.0f);
+		RenderTee(TeeRect.Center() + vec2(-1.0f, 2.5f), TeeEyeDir, &AnimState, &TeeInfo, Paused ? EMOTE_BLINK : EMOTE_NORMAL);
 	}
 	s_PlayerListBox.DoEnd();
 }
@@ -2821,7 +2826,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Cosmetics.HSplitTop(LineSize, &EffectDropDownRect, &Cosmetics);
 			const int EffectSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, EffectSelectedOld, s_EffectDropDownNames.data(), s_EffectDropDownNames.size(), s_EffectDropDownState);
 			Ui()->UpdatePopupMenuOffset(&s_EffectDropDownState.m_SelectionPopupContext, EffectDropDownRect.x, EffectDropDownRect.y);
-			
+
 			if(s_ScrollRegion.ClipRect())
 			{
 				const float y = EffectDropDownRect.y + 20.0f;
@@ -2830,7 +2835,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					Ui()->ClosePopupMenu(&s_EffectDropDownState.m_SelectionPopupContext);
 				}
 			}
-			
+
 			if(EffectSelectedOld != EffectSelectedNew)
 			{
 				g_Config.m_ClEffect = EffectSelectedNew;
@@ -2881,7 +2886,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Cosmetics.HSplitTop(LineSize, &RainbowDropDownRect, &Cosmetics);
 			const int RainbowSelectedNew = Ui()->DoDropDown(&RainbowDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
 			Ui()->UpdatePopupMenuOffset(&s_RainbowDropDownState.m_SelectionPopupContext, RainbowDropDownRect.x, RainbowDropDownRect.y);
-			
+
 			if(s_ScrollRegion.ClipRect())
 			{
 				const float y = RainbowDropDownRect.y + 20.0f;
@@ -2890,7 +2895,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					Ui()->ClosePopupMenu(&s_RainbowDropDownState.m_SelectionPopupContext);
 				}
 			}
-			
+
 			if(RainbowSelectedOld != RainbowSelectedNew)
 			{
 				g_Config.m_ClRainbowMode = RainbowSelectedNew + 1;
@@ -2947,7 +2952,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					Ui()->ClosePopupMenu(&s_TrailDropDownState.m_SelectionPopupContext);
 				}
 			}
-			
+
 			if(TrailSelectedOld != TrailSelectedNew)
 			{
 				g_Config.m_EcTeeTrailColorMode = TrailSelectedNew + 1;
@@ -2967,7 +2972,6 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailLength, &g_Config.m_EcTeeTrailLength, &Button, Localize("Trail length"), 0, 200);
 			Trails.HSplitTop(LineSize, &Button, &Trails);
 			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailAlpha, &g_Config.m_EcTeeTrailAlpha, &Button, Localize("Trail alpha"), 0, 100);
-
 		}
 	}
 
@@ -3362,7 +3366,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					Ui()->DoLabel(&Label, Localize("Custom Font:"), FontSize, TEXTALIGN_ML);
 					const int FontSelectedNew = Ui()->DoDropDown(&FontDropDownRect, FontSelectedOld, s_FontDropDownNames.data(), s_FontDropDownNames.size(), s_FontDropDownState);
 					Ui()->UpdatePopupMenuOffset(&s_FontDropDownState.m_SelectionPopupContext, FontDropDownRect.x, FontDropDownRect.y);
-					
+
 					if(s_ScrollRegion.ClipRect())
 					{
 						const float y = FontDropDownRect.y + 20.0f;
@@ -3371,7 +3375,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 							Ui()->ClosePopupMenu(&s_FontDropDownState.m_SelectionPopupContext);
 						}
 					}
-					
+
 					if(FontSelectedOld != FontSelectedNew)
 					{
 						str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
@@ -3405,7 +3409,6 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		}
 	}
 
-	
 #if defined(CONF_DISCORD)
 	/* Discord RPC */
 	{
@@ -3494,7 +3497,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			}
 		}
 	}
-	
+
 #else
 	/* Discord RPC */
 	{
@@ -3644,7 +3647,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 			Ui()->DoLabel(&Button, Localize("Background Draw"), HeaderSize, HeaderAlignment);
 			BgDraw.HSplitTop(MarginSmall, nullptr, &BgDraw);
-			
+
 			static CButtonContainer s_BgDrawColor;
 			DoLine_ColorPicker(&s_BgDrawColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &BgDraw, Localize("Color"), &g_Config.m_TcBgDrawColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::TcBgDrawColor)), false);
 
@@ -3884,7 +3887,6 @@ void CMenus::RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTe
 			TeeEmote = EMOTE_HAPPY;
 	}
 	RenderTools()->RenderTee(pAnim, pInfo, TeeEmote, TeeDirection, Pos);
-
 }
 
 bool CMenus::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
