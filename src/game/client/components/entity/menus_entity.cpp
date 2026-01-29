@@ -55,6 +55,8 @@ typedef struct
 static float s_Time = 0.0f;
 static bool s_StartedTime = false;
 
+const float ScrollSpeed = 100.0f;
+
 const float FontSize = 14.0f;
 const float EditBoxFontSize = 12.0f;
 const float LineSize = 20.0f;
@@ -196,7 +198,7 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 	static CScrollRegion s_ScrollRegion;
 	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
-	ScrollParams.m_ScrollUnit = 120.0f;
+	ScrollParams.m_ScrollUnit = Ui()->IsPopupOpen() ? 0.0f : ScrollSpeed;
 	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 
 	CUIRect ContentView = MainView;
@@ -2170,7 +2172,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	static CScrollRegion s_ScrollRegion;
 	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
-	ScrollParams.m_ScrollUnit = 120.0f;
+	ScrollParams.m_ScrollUnit = Ui()->IsPopupOpen() ? 0.0f : ScrollSpeed;
 	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 	MainView.y += ScrollOffset.y;
 
@@ -2781,7 +2783,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	static CScrollRegion s_ScrollRegion;
 	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
-	ScrollParams.m_ScrollUnit = 120.0f;
+	ScrollParams.m_ScrollUnit = Ui()->IsPopupOpen() ? 0.0f : ScrollSpeed;
 	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 	MainView.y += ScrollOffset.y;
 
@@ -2935,6 +2937,17 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			CUIRect TrailDropDownRect;
 			Trails.HSplitTop(LineSize, &TrailDropDownRect, &Trails);
 			const int TrailSelectedNew = Ui()->DoDropDown(&TrailDropDownRect, TrailSelectedOld, vTrailDropDownNames.data(), vTrailDropDownNames.size(), s_TrailDropDownState);
+			Ui()->UpdatePopupMenuOffset(&s_TrailDropDownState.m_SelectionPopupContext, TrailDropDownRect.x, TrailDropDownRect.y);
+
+			if(s_ScrollRegion.ClipRect())
+			{
+				const float y = TrailDropDownRect.y + 20.0f;
+				if(y < s_ScrollRegion.ClipRect()->y || y > (s_ScrollRegion.ClipRect()->y + s_ScrollRegion.ClipRect()->h))
+				{
+					Ui()->ClosePopupMenu(&s_TrailDropDownState.m_SelectionPopupContext);
+				}
+			}
+			
 			if(TrailSelectedOld != TrailSelectedNew)
 			{
 				g_Config.m_EcTeeTrailColorMode = TrailSelectedNew + 1;
