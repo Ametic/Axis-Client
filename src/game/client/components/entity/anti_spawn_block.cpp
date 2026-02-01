@@ -26,9 +26,12 @@ void CAntiSpawnBlock::OnRender()
 
 	if(!g_Config.m_ClAntiSpawnBlock)
 	{
-		Reset(STATE_IN_TEAM);
+		Reset(STATE_NONE);
 		return;
 	}
+
+	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
+		return;
 
 	// if Can't find Player or Player STARTED the race, stop
 	if(!GameClient()->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
