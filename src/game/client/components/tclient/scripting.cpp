@@ -370,7 +370,6 @@ private:
 	}
 	// E-Client>
 
-	
 	CScriptingCtx::Any ToLower(const std::string &Str)
 	{
 		std::string LowerStr = Str;
