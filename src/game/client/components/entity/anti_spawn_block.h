@@ -16,7 +16,7 @@ public:
 
 	int m_State;
 
-	void Reset(int State = -1);
+	void Reset(int State = STATE_NONE);
 
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;

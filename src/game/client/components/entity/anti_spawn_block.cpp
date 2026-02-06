@@ -14,10 +14,10 @@
 
 void CAntiSpawnBlock::Reset(int State)
 {
-	if(State != -1 && m_State == State && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != 0)
+	if(GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK)
 		GameClient()->m_Chat.SendChat(0, "/team 0");
 
-	m_State = STATE_NONE;
+	m_State = State;
 }
 
 void CAntiSpawnBlock::OnRender()
@@ -26,7 +26,8 @@ void CAntiSpawnBlock::OnRender()
 
 	if(!g_Config.m_ClAntiSpawnBlock)
 	{
-		Reset(STATE_NONE);
+		if(m_State != STATE_NONE)
+			Reset();
 		return;
 	}
 
@@ -35,11 +36,7 @@ void CAntiSpawnBlock::OnRender()
 
 	// if Can't find Player or Player STARTED the race, stop
 	if(!GameClient()->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
-	{
-		if(m_State != STATE_NONE)
-			Reset();
 		return;
-	}
 
 	vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
 
