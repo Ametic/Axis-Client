@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <base/log.h>
 
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
