@@ -3424,38 +3424,6 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordRpc, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordRpc, LineSize);
-				static int DiscordRPC = g_Config.m_ClDiscordRPC;
-				static int DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
-				static char aOldDiscordRPCOnlineMsg[128];
-				static char aOldDiscordRPCOfflineMsg[128];
-				static bool DiscordRpcSet = false;
-				if(!DiscordRpcSet)
-				{
-					str_copy(aOldDiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-					str_copy(aOldDiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
-					DiscordRpcSet = true;
-				}
-				if(DiscordRPC != g_Config.m_ClDiscordRPC)
-					DiscordRPC = g_Config.m_ClDiscordRPC;
-
-				if(g_Config.m_ClDiscordRPC)
-				{
-					if(DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
-					{
-						DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
-						Client()->DiscordRPCchange();
-					}
-					else if(str_comp(aOldDiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
-					{
-						str_copy(aOldDiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-						Client()->DiscordRPCchange();
-					}
-					else if(str_comp(aOldDiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
-					{
-						str_copy(aOldDiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
-						Client()->DiscordRPCchange();
-					}
-				}
 
 				std::array<float, 2> Sizes = {
 					TextRender()->TextBoundingBox(FontSize, "Online Message:").m_W,
@@ -3475,7 +3443,8 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					static CLineInput s_PrefixMsg;
 					s_PrefixMsg.SetBuffer(g_Config.m_ClDiscordOnlineStatus, sizeof(g_Config.m_ClDiscordOnlineStatus));
 					s_PrefixMsg.SetEmptyText("Online");
-					Ui()->DoEditBox(&s_PrefixMsg, &Button, EditBoxFontSize);
+					if(Ui()->DoEditBox(&s_PrefixMsg, &Button, EditBoxFontSize))
+						Client()->DiscordRPCchange();
 				}
 
 				DiscordRpc.HSplitTop(21.0f, &Button, &DiscordRpc);
@@ -3492,7 +3461,8 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					static CLineInput s_PrefixMsg;
 					s_PrefixMsg.SetBuffer(g_Config.m_ClDiscordOfflineStatus, sizeof(g_Config.m_ClDiscordOfflineStatus));
 					s_PrefixMsg.SetEmptyText("Offline");
-					Ui()->DoEditBox(&s_PrefixMsg, &Button, EditBoxFontSize);
+					if(Ui()->DoEditBox(&s_PrefixMsg, &Button, EditBoxFontSize))
+						Client()->DiscordRPCchange();
 				}
 			}
 		}

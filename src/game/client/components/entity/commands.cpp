@@ -493,6 +493,11 @@ void CEClient::OnConsoleInit()
 
 	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
 	Console()->Chain("ec_fast_input", ConchainFastInputs, this);
+
+	Console()->Chain("ec_discord_rpc", ConchainDiscordUpdate, this);
+	Console()->Chain("ec_discord_map_status", ConchainDiscordUpdate, this);
+	Console()->Chain("ec_discord_online_status", ConchainDiscordUpdate, this);
+	Console()->Chain("ec_discord_offline_status", ConchainDiscordUpdate, this);
 }
 
 void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -512,6 +517,13 @@ void CEClient::ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, I
 	CEClient *pSelf = (CEClient *)pUserData;
 	if(pResult->NumArguments())
 		pSelf->Client()->SendFastInputsInfo(g_Config.m_ClDummy);
+}
+
+void CEClient::ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	pSelf->Client()->DiscordRPCchange();
 }
 
 void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
