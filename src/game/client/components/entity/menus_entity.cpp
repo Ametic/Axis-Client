@@ -3426,13 +3426,13 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordRpc, LineSize);
 				static int DiscordRPC = g_Config.m_ClDiscordRPC;
 				static int DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
-				static char DiscordRPCOnlineMsg[25];
-				static char DiscordRPCOfflineMsg[25];
+				static char aOldDiscordRPCOnlineMsg[128];
+				static char aOldDiscordRPCOfflineMsg[128];
 				static bool DiscordRpcSet = false;
 				if(!DiscordRpcSet)
 				{
-					str_copy(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-					str_copy(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
+					str_copy(aOldDiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
+					str_copy(aOldDiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
 					DiscordRpcSet = true;
 				}
 				if(DiscordRPC != g_Config.m_ClDiscordRPC)
@@ -3445,14 +3445,14 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 						DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
 						Client()->DiscordRPCchange();
 					}
-					else if(str_comp(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
+					else if(str_comp(aOldDiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
 					{
-						str_copy(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
+						str_copy(aOldDiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
 						Client()->DiscordRPCchange();
 					}
-					else if(str_comp(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
+					else if(str_comp(aOldDiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
 					{
-						str_copy(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
+						str_copy(aOldDiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
 						Client()->DiscordRPCchange();
 					}
 				}

@@ -224,8 +224,8 @@ MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClDiscordRPC, ec_discord_rpc, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Discord Rpc (requires restart)")
 // MACRO_CONFIG_INT(ClDiscordTimestamp, ec_discord_timestamp, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Discord Rpc Time Stamp")
 MACRO_CONFIG_INT(ClDiscordMapStatus, ec_discord_map_status, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show What Map you're on")
-MACRO_CONFIG_STR(ClDiscordOnlineStatus, ec_discord_online_status, 25, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status")
-MACRO_CONFIG_STR(ClDiscordOfflineStatus, ec_discord_offline_status, 25, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status")
+MACRO_CONFIG_STR(ClDiscordOnlineStatus, ec_discord_online_status, 128, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status")
+MACRO_CONFIG_STR(ClDiscordOfflineStatus, ec_discord_offline_status, 128, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status")
 
 // Spec Menu Prefixes
 MACRO_CONFIG_INT(ClSpecMenuPrefixes, ec_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Prefixes Next to Names in The Spectate Menu")
