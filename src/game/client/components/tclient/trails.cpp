@@ -159,7 +159,8 @@ void CTrails::OnRender()
 
 		// Stuff breaks if we have less than 3 points because we cannot calculate an angle between segments to preserve constant width
 		// TODO: Pad the list with generated entries in the same direction as before
-		if((int)s_Trail.size() < 3)
+		const int TrailCount = (int)s_Trail.size();
+		if(TrailCount < 3)
 			continue;
 
 		if(PredictPlayer)
@@ -219,8 +220,9 @@ void CTrails::OnRender()
 			}
 
 			Part.m_Col.a = Alpha;
+			float TrueProgress = (TrailCount > 1) ? (float)i / (float)(TrailCount - 1) : 0.0f;
 			if(g_Config.m_EcTeeTrailFade)
-				Part.m_Col.a *= 1.0 - Part.m_Progress;
+				Part.m_Col.a *= (1.0f - TrueProgress); // Use TrueProgress here to avoid alpha popping
 
 			Part.m_Width = Width;
 			if(g_Config.m_EcTeeTrailTaper)
