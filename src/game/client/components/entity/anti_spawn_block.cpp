@@ -63,3 +63,9 @@ void CAntiSpawnBlock::OnRender()
 		}
 	}
 }
+
+void CAntiSpawnBlock::OnStateChange(int NewState, int OldState)
+{
+	if(NewState != OldState)
+		Reset();
+}

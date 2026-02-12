@@ -21,6 +21,7 @@ public:
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
 	virtual void OnSelfDeath() override { Reset(); }
+	virtual void OnStateChange(int NewState, int OldState) override;
 };
 
 #endif
