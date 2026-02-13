@@ -29,8 +29,8 @@
 
 #include <string>
 #include <vector>
+#include <engine/font_icons.h>
 
-using namespace FontIcons;
 using namespace std::chrono_literals;
 
 enum
@@ -306,7 +306,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
 		Ui()->DoLabel(&Label, "qxdFox", LineSize, TEXTALIGN_ML);
-		if(Ui()->DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
+		if(Ui()->DoButton_FontIcon(&s_LinkButton, FontIcon::ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
 			Client()->ViewLink("https://github.com/qxdFox");
 	}
 
@@ -1391,7 +1391,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	static CButtonContainer s_ReverseEntries;
 	static bool s_Reversed = true;
-	if(Ui()->DoButton_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, BUTTONFLAG_LEFT))
+	if(Ui()->DoButton_FontIcon(&s_ReverseEntries, FontIcon::CHEVRON_DOWN, 0, &Button, BUTTONFLAG_LEFT))
 	{
 		s_Reversed = !s_Reversed;
 	}
@@ -1457,7 +1457,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		DeleteButton.VSplitLeft(MarginSmall, nullptr, &DeleteButton);
 		DeleteButton.VSplitRight(MarginExtraSmall, &DeleteButton, nullptr);
 
-		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, BUTTONFLAG_LEFT))
+		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FontIcon::TRASH, 0, &DeleteButton, BUTTONFLAG_LEFT))
 			GameClient()->m_WarList.RemoveWarEntry(pEntry);
 
 		bool IsClan = false;
@@ -1475,7 +1475,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 		if(IsClan)
 		{
-			RenderFontIcon(EntryTypeRect, FONT_ICON_USERS, 18.0f, TEXTALIGN_MC);
+			RenderFontIcon(EntryTypeRect, FontIcon::USERS, 18.0f, TEXTALIGN_MC);
 		}
 		else
 		{
@@ -1490,7 +1490,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		if(str_comp(pEntry->m_aReason, "") != 0)
 		{
 			EntryRect.VSplitRight(20.0f, &EntryRect, &ToolTip);
-			RenderFontIcon(ToolTip, FONT_ICON_COMMENT, 18.0f, TEXTALIGN_MC);
+			RenderFontIcon(ToolTip, FontIcon::COMMENT, 18.0f, TEXTALIGN_MC);
 			GameClient()->m_Tooltips.DoToolTip(&s_vItemIds[i], &ToolTip, pEntry->m_aReason);
 			GameClient()->m_Tooltips.SetFadeTime(&s_vItemIds[i], 0.0f);
 		}
@@ -1715,7 +1715,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 			TypeRect.VSplitRight(20.0f, &TypeRect, &DeleteButton);
 			DeleteButton.HSplitTop(20.0f, &DeleteButton, nullptr);
 			DeleteButton.Margin(2.0f, &DeleteButton);
-			if(DoButtonNoRect_FontIcon(&s_vTypeDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
+			if(DoButtonNoRect_FontIcon(&s_vTypeDeleteButtons[i], FontIcon::TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
 				m_pRemoveWarType = pType;
 		}
 		if(g_Config.m_ClWarlistBrowser && pType != GameClient()->m_WarList.m_pWarTypeNone)
@@ -1726,7 +1726,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 			const bool BrowserFlagSet = IsFlagSet(g_Config.m_ClWarlistrowserFlags, i);
 
-			if(DoButtonNoRect_FontIcon(&s_vTypeBrowserHideButtons[i], BrowserFlagSet ? FONT_ICON_EYE_SLASH : FONT_ICON_EYE, 0, &HideButton, IGraphics::CORNER_ALL))
+			if(DoButtonNoRect_FontIcon(&s_vTypeBrowserHideButtons[i], BrowserFlagSet ? FontIcon::EYE_SLASH : FontIcon::EYE, 0, &HideButton, IGraphics::CORNER_ALL))
 			{
 				SetFlag(g_Config.m_ClWarlistrowserFlags, i, !BrowserFlagSet);
 			}
@@ -1909,8 +1909,8 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 			float MaxExtent = std::max(Cross.w, Cross.h);
 			TextRender()->TextColor(ColorRGBA(1.0f, 0.0f, 0.0f));
 			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-			const auto TextBoundingBox = TextRender()->TextBoundingBox(MaxExtent * 0.8f, FONT_ICON_XMARK);
-			TextRender()->Text(Cross.x + (Cross.w - TextBoundingBox.m_W) / 2.0f, Cross.y + (Cross.h - TextBoundingBox.m_H) / 2.0f, MaxExtent * 0.8f, FONT_ICON_XMARK);
+			const auto TextBoundingBox = TextRender()->TextBoundingBox(MaxExtent * 0.8f, FontIcon::XMARK);
+			TextRender()->Text(Cross.x + (Cross.w - TextBoundingBox.m_W) / 2.0f, Cross.y + (Cross.h - TextBoundingBox.m_H) / 2.0f, MaxExtent * 0.8f, FontIcon::XMARK);
 			TextRender()->TextColor(TextRender()->DefaultTextColor());
 			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 		};
@@ -3390,7 +3390,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 						GameClient()->m_MapImages.SetTextureScale(g_Config.m_ClTextEntitiesSize);
 					}
 					static CButtonContainer s_FontDirectoryId;
-					if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, BUTTONFLAG_LEFT))
+					if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FontIcon::FOLDER, 0, &FontDirectory, BUTTONFLAG_LEFT))
 					{
 						Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
 						Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);

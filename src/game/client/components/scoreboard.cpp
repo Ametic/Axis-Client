@@ -783,7 +783,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
 					// TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-					// TextRender()->TextEx(&Cursor, FontIcons::FONT_ICON_EYE);
+					// TextRender()->TextEx(&Cursor, FontIcons::FontIcon::EYE);
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 					// TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 					TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);

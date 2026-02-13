@@ -609,7 +609,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
 			Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);
 		}
-		if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENTNEWS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, &Active))
+		if(DoButton_MenuTab(&s_EClientButton, FontIcon::INFO, ActivePage == PAGE_ECLIENTNEWS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, &Active))
 		{
 			NewPage = PAGE_ECLIENTNEWS;
 			g_Config.m_EcUnreadNews = false;
@@ -802,7 +802,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 				Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
 				Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);
 			}
-			if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENTNEWS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, &Active))
+			if(DoButton_MenuTab(&s_EClientButton, FontIcon::INFO, ActivePage == PAGE_ECLIENTNEWS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, &Active))
 			{
 				NewPage = PAGE_ECLIENTNEWS;
 				g_Config.m_EcUnreadNews = false;

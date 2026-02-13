@@ -446,7 +446,7 @@ void CClient::SetState(EClientState State)
 		CServerInfo CurrentServerInfo;
 		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(CurrentServerInfo, GameClient()->Map()->BaseName(), Registered);
+		Discord()->SetGameInfo(CurrentServerInfo, GameClient()->Map()->BaseName(), g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
 		Steam()->SetGameInfo(ServerAddress(), GameClient()->Map()->BaseName(), Registered);
 	}
 	else if(OldState == IClient::STATE_ONLINE)
@@ -470,7 +470,7 @@ void CClient::DiscordRPCchange()
 		CServerInfo CurrentServerInfo;
 		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(CurrentServerInfo, m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
+		Discord()->SetGameInfo(CurrentServerInfo, GameClient()->Map()->BaseName(), g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{

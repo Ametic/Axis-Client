@@ -18,10 +18,8 @@
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
-using namespace FontIcons;
-
-constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // E-Client
-static constexpr ColorRGBA gs_HighlightedTextColor = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
+static constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // E-Client
+static constexpr ColorRGBA HIGHLIGHTED_TEXT_COLOR = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
 
 static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Inside)
 {
@@ -2132,7 +2130,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 		// Plus/minus icon for extend/collapse
 		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 		TextRender()->TextColor(Ui()->HotItem() == &s_aWarListExtended[WarlistType] ? TextRender()->DefaultTextColor() : ColorRGBA(0.6f, 0.6f, 0.6f, 1.0f));
-		Ui()->DoLabel(&Icon, s_aWarListExtended[WarlistType] ? FONT_ICON_SQUARE_MINUS : FONT_ICON_SQUARE_PLUS, Icon.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+		Ui()->DoLabel(&Icon, s_aWarListExtended[WarlistType] ? FontIcon::SQUARE_MINUS : FontIcon::SQUARE_PLUS, Icon.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 
@@ -2263,7 +2261,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 				TextRender()->TextColor(Ui()->HotItem() == Entry.RemoveButtonId() ? TextRender()->DefaultTextColor() : ColorRGBA(0.4f, 0.4f, 0.4f, 1.0f));
 				TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 				TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
-				Ui()->DoLabel(&RemoveButton, FONT_ICON_TRASH, RemoveButton.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+				Ui()->DoLabel(&RemoveButton, FontIcon::TRASH, RemoveButton.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
 				TextRender()->SetRenderFlags(0);
 				TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());

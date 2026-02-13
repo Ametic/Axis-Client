@@ -1624,11 +1624,10 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				{
 					const char *PName = str_find_nocase(pLine, "'");
 					const char *NameLength = str_find_nocase(pLine, "' ");
-					using namespace std;
 					if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
 					{
 						int nLength = str_length(PName) - str_length(NameLength);
-						string Name(PName);
+						std::string Name(PName);
 						Name.erase(nLength);
 						Name.erase(Name.begin());
 
