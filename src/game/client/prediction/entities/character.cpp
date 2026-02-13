@@ -366,7 +366,7 @@ void CCharacter::FireWeapon()
 
 			pTarget->TakeDamage(Force, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
 				GetCid(), m_Core.m_ActiveWeapon);
-			pTarget->UnFreeze();
+			pTarget->Unfreeze();
 
 			Hits++;
 		}
@@ -787,7 +787,7 @@ void CCharacter::HandleTiles(int Index)
 	}
 	else if(((m_TileIndex == TILE_UNFREEZE) || (m_TileFIndex == TILE_UNFREEZE)) && !m_Core.m_DeepFrozen)
 	{
-		UnFreeze();
+		Unfreeze();
 	}
 
 	// deep freeze
@@ -1076,7 +1076,7 @@ void CCharacter::DDRaceTick()
 			m_Input.m_Hook = 0;
 		}
 		if(m_FreezeTime == 1)
-			UnFreeze();
+			Unfreeze();
 
 		m_AliveAccumulation = std::min(m_AliveAccumulation - 1, 0);
 		m_AliveAccumulation = std::max(m_AliveAccumulation, -g_Config.m_TcUnfreezeLagDelayTicks);
@@ -1190,7 +1190,7 @@ bool CCharacter::Freeze()
 	return Freeze(g_Config.m_SvFreezeDelay);
 }
 
-bool CCharacter::UnFreeze()
+bool CCharacter::Unfreeze()
 {
 	if(m_FreezeTime > 0)
 	{
@@ -1372,13 +1372,13 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 				m_Core.m_DeepFrozen = true;
 		}
 		else
-			UnFreeze();
+			Unfreeze();
 
 		m_Core.ReadDDNet(pExtended);
 
 		if(!GameWorld()->m_WorldConfig.m_PredictFreeze)
 		{
-			UnFreeze();
+			Unfreeze();
 		}
 	}
 	else
@@ -1453,7 +1453,7 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 		if(pChar->m_Weapon != WEAPON_NINJA || pChar->m_AttackTick > m_Core.m_FreezeStart || absolute(pChar->m_VelX) == 256 * 10 || !GameWorld()->m_WorldConfig.m_PredictFreeze)
 		{
 			m_Core.m_DeepFrozen = false;
-			UnFreeze();
+			Unfreeze();
 		}
 
 		m_TuneZoneOverride = TuneZone::OVERRIDE_NONE;
