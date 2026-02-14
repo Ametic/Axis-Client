@@ -53,8 +53,9 @@ MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 2113893167, CFGFLAG_
 MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 2097217461, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
 
 // Fast Input
-MACRO_CONFIG_INT(TcFastInput, ec_fast_input, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction up to 20ms faster")
-MACRO_CONFIG_INT(TcFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Do an extra 1 tick (20ms) for other tees with your fast inputs. (increases visual latency, makes dragging easier)")
+MACRO_CONFIG_INT(TcFastInput, ec_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction before the next tick")
+MACRO_CONFIG_INT(TcFastInputAmount, ec_fast_input_amount, 20, 1, 50, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many milliseconds fast input will apply")
+MACRO_CONFIG_INT(TcFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply fast input to other tees")
 
 // Anti Ping Smoothing
 MACRO_CONFIG_INT(TcAntiPingImproved, ec_antiping_improved, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Different antiping smoothing algorithm, not compatible with cl_antiping_smooth")

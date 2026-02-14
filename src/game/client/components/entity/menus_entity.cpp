@@ -2762,7 +2762,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Fast Input */
 	{
 		FastInput.HSplitTop(Margin, nullptr, &FastInput);
-		FastInput.HSplitTop(g_Config.m_TcFastInput ? 100.0f : 80.0f, &FastInput, nullptr);
+		FastInput.HSplitTop(g_Config.m_TcFastInput ? 125.0f : 80.0f, &FastInput, nullptr);
 		if(s_ScrollRegion.AddRect(FastInput))
 		{
 			FastInput.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -2771,9 +2771,12 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			FastInput.HSplitTop(HeaderHeight, &Button, &FastInput);
 			Ui()->DoLabel(&Button, Localize("Input"), HeaderSize, HeaderAlignment);
 			{
-				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInput, Localize("Fast Inputs (-20ms visual delay)"), &g_Config.m_TcFastInput, &FastInput, LineSize))
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInput, Localize("Fast Input (reduced visual delay)"), &g_Config.m_TcFastInput, &FastInput, LineSize))
 					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
 
+				FastInput.HSplitTop(LineSize, &Button, &FastInput);
+				DoSliderWithScaledValue(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, 1, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+				
 				FastInput.HSplitTop(MarginSmall, nullptr, &FastInput);
 				if(g_Config.m_TcFastInput)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, Localize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &FastInput, LineSize);
