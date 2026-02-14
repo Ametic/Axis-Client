@@ -615,7 +615,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 				RowAndSpacing.Draw(Color, TeamRectCorners, RoundRadius);
 
-				if(g_Config.m_ClRevertTeamColors)
+				if(g_Config.m_ClScoreboardOutlineTeams)
 				{
 					int TeamRectSides = IGraphics::SIDE_L | IGraphics::SIDE_R;
 					if(TeamRectCorners & IGraphics::CORNER_T)
