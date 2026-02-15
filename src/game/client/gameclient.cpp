@@ -2629,6 +2629,9 @@ void CGameClient::OnPredict()
 	if(g_Config.m_TcFastInput && !g_Config.m_TcFastInputOthers)
 		FinalTickOthers = FinalTickSelf - FastInputTicks;
 
+	int LocalTee = g_Config.m_ClDummy ^ m_IsDummySwapping;
+	int DummyTee = LocalTee ^ 1;
+
 	for(int Tick = Client()->GameTick(g_Config.m_ClDummy) + 1; Tick <= FinalTickSelf; Tick++)
 	{
 		// fetch the previous characters
@@ -2665,9 +2668,24 @@ void CGameClient::OnPredict()
 
 		if(g_Config.m_TcFastInput && Tick > FinalTickRegular)
 		{
-			pInputData = &m_Controls.m_FastInput;
-			if(g_Config.m_ClDummyCopyMoves && PredictDummy())
-				pDummyInputData = &m_Controls.m_FastInput;
+			pInputData = &m_Controls.m_aFastInput[LocalTee];
+			if(g_Config.m_ClDummyCopyMoves && PredictDummy() && pDummyChar)
+			{
+				CNetObj_PlayerInput DummyFastInput;
+				if(g_Config.m_ClDummyHammer)
+				{
+					DummyFastInput = m_HammerInput;
+				}
+				else
+				{
+					DummyFastInput = m_Controls.m_aFastInput[LocalTee];
+					DummyFastInput.m_Fire = m_Controls.m_aFastInput[DummyTee].m_Fire;
+					DummyFastInput.m_WantedWeapon = m_Controls.m_aFastInput[DummyTee].m_WantedWeapon;
+					DummyFastInput.m_NextWeapon = m_Controls.m_aFastInput[DummyTee].m_NextWeapon;
+					DummyFastInput.m_PrevWeapon = m_Controls.m_aFastInput[DummyTee].m_PrevWeapon;
+				}
+				pDummyInputData = &DummyFastInput;
+			}
 		}
 
 		if(DummyFirst)
@@ -2700,6 +2718,12 @@ void CGameClient::OnPredict()
 			for(int i = 0; i < MAX_CLIENTS; i++)
 				if(CCharacter *pChar = m_PredictedWorld.GetCharacterById(i))
 					m_aClients[i].m_Predicted = pChar->GetCore();
+		}
+		if(Tick == FinalTickRegular)
+		{
+			for(int i = 0; i < MAX_CLIENTS; i++)
+				if(CCharacter *pChar = m_PredictedWorld.GetCharacterById(i))
+					m_aClients[i].m_RegularPredicted = pChar->GetCore();
 		}
 
 		if(Tick == Client()->PredGameTick(g_Config.m_ClDummy))
@@ -3289,6 +3313,9 @@ void CGameClient::CClientData::Reset()
 
 	m_Predicted.Reset();
 	m_PrevPredicted.Reset();
+
+	// TClient
+	m_RegularPredicted.Reset();
 
 	if(m_pSkinInfo != nullptr)
 	{

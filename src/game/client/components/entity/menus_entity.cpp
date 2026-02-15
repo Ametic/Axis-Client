@@ -3406,7 +3406,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, Localize("Freeze stars"), &g_Config.m_ClFreezeStars, &Miscellaneous, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFreezeKatana, Localize("Show katana on frozen players"), &g_Config.m_TcFreezeKatana, &Miscellaneous, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFrozenKatana, Localize("Show katana on frozen players"), &g_Config.m_TcFrozenKatana, &Miscellaneous, LineSize);
 
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreboardOutlineTeams, Localize("Outline Teams in Scoreboard"), &g_Config.m_ClScoreboardOutlineTeams, &Miscellaneous, LineSize);
