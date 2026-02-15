@@ -14,6 +14,9 @@
 
 void CAntiSpawnBlock::Reset(int State)
 {
+	if(m_State == State)
+		return;
+
 	if(GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK)
 		GameClient()->m_Chat.SendChat(0, "/team 0");
 
@@ -27,7 +30,7 @@ void CAntiSpawnBlock::OnRender()
 	if(!g_Config.m_ClAntiSpawnBlock)
 	{
 		if(m_State != STATE_NONE)
-			Reset();
+			Reset(STATE_NONE);
 		return;
 	}
 
@@ -67,5 +70,5 @@ void CAntiSpawnBlock::OnRender()
 void CAntiSpawnBlock::OnStateChange(int NewState, int OldState)
 {
 	if(NewState != OldState)
-		Reset();
+		Reset(STATE_NONE);
 }
