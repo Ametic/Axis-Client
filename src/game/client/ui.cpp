@@ -1626,6 +1626,16 @@ bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *
 		Value -= Increment;
 		Value = std::clamp(Value, Min, Max);
 	}
+	if(Input()->KeyPress(KEY_A) && MouseInside(pRect))
+	{
+		Value -= Input()->ModifierIsPressed() ? 5 : 1;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->KeyPress(KEY_D) && MouseInside(pRect))
+	{
+		Value += Input()->ModifierIsPressed() ? 5 : 1;
+		Value = std::clamp(Value, Min, Max);
+	}
 
 	if(NoClampValue)
 	{
@@ -1657,6 +1667,134 @@ bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *
 	}
 	return false;
 }
+
+bool CUi::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
+{
+	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
+	const bool DelayUpdate = Flags & CUi::SCROLLBAR_OPTION_DELAYUPDATE;
+
+	int Value = (DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId)) ? m_ScrollbarValue : *pOption;
+	Min /= Scale;
+	Max /= Scale;
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
+	int Increment = std::max(1, (Max - Min) / 35);
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
+	{
+		Value += Increment;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && MouseInside(pRect))
+	{
+		Value -= Increment;
+		Value = std::clamp(Value, Min, Max);
+	}
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "%s: %i%s", pStr, Value * Scale, pSuffix);
+
+	if(NoClampValue)
+	{
+		// clamp the value internally for the scrollbar
+		Value = std::clamp(Value, Min, Max);
+	}
+
+	CUIRect Label, ScrollBar;
+	pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+
+	const float LabelFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
+	DoLabel(&Label, aBuf, LabelFontSize, TEXTALIGN_ML);
+
+	Value = pScale->ToAbsolute(DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max)), Min, Max);
+	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
+	{
+		Value = *pOption;
+	}
+
+	if(DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId))
+	{
+		m_ScrollbarValue = Value;
+		return false;
+	}
+
+	if(*pOption != Value)
+	{
+		*pOption = Value;
+		return true;
+	}
+	return false;
+}
+
+bool CUi::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
+{
+	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
+	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
+	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
+	const bool DelayUpdate = Flags & CUi::SCROLLBAR_OPTION_DELAYUPDATE;
+
+	int Value = (DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId)) ? m_ScrollbarValue : *pOption;
+	if(Infinite)
+	{
+		Max += 1;
+		if(Value == 0)
+			Value = Max;
+	}
+
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
+	int Increment = std::max(1, (Max - Min) / 35);
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
+	{
+		Value += Increment;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && MouseInside(pRect))
+	{
+		Value -= Increment;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->KeyPress(KEY_A) && MouseInside(pRect))
+	{
+		Value -= Input()->ModifierIsPressed() ? 5 : 1;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->KeyPress(KEY_D) && MouseInside(pRect))
+	{
+		Value += Input()->ModifierIsPressed() ? 5 : 1;
+		Value = std::clamp(Value, Min, Max);
+	}
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "%s: %.1f%s", pStr, (float)Value / DivideBy, pSuffix);
+
+	Value = std::clamp(Value, Min, Max);
+
+	CUIRect Label, ScrollBar;
+	if(MultiLine)
+		pRect->HSplitMid(&Label, &ScrollBar);
+	else
+		pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+
+	const float aFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
+	DoLabel(&Label, aBuf, aFontSize, TEXTALIGN_ML);
+
+	Value = pScale->ToAbsolute(DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max)), Min, Max);
+	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
+	{
+		Value = *pOption; // use previous out of range value instead if the scrollbar is at the edge
+	}
+	else if(Infinite)
+	{
+		if(Value == Max)
+			Value = 0;
+	}
+
+	if(*pOption != Value)
+	{
+		*pOption = Value;
+		return true;
+	}
+	return false;
+}
+
 
 void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 {

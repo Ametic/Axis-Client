@@ -493,6 +493,7 @@ void CEClient::OnConsoleInit()
 
 	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
 	Console()->Chain("ec_fast_input", ConchainFastInputs, this);
+	Console()->Chain("ec_fast_input_amount", ConchainFastInputs, this);
 
 	Console()->Chain("ec_discord_rpc", ConchainDiscordUpdate, this);
 	Console()->Chain("ec_discord_map_status", ConchainDiscordUpdate, this);

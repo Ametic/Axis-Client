@@ -2721,9 +2721,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					if(g_Config.m_TcUnfreezeLagDelayTicks < g_Config.m_TcUnfreezeLagTicks)
 						g_Config.m_TcUnfreezeLagDelayTicks = g_Config.m_TcUnfreezeLagTicks;
 					AntiLatency.HSplitTop(LineSize, &Button, &AntiLatency);
-					DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagTicks, &g_Config.m_TcUnfreezeLagTicks, &Button, Localize("Amount"), 100, 300, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagTicks, &g_Config.m_TcUnfreezeLagTicks, &Button, Localize("Amount"), 100, 300, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
 					AntiLatency.HSplitTop(LineSize, &Button, &AntiLatency);
-					DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagDelayTicks, &g_Config.m_TcUnfreezeLagDelayTicks, &Button, Localize("Delay"), 100, 3000, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagDelayTicks, &g_Config.m_TcUnfreezeLagDelayTicks, &Button, Localize("Delay"), 100, 3000, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
 					Offset += 40.0f;
 				}
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcUnpredOthersInFreeze, Localize("Dont predict other players if you are frozen"), &g_Config.m_TcUnpredOthersInFreeze, &AntiLatency, LineSize);
@@ -2775,8 +2775,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
 
 				FastInput.HSplitTop(LineSize, &Button, &FastInput);
-				DoSliderWithScaledValue(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, 1, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
-				
+				if(Ui()->DoScrollbarOption(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
+					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
+
 				FastInput.HSplitTop(MarginSmall, nullptr, &FastInput);
 				if(g_Config.m_TcFastInput)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, Localize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &FastInput, LineSize);
@@ -3514,11 +3515,11 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				Ui()->DoScrollbarOption(&g_Config.m_ClChatBubbleSize, &g_Config.m_ClChatBubbleSize, &Button, Localize("Chat Bubble Size"), 20, 30);
 				ChatBubbles.HSplitTop(MarginSmall, &Button, &ChatBubbles);
 				ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
-				DoFloatScrollBar(&g_Config.m_ClChatBubbleShowTime, &g_Config.m_ClChatBubbleShowTime, &Button, Localize("Show the Bubbles for"), 200, 1000, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleShowTime, &g_Config.m_ClChatBubbleShowTime, &Button, Localize("Show the Bubbles for"), 200, 1000, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
 				ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
-				DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeIn, &g_Config.m_ClChatBubbleFadeIn, &Button, Localize("fade in for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeIn, &g_Config.m_ClChatBubbleFadeIn, &Button, Localize("fade in for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
 				ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
-				DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeOut, &g_Config.m_ClChatBubbleFadeOut, &Button, Localize("fade out for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeOut, &g_Config.m_ClChatBubbleFadeOut, &Button, Localize("fade out for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
 			}
 		}
 	}
@@ -3745,55 +3746,6 @@ int CMenus::DoButtonNoRect_FontIcon(CButtonContainer *pButtonContainer, const ch
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
 }
 
-bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
-{
-	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
-
-	int Value = *pOption;
-	Min /= Scale;
-	Max /= Scale;
-	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
-	int Increment = std::max(1, (Max - Min) / 35);
-	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
-	{
-		Value += Increment;
-		Value = std::clamp(Value, Min, Max);
-	}
-	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && Ui()->MouseInside(pRect))
-	{
-		Value -= Increment;
-		Value = std::clamp(Value, Min, Max);
-	}
-
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "%s: %i%s", pStr, Value * Scale, pSuffix);
-
-	if(NoClampValue)
-	{
-		// clamp the value internally for the scrollbar
-		Value = std::clamp(Value, Min, Max);
-	}
-
-	CUIRect Label, ScrollBar;
-	pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
-
-	const float LabelFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
-	Ui()->DoLabel(&Label, aBuf, LabelFontSize, TEXTALIGN_ML);
-
-	Value = pScale->ToAbsolute(Ui()->DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max)), Min, Max);
-	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
-	{
-		Value = *pOption;
-	}
-
-	if(*pOption != Value)
-	{
-		*pOption = Value;
-		return true;
-	}
-	return false;
-}
-
 vec2 CMenus::TeeEyeDirection(vec2 Pos)
 {
 	vec2 DeltaPosition = Ui()->MousePos() - Pos;
@@ -3866,76 +3818,6 @@ void CMenus::RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTe
 			TeeEmote = EMOTE_HAPPY;
 	}
 	RenderTools()->RenderTee(pAnim, pInfo, TeeEmote, TeeDirection, Pos);
-}
-
-bool CMenus::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
-{
-	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
-	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
-	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
-
-	int Value = *pOption;
-	if(Infinite)
-	{
-		Max += 1;
-		if(Value == 0)
-			Value = Max;
-	}
-
-	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
-	int Increment = std::max(1, (Max - Min) / 35);
-	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
-	{
-		Value += Increment;
-		Value = std::clamp(Value, Min, Max);
-	}
-	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && Ui()->MouseInside(pRect))
-	{
-		Value -= Increment;
-		Value = std::clamp(Value, Min, Max);
-	}
-	if(Input()->KeyPress(KEY_A) && Ui()->MouseInside(pRect))
-	{
-		Value -= Input()->ModifierIsPressed() ? 5 : 1;
-		Value = std::clamp(Value, Min, Max);
-	}
-	if(Input()->KeyPress(KEY_D) && Ui()->MouseInside(pRect))
-	{
-		Value += Input()->ModifierIsPressed() ? 5 : 1;
-		Value = std::clamp(Value, Min, Max);
-	}
-
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "%s: %.1f%s", pStr, (float)Value / DivideBy, pSuffix);
-
-	Value = std::clamp(Value, Min, Max);
-
-	CUIRect Label, ScrollBar;
-	if(MultiLine)
-		pRect->HSplitMid(&Label, &ScrollBar);
-	else
-		pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
-
-	const float aFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
-	Ui()->DoLabel(&Label, aBuf, aFontSize, TEXTALIGN_ML);
-
-	Value = pScale->ToAbsolute(Ui()->DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max)), Min, Max);
-	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
-	{
-		Value = *pOption; // use previous out of range value instead if the scrollbar is at the edge
-	}
-	else if(Infinite)
-	{
-		if(Value == Max)
-			Value = 0;
-	}
-
-	if(*pOption != Value)
-	{
-		*pOption = Value;
-		return true;
-	}
-	return false;
 }
 
 bool CMenus::DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CButtonContainer &ClearButton, const char *pName, const char *pCommand)
