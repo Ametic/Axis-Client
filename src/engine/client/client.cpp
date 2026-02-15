@@ -2374,6 +2374,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 			const int Version = Unpacker.GetInt();
 			if(Unpacker.Error() || Version < 0)
 				return;
+			log_info("foxnet", "server is running FoxNet version %d", Version);
 			m_FoxNetVersion = Version;
 			SendFastInputsInfo(CONN_MAIN);
 		}
