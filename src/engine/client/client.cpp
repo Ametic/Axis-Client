@@ -215,6 +215,7 @@ void CClient::SendFastInputsInfo(int Conn)
 {
 	CMsgPacker Msg(NETMSG_FOXNET_FASTINPUTS, true);
 	Msg.AddInt(g_Config.m_TcFastInput);
+	Msg.AddInt(g_Config.m_TcFastInputAmount);
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
