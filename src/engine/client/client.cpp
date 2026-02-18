@@ -3026,6 +3026,7 @@ void CClient::Update()
 			}
 
 			ResetDDNetInfoTask();
+			GameClient()->OnServerBrowserRefresh(); // E-Client
 		}
 		else if(m_pDDNetInfoTask->State() == EHttpState::ERROR || m_pDDNetInfoTask->State() == EHttpState::ABORTED)
 		{
@@ -4282,7 +4283,7 @@ void CClient::UpdateAndSwap()
 void CClient::ServerBrowserUpdate()
 {
 	m_ServerBrowser.RequestResort();
-	GameClient()->OnServerBrowserUpdate();
+	GameClient()->OnServerBrowserRefresh(); // E-Client
 }
 
 void CClient::ConchainServerBrowserUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

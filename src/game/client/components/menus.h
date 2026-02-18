@@ -934,7 +934,6 @@ public:
 
 	void UpdateWarlistCache();
 
-	int64_t m_ScheduledUpdate = 0;
 	int m_MenusRainbowColor;
 
 	/*

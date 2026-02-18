@@ -2125,7 +2125,7 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 				{
 					if(Render)
 						TextRender()->TextColor(FriendColor);
-					TextRender()->TextEx(&LocalCursor, "♥ ", -1);
+					TextRender()->TextEx(&LocalCursor, g_Config.m_ClFriendPrefix, -1);
 				}
 			}
 

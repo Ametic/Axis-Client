@@ -439,7 +439,7 @@ public:
 
 	virtual void OnSelfDeath() = 0;
 
-	virtual void OnServerBrowserUpdate() = 0;
+	virtual void OnServerBrowserRefresh() = 0;
 	virtual void ClientMessage(const char *pString) = 0;
 	virtual void OnJoinInfo() = 0;
 	virtual void SetLastMovementTime() = 0;

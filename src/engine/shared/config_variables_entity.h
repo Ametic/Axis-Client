@@ -90,8 +90,11 @@ MACRO_CONFIG_INT(ClWarlistBrowser, ec_warlist_browser, 1, 0, 1, CFGFLAG_CLIENT |
 MACRO_CONFIG_INT(ClWarlistrowserFlags, ec_warlist_browser_flags, 0, 0, 262144, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to hide wartypes in server browser")
 MACRO_CONFIG_INT(ClAutoAddFlags, ec_warlist_auto_add_flags, 4, 0, 262144, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable wartypes getting auto added")
 
+// Info
+MACRO_CONFIG_INT(ClListsInfo, ec_list_warlist_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many enemies, teams, helpers and mutes are online on the current server")
+
 // Server Info
-// MACRO_CONFIG_INT(ClWarlistServerInfo, ec_warlist_server_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show warlist info in the server info")
+MACRO_CONFIG_INT(ClWarlistPrefixesServerInfo, ec_warlist_prefixes_server_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show warlist prefixes in the server info")
 
 // Run on Join
 MACRO_CONFIG_STR(ClExecuteOnConnect, ec_execute_on_connect, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Run a console command before connect")
@@ -191,11 +194,11 @@ MACRO_CONFIG_INT(ClChatClientPrefix, ec_do_chat_client_prefix, 1, 0, 1, CFGFLAG_
 MACRO_CONFIG_INT(ClSpectatePrefix, ec_do_spec_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names")
 
 // Prefixes
-MACRO_CONFIG_STR(ClClientPrefix, ec_client_prefix, 8, "— ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client (Echo) Message Prefix")
-MACRO_CONFIG_STR(ClServerPrefix, ec_server_prefix, 8, "*** ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Server Message Prefix")
-MACRO_CONFIG_STR(ClWarlistPrefix, ec_warlist_prefix, 8, "♦ ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Warlist Prefix")
-MACRO_CONFIG_STR(ClFriendPrefix, ec_friend_prefix, 8, "♥ ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Friend Prefix (alt + num3 = ♥)")
-MACRO_CONFIG_STR(ClSpecPrefix, ec_spec_prefix, 8, "• ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spectating Prefix (alt + num7 = ♥)")
+MACRO_CONFIG_STR(ClClientPrefix, ec_client_prefix, 5, "— ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client (Echo) Message Prefix")
+MACRO_CONFIG_STR(ClServerPrefix, ec_server_prefix, 5, "*** ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Server Message Prefix")
+MACRO_CONFIG_STR(ClWarlistPrefix, ec_warlist_prefix, 5, "♦ ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Warlist Prefix")
+MACRO_CONFIG_STR(ClFriendPrefix, ec_friend_prefix, 5, "♥ ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Friend Prefix (alt + num3 = ♥)")
+MACRO_CONFIG_STR(ClSpecPrefix, ec_spec_prefix, 5, "• ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spectating Prefix (alt + num7 = •)")
 
 // Mutes
 MACRO_CONFIG_INT(ClReplyMuted, ec_reply_muted, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "replies to muted players if they ping you")
@@ -243,9 +246,6 @@ MACRO_CONFIG_STR(ClAutoJoinTeamName, ec_auto_join_team_name, 16, "", CFGFLAG_CLI
 
 MACRO_CONFIG_INT(ClAutoAddOnNameChange, ec_auto_add_on_name_change, 2, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds a player back to a list if their name changed")
 MACRO_CONFIG_INT(ClAutoJoinTest, ec_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
-
-// Info
-MACRO_CONFIG_INT(ClListsInfo, ec_list_warlist_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many enemies, teams, helpers and mutes are online on the current server")
 
 // Anti Spawn Block
 MACRO_CONFIG_INT(ClAntiSpawnBlock, ec_anti_spawn_block, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Puts you in a Team before enter Play Ground on Multeasymap")

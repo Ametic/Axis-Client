@@ -1629,14 +1629,15 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
-	Column2.HSplitBottom(180.0f, nullptr, &Column2);
+	Column2.HSplitBottom(200.0f, nullptr, &Column2);
 
 	Column2.HSplitTop(HeadlineHeight, &Label, &Column2);
 	Ui()->DoLabel(&Label, Localize("Settings"), HeadlineFontSize, TEXTALIGN_ML);
 	Column2.HSplitTop(MarginSmall, nullptr, &Column2);
 
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarList, Localize("Enable warlist"), &g_Config.m_ClWarList, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistPrefixes, Localize("Warlist Prefixes"), &g_Config.m_ClWarlistPrefixes, &Column2, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistPrefixes, Localize("Warlist Chat Prefixes"), &g_Config.m_ClWarlistPrefixes, &Column2, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistPrefixesServerInfo, Localize("Warlist Prefix Server Info"), &g_Config.m_ClWarlistPrefixesServerInfo, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListChat, Localize("Colors in chat"), &g_Config.m_ClWarListChat, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListScoreboard, Localize("Colors in scoreboard"), &g_Config.m_ClWarListScoreboard, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSpecMenu, Localize("Colors in specmenu"), &g_Config.m_ClWarListSpecMenu, &Column2, LineSize);
@@ -2512,7 +2513,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					static CLineInput s_PrefixMsg;
 					s_PrefixMsg.SetBuffer(g_Config.m_ClWarlistPrefix, sizeof(g_Config.m_ClWarlistPrefix));
 					s_PrefixMsg.SetEmptyText("alt4");
-					if(DoButton_CheckBox(&g_Config.m_ClWarlistPrefixes, "Warlist Prefix", g_Config.m_ClWarlistPrefixes, &ChatSettings))
+					if(DoButton_CheckBox(&g_Config.m_ClWarlistPrefixes, "Warlist Chat Prefixes", g_Config.m_ClWarlistPrefixes, &ChatSettings))
 					{
 						g_Config.m_ClWarlistPrefixes ^= 1;
 					}

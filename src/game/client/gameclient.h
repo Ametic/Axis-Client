@@ -1074,7 +1074,7 @@ public:
 	// E-Client
 	void OnSelfDeath() override;
 
-	void OnServerBrowserUpdate() override;
+	void OnServerBrowserRefresh() override;
 
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;

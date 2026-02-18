@@ -5893,9 +5893,9 @@ void CGameClient::OnSelfDeath()
 		pComponent->OnSelfDeath();
 }
 
-void CGameClient::OnServerBrowserUpdate()
+void CGameClient::OnServerBrowserRefresh()
 {
-	m_Menus.m_ScheduledUpdate = time_get() + time_freq() / 64.0f;
+	m_Menus.UpdateWarlistCache();
 }
 
 vec2 CGameClient::GetCursorWorldPos() const

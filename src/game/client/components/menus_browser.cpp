@@ -1423,7 +1423,25 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 				TextRender()->TextEx(&NameCursor, pFilteredStr + FilterLen, -1);
 			});
 		if(!Printed)
+		{
+			if(g_Config.m_ClWarlistPrefixesServerInfo && g_Config.m_ClWarList && pName)
+			{
+				for(const CWarlistCache &Warlist : m_vWarlistCache)
+				{
+					if(Warlist.m_ServerIndex != pSelectedServer->m_ServerIndex)
+						continue;
+
+					if(str_comp(pName, Warlist.m_aName) == 0 || (str_comp(CurrentClient.m_aClan, Warlist.m_aClan) == 0 && CurrentClient.m_aClan[0] != '\0'))
+					{
+						TextRender()->TextColor(Warlist.m_pWarType->m_Color);
+						TextRender()->TextEx(&NameCursor, g_Config.m_ClWarlistPrefix, -1);
+						TextRender()->TextColor(TextRender()->DefaultTextColor());
+						break;
+					}
+				}
+			}
 			TextRender()->TextEx(&NameCursor, pName, -1);
+		}
 
 		// clan
 		CTextCursor ClanCursor;
@@ -1935,13 +1953,6 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 
 	RenderServerbrowserTabBar(TabBar);
 	RenderServerbrowserToolBox(ToolBox);
-
-	// E-Client
-	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && m_ScheduledUpdate >= 0 && m_ScheduledUpdate <= time_get())
-	{
-		UpdateWarlistCache();
-		m_ScheduledUpdate = -1;
-	}
 }
 
 template<typename F>
@@ -2049,6 +2060,7 @@ void CMenus::UpdateCommunityCache(bool Force)
 		ServerBrowser()->CommunityCache().Update(Force);
 	}
 }
+
 void CMenus::UpdateWarlistCache()
 {
 	m_vWarlistCache.clear();
@@ -2068,27 +2080,27 @@ void CMenus::UpdateWarlistCache()
 		}
 	}
 
-	std::unordered_set<const CServerInfo::CClient *> matchedClients;
+	std::unordered_set<const CServerInfo::CClient *> MatchedClients;
 
 	for(CWarEntry &Entry : GameClient()->m_WarList.m_vWarEntries)
 	{
 		if(Entry.m_aName[0] && NameMap.count(Entry.m_aName))
 		{
 			const CServerInfo::CClient *pClient = NameMap[Entry.m_aName].first;
-			if(matchedClients.find(pClient) == matchedClients.end())
+			if(MatchedClients.find(pClient) == MatchedClients.end())
 			{
 				m_vWarlistCache.push_back({&Entry, pClient, NameMap[Entry.m_aName].second});
-				matchedClients.insert(pClient);
+				MatchedClients.insert(pClient);
 				continue;
 			}
 		}
 		if(Entry.m_aClan[0] && ClanMap.count(Entry.m_aClan))
 		{
 			const CServerInfo::CClient *pClient = ClanMap[Entry.m_aClan].first;
-			if(matchedClients.find(pClient) == matchedClients.end())
+			if(MatchedClients.find(pClient) == MatchedClients.end())
 			{
 				m_vWarlistCache.push_back({&Entry, pClient, ClanMap[Entry.m_aClan].second});
-				matchedClients.insert(pClient);
+				MatchedClients.insert(pClient);
 			}
 		}
 	}

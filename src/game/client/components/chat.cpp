@@ -1138,7 +1138,7 @@ void CChat::OnPrepareLines(float y)
 			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(1.0f));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, "♥ ");
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClFriendPrefix);
 			}
 		}
 
