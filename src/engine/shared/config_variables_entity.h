@@ -74,7 +74,7 @@ MACRO_CONFIG_INT(ClWarListReason, ec_warlist_reason, 1, 0, 1, CFGFLAG_CLIENT | C
 MACRO_CONFIG_INT(ClWarListChat, ec_warlist_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war colors in chat")
 MACRO_CONFIG_INT(ClWarlistPrefixes, ec_warlist_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Warlist Prefix")
 MACRO_CONFIG_INT(ClWarListScoreboard, ec_warlist_scoreboard, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war colors in scoreboard")
-MACRO_CONFIG_INT(ClWarListSpecMenu, ec_warlist_spec_menu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war colors in spectate menu")
+MACRO_CONFIG_INT(ClWarListSpecMenu, ec_warlist_specmenu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war colors in spectate menu")
 MACRO_CONFIG_INT(ClWarListAllowDuplicates, ec_warlist_allow_duplicates, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allow duplicate war entries")
 
 MACRO_CONFIG_INT(ClWarListIndicator, ec_warlist_indicator, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use warlist for indicator")

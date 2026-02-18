@@ -599,9 +599,19 @@ void CSpectator::OnRender()
 
 		if(GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
 		{
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(1.f));
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(PlayerSelected ? 1.0f : 0.5f));
 			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, "♥", 220.0f);
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		else if(g_Config.m_ClSpecMenuPrefixes && g_Config.m_ClWarList)
+		{
+			const int ClientId = GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
+			if(GameClient()->m_WarList.GetAnyWar(ClientId))
+			{
+				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(ClientId).WithAlpha(PlayerSelected ? 1.0f : 0.5f));
+				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClWarlistPrefix, 220.0f);
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+			}
 		}
 
 		y += LineHeight;
