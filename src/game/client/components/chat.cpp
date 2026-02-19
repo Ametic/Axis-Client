@@ -1564,7 +1564,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					// Skip Wartype None
 					for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 					{
-						if(IsFlagSet(g_Config.m_ClAutoAddFlags, WarlistType))
+						if(IsFlagSet(g_Config.m_ClWarlistAutoAddFlags, WarlistType))
 							continue;
 						const char *pWarName = GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName;
 							

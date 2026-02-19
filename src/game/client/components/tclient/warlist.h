@@ -111,6 +111,8 @@ public:
 	std::vector<char> m_WarGroupMatches = {false, false, false, false};
 
 	char m_aReason[MAX_WARLIST_REASON_LENGTH] = "";
+
+	int m_WarTypeIndex = 0;
 };
 
 class CWarList : public CComponent

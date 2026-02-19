@@ -655,6 +655,7 @@ void CWarList::UpdateWarPlayers()
 		Cache.m_ClanColor = ColorRGBA(1, 1, 1, 1);
 		Cache.m_WarGroupMatches.clear();
 		Cache.m_WarGroupMatches.resize((int)m_WarTypes.size(), false);
+		Cache.m_WarTypeIndex = -1;
 
 		// Name war
 		auto itName = m_NameWarMap.find(Client.m_aName);
@@ -665,6 +666,7 @@ void CWarList::UpdateWarPlayers()
 			Cache.IsWarName = true;
 			Cache.m_NameColor = entry->m_pWarType->m_Color;
 			Cache.m_WarGroupMatches[entry->m_pWarType->m_Index] = true;
+			Cache.m_WarTypeIndex = entry->m_pWarType->m_Index;
 		}
 
 		// Clan war (only if not already a name war)
@@ -677,6 +679,7 @@ void CWarList::UpdateWarPlayers()
 			Cache.IsWarClan = true;
 			Cache.m_ClanColor = entry->m_pWarType->m_Color;
 			Cache.m_WarGroupMatches[entry->m_pWarType->m_Index] = true;
+			Cache.m_WarTypeIndex = entry->m_pWarType->m_Index;
 		}
 
 		// Mute

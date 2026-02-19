@@ -2128,7 +2128,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 	char aBuf[256];
 	for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 	{
-		if(IsFlagSet(g_Config.m_ClWarlistrowserFlags, WarlistType))
+		if(IsFlagSet(g_Config.m_ClWarlistBrowserFlags, WarlistType))
 			continue;
 
 		// Header for warlist type

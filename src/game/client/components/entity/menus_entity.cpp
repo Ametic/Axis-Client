@@ -82,7 +82,7 @@ const float ColorPickerLineSpacing = 5.0f;
 const float CornerRoundness = 15.0f;
 
 const float HeaderSize = 20.0f;
-const float HeaderAlignment = TEXTALIGN_MC;
+const int HeaderAlignment = TEXTALIGN_MC;
 const ColorRGBA BackgroundColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
 
 void CMenus::RenderSettingsEntity(CUIRect MainView)
@@ -1725,11 +1725,11 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 			HideButton.HSplitTop(20.0f, &HideButton, nullptr);
 			HideButton.Margin(2.0f, &HideButton);
 
-			const bool BrowserFlagSet = IsFlagSet(g_Config.m_ClWarlistrowserFlags, i);
+			const bool BrowserFlagSet = IsFlagSet(g_Config.m_ClWarlistBrowserFlags, i);
 
 			if(DoButtonNoRect_FontIcon(&s_vTypeBrowserHideButtons[i], BrowserFlagSet ? FontIcon::EYE_SLASH : FontIcon::EYE, 0, &HideButton, IGraphics::CORNER_ALL))
 			{
-				SetFlag(g_Config.m_ClWarlistrowserFlags, i, !BrowserFlagSet);
+				SetFlag(g_Config.m_ClWarlistBrowserFlags, i, !BrowserFlagSet);
 			}
 			GameClient()->m_Tooltips.DoToolTip(&s_vTypeBrowserHideButtons[i], &HideButton,
 				BrowserFlagSet ? Localize("Hidden in server browser") : Localize("Shown in server browser"));
@@ -2513,7 +2513,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					static CLineInput s_PrefixMsg;
 					s_PrefixMsg.SetBuffer(g_Config.m_ClWarlistPrefix, sizeof(g_Config.m_ClWarlistPrefix));
 					s_PrefixMsg.SetEmptyText("alt4");
-					if(DoButton_CheckBox(&g_Config.m_ClWarlistPrefixes, "Warlist Chat Prefixes", g_Config.m_ClWarlistPrefixes, &ChatSettings))
+					if(DoButton_CheckBox(&g_Config.m_ClWarlistPrefixes, "Warlist Prefix", g_Config.m_ClWarlistPrefixes, &ChatSettings))
 					{
 						g_Config.m_ClWarlistPrefixes ^= 1;
 					}
@@ -2668,32 +2668,88 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Frozen Tee Hud */
 	{
 		FrozenTeeHud.HSplitTop(Margin, nullptr, &FrozenTeeHud);
-		FrozenTeeHud.HSplitTop(g_Config.m_ClShowFrozenText ? 120.0f : 100.0f, &FrozenTeeHud, &AntiLatency);
+		int Size = 160.0f;
+		if(g_Config.m_ClShowFrozenText)
+			Size += 20.0f;
+		if(g_Config.m_ClWarList && g_Config.m_ClShowFrozenHud)
+			Size += 64.0f;
+
+		static int s_Offset = 0;
+
+		FrozenTeeHud.HSplitTop(Size + s_Offset, &FrozenTeeHud, &AntiLatency);
 		if(s_ScrollRegion.AddRect(FrozenTeeHud))
 		{
+			s_Offset = 0;
 			FrozenTeeHud.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			FrozenTeeHud.VMargin(Margin, &FrozenTeeHud);
 
 			FrozenTeeHud.HSplitTop(HeaderHeight, &Button, &FrozenTeeHud);
 			Ui()->DoLabel(&Button, Localize("Frozen Tee Display"), HeaderSize, HeaderAlignment);
 			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHud, Localize("Show frozen tee display"), &g_Config.m_ClShowFrozenHud, &FrozenTeeHud, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHudSkins, Localize("Use skins instead of ninja tees"), &g_Config.m_ClShowFrozenHudSkins, &FrozenTeeHud, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFrozenHudTeamOnly, Localize("Only show after joining a team"), &g_Config.m_ClFrozenHudTeamOnly, &FrozenTeeHud, LineSize);
+
 				FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
 				Ui()->DoScrollbarOption(&g_Config.m_ClFrozenMaxRows, &g_Config.m_ClFrozenMaxRows, &Button, Localize("Max Rows"), 1, 6);
 				FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
-				Ui()->DoScrollbarOption(&g_Config.m_ClFrozenHudTeeSize, &g_Config.m_ClFrozenHudTeeSize, &Button, Localize("Tee Size"), 8, 27);
+				Ui()->DoScrollbarOption(&g_Config.m_ClFrozenHudTeeSize, &g_Config.m_ClFrozenHudTeeSize, &Button, Localize	("Tee Size"), 8, 27);
 
+				FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
+				if(DoButton_CheckBox(&g_Config.m_ClShowFrozenText, Localize("Tees left alive text"), g_Config.m_ClShowFrozenText >= 1, &Button))
+					g_Config.m_ClShowFrozenText = g_Config.m_ClShowFrozenText >= 1 ? 0 : 1;
+				if(g_Config.m_ClShowFrozenText)
 				{
-					CUIRect CheckBoxRect, CheckBoxRect2;
-					FrozenTeeHud.HSplitTop(LineSize, &CheckBoxRect, &FrozenTeeHud);
-					FrozenTeeHud.HSplitTop(LineSize, &CheckBoxRect2, &FrozenTeeHud);
-					if(DoButton_CheckBox(&g_Config.m_ClShowFrozenText, Localize("Tees left alive text"), g_Config.m_ClShowFrozenText >= 1, &CheckBoxRect))
-						g_Config.m_ClShowFrozenText = g_Config.m_ClShowFrozenText >= 1 ? 0 : 1;
+					FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
+					static int s_CountFrozenText = 0;
+					if(DoButton_CheckBox(&s_CountFrozenText, Localize("Count frozen tees"), g_Config.m_ClShowFrozenText == 2, &Button))
+						g_Config.m_ClShowFrozenText = g_Config.m_ClShowFrozenText != 2 ? 2 : 1;
+				}
 
-					if(g_Config.m_ClShowFrozenText)
+				// This would be fancy asf as a popup ngl, like generally speaking any of these weird extra
+				// settings for other features could* (should) be inside popups cause they dont fucking fit
+				// Also, fuck UI coding
+				if(g_Config.m_ClWarList && g_Config.m_ClShowFrozenHud)
+				{
+					FrozenTeeHud.HSplitTop(10.0f, nullptr, &FrozenTeeHud);
+					FrozenTeeHud.HSplitTop(FontSize, &Button, &FrozenTeeHud);
+					Ui()->DoLabel(&Button, Localize("Only show certain Wartypes in frozen tee display"), FontSize, TEXTALIGN_TL);
+					FrozenTeeHud.HSplitTop(FontSize, &Button, &FrozenTeeHud);
+					Ui()->DoLabel(&Button, Localize("Select none to show all"), FontSize, TEXTALIGN_TL);
+					FrozenTeeHud.HSplitTop(5.0f, nullptr, &FrozenTeeHud);
+					FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
+
+					static CButtonContainer s_OpenedEntries;
+					static bool s_Open = false;
+					if(Ui()->DoButton_FontIcon(&s_OpenedEntries, s_Open ? FontIcon::CHEVRON_DOWN : FontIcon::CHEVRON_RIGHT, 0, &Button, BUTTONFLAG_LEFT))
+						s_Open = !s_Open;
+
+					CUIRect Button2;
+					FrozenTeeHud.HSplitTop(0, &Button2, &FrozenTeeHud);
+
+					if(s_Open)
 					{
-						static int s_CountFrozenText = 0;
-						if(DoButton_CheckBox(&s_CountFrozenText, Localize("Count frozen tees"), g_Config.m_ClShowFrozenText == 2, &CheckBoxRect2))
-							g_Config.m_ClShowFrozenText = g_Config.m_ClShowFrozenText != 2 ? 2 : 1;
+						const size_t WarTypes = GameClient()->m_WarList.m_WarTypes.size();
+						s_Offset += WarTypes * LineSize;
+
+						static std::vector<int> s_vFrozenWarTypeIds;
+						if(s_vFrozenWarTypeIds.size() < WarTypes)
+							s_vFrozenWarTypeIds.resize(WarTypes);
+
+						FrozenTeeHud.HSplitTop(LineSize, &Button2, &FrozenTeeHud);
+						if(DoButton_CheckBox(&s_vFrozenWarTypeIds[0], "Show players without entry", IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, 0), &Button2))
+							SetFlag(g_Config.m_ClWarlistFrozenTeeFlags, 0, !IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, 0));
+
+						for(size_t Type = 1; Type < WarTypes; Type++)
+						{
+							char aBuf[64];
+							str_format(aBuf, sizeof(aBuf), "%s '%s'", "Show", GameClient()->m_WarList.m_WarTypes.at(Type)->m_aWarName);
+							const bool FlagSet = IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, Type);
+
+							FrozenTeeHud.HSplitTop(LineSize, &Button2, &FrozenTeeHud);
+							if(DoButton_CheckBox(&s_vFrozenWarTypeIds[Type], aBuf, FlagSet, &Button2))
+								SetFlag(g_Config.m_ClWarlistFrozenTeeFlags, Type, !FlagSet);
+						}
 					}
 				}
 			}
