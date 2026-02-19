@@ -287,7 +287,6 @@ void CPhysicBalls::DoBallCollisions(CBall *pBall, float Dt, float Elasticity)
 		}
 	}
 }
-
 void CPhysicBalls::DoMapCollisions(CBall *pBall, float Dt, float Elasticity) const
 {
 	const vec2 StartPos = pBall->m_PrevPos;
@@ -449,9 +448,12 @@ void CPhysicBalls::DoBallPhysics(CBall *pBall, float DtTicks)
 
 	float Elasticity = 0.66f;
 
-	DoWeaponFireEffects(pBall, DtTicks);
 	DoBallCollisions(pBall, DtTicks, Elasticity);
 	DoPlayerCollisions(pBall, DtTicks, Elasticity);
+
+	DtTicks *= (float)SERVER_TICK_SPEED;
+
+	DoWeaponFireEffects(pBall, DtTicks);
 	DoMapCollisions(pBall, DtTicks, Elasticity);
 
 	pBall->m_Vel.y += GameClient()->m_aClients[LocalId].m_Predicted.m_Tuning.m_Gravity * DtTicks;
@@ -505,7 +507,7 @@ void CPhysicBalls::OnRender()
 
 			for(auto &Ball : m_vBalls)
 			{
-				DoBallPhysics(&Ball, Dt * (float)SERVER_TICK_SPEED);
+				DoBallPhysics(&Ball, Dt);
 				if(round_to_int(Ball.m_Pos.y) / 32 > Collision()->GetHeight() + 200)
 					KillBall(&Ball);
 			}
