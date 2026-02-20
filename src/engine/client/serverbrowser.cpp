@@ -1912,13 +1912,15 @@ void CCommunityCache::Update(bool Force)
 		const size_t CommunityIndex = m_pServerBrowser->GetCurrentType() - IServerBrowser::TYPE_FAVORITE_COMMUNITY_1;
 		std::vector<const CCommunity *> vpFavoriteCommunities = m_pServerBrowser->FavoriteCommunities();
 		dbg_assert(CommunityIndex < vpFavoriteCommunities.size(), "Invalid favorite community serverbrowser type");
-		m_pCountryTypeFilterKey = vpFavoriteCommunities[CommunityIndex]->Id();
+		if(vpFavoriteCommunities[CommunityIndex]->Id()[0] != '\0')
+			m_pCountryTypeFilterKey = vpFavoriteCommunities[CommunityIndex]->Id();
+		else
+			m_pCountryTypeFilterKey = IServerBrowser::COMMUNITY_ALL;
 	}
 	else
 	{
 		m_pCountryTypeFilterKey = IServerBrowser::COMMUNITY_ALL;
 	}
-
 	m_pServerBrowser->CleanFilters();
 }
 
