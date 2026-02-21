@@ -305,7 +305,7 @@ private:
 	std::set<std::string> m_Favorites;
 
 	CSkin m_PlaceholderSkin;
-	char m_aEventSkinPrefix[MAX_SKIN_LENGTH];
+	char m_aEventSkinPrefix[MAX_SKIN_LENGTH] = "";
 
 	bool LoadSkinData(const char *pName, CSkinLoadData &Data) const;
 	void LoadSkinFinish(CSkinContainer *pSkinContainer, const CSkinLoadData &Data);

@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "render.h"
+#include "gameclient.h"
 
 #include "animstate.h"
 
@@ -13,6 +14,8 @@
 #include <generated/client_data7.h>
 #include <generated/protocol.h>
 #include <generated/protocol7.h>
+
+#include <game/client/skin.h>
 
 #include <game/mapitems.h>
 
@@ -90,10 +93,11 @@ bool CSkinDescriptor::CSixup::operator==(const CSixup &Other) const
 	       m_XmasHat == Other.m_XmasHat;
 }
 
-void CRenderTools::Init(IGraphics *pGraphics, ITextRender *pTextRender)
+void CRenderTools::Init(IGraphics *pGraphics, ITextRender *pTextRender, CGameClient *pGameClient)
 {
 	m_pGraphics = pGraphics;
 	m_pTextRender = pTextRender;
+	m_pGameClient = pGameClient;
 	m_TeeQuadContainerIndex = Graphics()->CreateQuadContainer(false);
 	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
 
@@ -561,8 +565,8 @@ void CRenderTools::RenderTee6(const CAnimState *pAnim, const CTeeRenderInfo *pIn
 
 			if(g_Config.m_ClSmallSkins)
 			{
-				w /= 1.15;
-				h /= 1.15;
+				w *= 0.89f;
+				h *= 0.89f;
 			}
 
 			int QuadOffset = 7;
@@ -586,6 +590,22 @@ void CRenderTools::RenderTee6(const CAnimState *pAnim, const CTeeRenderInfo *pIn
 			Graphics()->SetColor(pInfo->m_ColorFeet.r * ColorScale, pInfo->m_ColorFeet.g * ColorScale, pInfo->m_ColorFeet.b * ColorScale, Alpha);
 
 			Graphics()->TextureSet(OutLine == 1 ? pSkinTextures->m_FeetOutline : pSkinTextures->m_Feet);
+			if(g_Config.m_ClWhiteFeet)
+			{
+				const float WhiteFeetColor = 1.0f * ColorScale;
+				Graphics()->SetColor(WhiteFeetColor, WhiteFeetColor, WhiteFeetColor, Alpha);
+
+				CTeeRenderInfo WhiteFeetInfo;
+				const CSkin *pSkin = GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClWhiteFeetSkin);
+				if(pSkin)
+				{
+					WhiteFeetInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
+					WhiteFeetInfo.m_ColorFeet = ColorRGBA(1.0f, 1.0f, 1.0f);
+					const CSkin::CSkinTextures *pWhiteFeetTextures = &WhiteFeetInfo.m_OriginalRenderSkin;
+					Graphics()->TextureSet(OutLine == 1 ? pWhiteFeetTextures->m_FeetOutline : pWhiteFeetTextures->m_Feet);
+				}
+			}
+
 			Graphics()->RenderQuadContainerAsSprite(m_TeeQuadContainerIndex, QuadOffset, Position.x + pFoot->m_X * AnimScale, Position.y + pFoot->m_Y * AnimScale, w / 64.f, h / 32.f);
 		}
 	}

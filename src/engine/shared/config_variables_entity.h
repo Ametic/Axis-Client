@@ -405,6 +405,14 @@ MACRO_CONFIG_INT(ClRevertTeamColors, ec_revert_team_colors, 0, 0, 1, CFGFLAG_CLI
 
 // Hookline
 MACRO_CONFIG_INT(EcRevertHookLine, ec_revert_hook_line, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Revert hook line to default behavior | 1=Accurate to Tiles | 2=Accurate to Tees")
+
+MACRO_CONFIG_INT(ClColorFrozenTeeBody, ec_color_frozen_tee_body, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use skin colors for frozen tees")
+MACRO_CONFIG_INT(ClColorFrozenTeeDarken, ec_color_frozen_tee_darken, 90, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes color of tees darker when in freeze (0-100)")
+MACRO_CONFIG_INT(ClColorFrozenTeeFeet, ec_color_frozen_tee_feet, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Also use color for frozen tee feet")
+
+MACRO_CONFIG_INT(ClWhiteFeet, ec_white_feet, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render all feet as ec_white_feet_skin and fully white")
+MACRO_CONFIG_STR(ClWhiteFeetSkin, ec_white_feet_skin, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Base skin for white feet")
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 

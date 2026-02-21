@@ -3387,12 +3387,15 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 	/* Miscellaneous */
 	{
-		static float Offset = 0.0f;
+		int Size = 235;
+		if(g_Config.m_ClWhiteFeet)
+			Size += LineSize;
+
+
 		Miscellaneous.VMargin(5.0f, &Miscellaneous);
-		Miscellaneous.HSplitTop(195.0f + Offset, &Miscellaneous, &DiscordRpc);
+		Miscellaneous.HSplitTop(Size, &Miscellaneous, &DiscordRpc);
 		if(s_ScrollRegion.AddRect(Miscellaneous))
 		{
-			Offset = 0.0f;
 			Miscellaneous.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			Miscellaneous.VMargin(Margin, &Miscellaneous);
 
@@ -3464,6 +3467,18 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, Localize("Freeze stars"), &g_Config.m_ClFreezeStars, &Miscellaneous, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFrozenKatana, Localize("Show katana on frozen players"), &g_Config.m_TcFrozenKatana, &Miscellaneous, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClColorFrozenTeeBody, Localize("Colored frozen tee skins"), &g_Config.m_ClColorFrozenTeeBody, &Miscellaneous, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWhiteFeet, Localize("Render feet as white feet"), &g_Config.m_ClWhiteFeet, &Miscellaneous, LineSize);
+				CUIRect FeetBox;
+				if(g_Config.m_ClWhiteFeet)
+				{
+					Miscellaneous.HSplitTop(LineSize + MarginExtraSmall, &FeetBox, &Miscellaneous);
+					FeetBox.HSplitTop(MarginExtraSmall, nullptr, &FeetBox);
+					FeetBox.VSplitMid(&FeetBox, nullptr);
+					static CLineInput s_WhiteFeet(g_Config.m_ClWhiteFeetSkin, sizeof(g_Config.m_ClWhiteFeetSkin));
+					s_WhiteFeet.SetEmptyText("x_ninja");
+					Ui()->DoEditBox(&s_WhiteFeet, &FeetBox, EditBoxFontSize);
+				}
 
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreboardOutlineTeams, Localize("Outline Teams in Scoreboard"), &g_Config.m_ClScoreboardOutlineTeams, &Miscellaneous, LineSize);

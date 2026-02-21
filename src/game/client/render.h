@@ -209,6 +209,7 @@ enum
 
 class CRenderTools
 {
+	class CGameClient *m_pGameClient;
 	class IGraphics *m_pGraphics;
 	class ITextRender *m_pTextRender;
 
@@ -222,12 +223,11 @@ class CRenderTools
 public:
 	static void GetRenderTeeBodyScale(float BaseSize, float &BodyScale); // E-Client
 
-	class CGameClient *m_pGameClient;
 	class IGraphics *Graphics() const { return m_pGraphics; }
 	class ITextRender *TextRender() const { return m_pTextRender; }
 	class CGameClient *GameClient() const { return m_pGameClient; }
 
-	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender);
+	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender, CGameClient *pGameClient);
 
 	void RenderCursor(vec2 Center, float Size, float Alpha = 1.0f) const;
 	void RenderIcon(int ImageId, int SpriteId, const CUIRect *pRect, const ColorRGBA *pColor = nullptr) const;
