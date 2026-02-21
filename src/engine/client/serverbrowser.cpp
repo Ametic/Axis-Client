@@ -453,7 +453,7 @@ void CServerBrowser::Filter()
 			Filtered = true;
 		else
 		{
-			if(!Communities().empty())
+			if(!Communities().empty() && m_LoadedCustomCommunities)
 			{
 				if(m_ServerlistType == IServerBrowser::TYPE_INTERNET || m_ServerlistType == IServerBrowser::TYPE_FAVORITES)
 				{
@@ -2380,7 +2380,7 @@ void CExcludedCommunityTypeFilterList::Save(IConfigManager *pConfigManager) cons
 void CServerBrowser::CleanFilters()
 {
 	// Keep filters if we failed to load any communities
-	if(Communities().empty() || !m_LoadedCustomCommunities)
+	if(Communities().empty() || !m_LoadedCustomCommunities) // Don't clean filters before custom communities have been loaded
 		return;
 	FavoriteCommunitiesFilter().Clean(Communities());
 	CommunitiesFilter().Clean(Communities());
