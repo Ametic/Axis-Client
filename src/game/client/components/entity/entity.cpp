@@ -326,10 +326,6 @@ void CEClient::OnConnect()
 				g_Config.m_ClGoresMode = 0;
 			}
 		}
-
-	
-		if(g_Config.m_ClListsInfo)
-			OnlineInfo();
 	}
 }
 

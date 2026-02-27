@@ -91,15 +91,12 @@ MACRO_CONFIG_INT(ClWarlistBrowserFlags, ec_warlist_browser_flags, 0, 0, 262144, 
 MACRO_CONFIG_INT(ClWarlistAutoAddFlags, ec_warlist_auto_add_flags, 4, 0, 262144, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable wartypes getting auto added")
 MACRO_CONFIG_INT(ClWarlistFrozenTeeFlags, ec_warlist_frozen_tee_flags, 0, 0, 262144, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to hide/show wartypes getting in frozen tee hud")
 
-// Info
-MACRO_CONFIG_INT(ClListsInfo, ec_list_warlist_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many people from your warlist are online on the current server")
-
 // Server Info
 MACRO_CONFIG_INT(ClWarlistPrefixesServerInfo, ec_warlist_prefixes_server_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show warlist prefixes in the server info")
 
 // Run on Join
 MACRO_CONFIG_STR(ClExecuteOnConnect, ec_execute_on_connect, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Run a console command before connect")
-MACRO_CONFIG_STR(ClRunOnJoinConsole, ec_run_on_join_console, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
+MACRO_CONFIG_STR(ClRunOnJoinConsole, ec_run_on_join_console, 128, "onlineinfo", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 MACRO_CONFIG_INT(ClRunOnJoinConsoleDelay, ec_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 
 // Limit Mouse
