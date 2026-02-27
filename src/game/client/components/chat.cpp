@@ -54,15 +54,16 @@ CChat::CChat()
 {
 	m_Mode = MODE_NONE;
 
-	m_Input.SetClipboardLineCallback([this](const char *pStr) {
-		if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
-		{
-			SendChat(TEAM_FLOCK, pStr);
-			AddHistoryEntry(pStr);
-		}
-		else
-			SendChatQueued(pStr);
-	});
+	if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
+	{
+		m_Input.SetClipboardLineCallback([this](const char *pStr) {
+			if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
+			{
+				SendChat(TEAM_FLOCK, pStr);
+				AddHistoryEntry(pStr);
+			}
+		});
+	}
 	m_Input.SetCalculateOffsetCallback([this]() { return m_IsInputCensored; });
 	m_Input.SetDisplayTextCallback([this](char *pStr, size_t NumChars) {
 		m_IsInputCensored = false;
