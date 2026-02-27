@@ -401,7 +401,7 @@ MACRO_CONFIG_INT(ClScoreboardOutlineTeams, ec_scoreboard_outline_teams, 0, 0, 1,
 MACRO_CONFIG_INT(ClRevertTeamColors, ec_revert_team_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "revert team colors (github.com/ddnet/ddnet/pull/7129)") // https://github.com/ddnet/ddnet/pull/7129
 
 // Hookline
-MACRO_CONFIG_INT(EcRevertHookLine, ec_revert_hook_line, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Revert hook line to default behavior | 1=Accurate to Tiles | 2=Accurate to Tees")
+// MACRO_CONFIG_INT(EcRevertHookLine, ec_revert_hook_line, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Revert hook line to default behavior | 1=Accurate to Tiles | 2=Accurate to Tees")
 
 MACRO_CONFIG_INT(ClColorFrozenTeeBody, ec_color_frozen_tee_body, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use skin colors for frozen tees")
 MACRO_CONFIG_INT(ClColorFrozenTeeDarken, ec_color_frozen_tee_darken, 90, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes color of tees darker when in freeze (0-100)")
