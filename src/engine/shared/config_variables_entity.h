@@ -380,7 +380,7 @@ MACRO_CONFIG_INT(ClMapOverviewOpacity, ec_map_overview_opacity, 15, 0, 100, CFGF
 
 // Volleyball
 MACRO_CONFIG_INT(EcVolleyBallBetterBall, ec_volleyball_better_ball, 1, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make frozen players in volleyball look more like volleyballs (0 = disabled, 1 = in volleyball maps, 2 = always)")
-MACRO_CONFIG_STR(EcVolleyBallBetterBallSkin, ec_volleyball_better_ball_skin, 24, "beachball", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Player skin to use for better volleyball ball")
+MACRO_CONFIG_STR(EcVolleyBallBetterBallSkin, ec_volleyball_better_ball_skin, 24, "Volleyball", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Player skin to use for better volleyball ball")
 MACRO_CONFIG_INT(EcVolleyBallSpinSpeed, ec_volleyball_spin_speed, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How fast the volleyball spins")
 
 // Trails
