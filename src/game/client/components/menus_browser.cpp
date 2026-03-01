@@ -1431,7 +1431,10 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 					if(Warlist.m_ServerIndex != pSelectedServer->m_ServerIndex)
 						continue;
 
-					if(str_comp(pName, Warlist.m_aName) == 0 || (str_comp(CurrentClient.m_aClan, Warlist.m_aClan) == 0 && CurrentClient.m_aClan[0] != '\0'))
+					bool NameMatch = str_comp(pName, Warlist.m_aName) == 0;
+					bool ClanMatch = str_comp(CurrentClient.m_aClan, Warlist.m_aClan) == 0 && CurrentClient.m_aClan[0] != '\0' && Warlist.m_aName[0] == '\0' && Warlist.m_aClan[0] != '\0';
+
+					if((NameMatch || ClanMatch))
 					{
 						TextRender()->TextColor(Warlist.m_pWarType->m_Color);
 						TextRender()->TextEx(&NameCursor, g_Config.m_ClWarlistPrefix, -1);
