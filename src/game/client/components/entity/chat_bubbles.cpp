@@ -243,7 +243,6 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 			x += Bubble.m_PushOffset.x;
 			y += Bubble.m_PushOffset.y;
 
-
 			Graphics()->DrawRect((x - FontSize / 2.0f), y - FontSize / 2.0f,
 				BoundingBox.m_W + FontSize * 1.20f, BoundingBox.m_H + FontSize,
 				BgColor, IGraphics::CORNER_ALL, g_Config.m_ClChatBubbleSize / 4.5f);

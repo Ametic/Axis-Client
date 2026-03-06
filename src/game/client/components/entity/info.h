@@ -1,8 +1,10 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_INFO_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_INFO_H
-#include <cstdint>
 #include <engine/shared/http.h>
+
 #include <game/client/component.h>
+
+#include <cstdint>
 #include <memory>
 
 class CEntityInfo : public CComponent

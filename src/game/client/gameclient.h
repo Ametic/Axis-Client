@@ -67,6 +67,7 @@
 #include "components/tooltips.h"
 #include "components/touch_controls.h"
 #include "components/voting.h"
+
 #include <memory>
 
 // Entity
@@ -1069,7 +1070,6 @@ public:
 	bool CheckNewInput() override;
 	std::optional<CServerInfo> m_ConnectServerInfo = std::nullopt;
 	void SetConnectInfo(const NETADDR *pAddress) override;
-
 
 	// E-Client
 	void OnSelfDeath() override;

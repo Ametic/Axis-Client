@@ -513,7 +513,7 @@ void CEffects::OnRender()
 	}
 	else
 		m_AddXhz = false;
-		
+
 	if(m_Add50hz)
 		GameClient()->m_Flow.Update();
 }

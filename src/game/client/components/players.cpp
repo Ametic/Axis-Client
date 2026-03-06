@@ -4,6 +4,7 @@
 #include "players.h"
 
 #include <base/color.h>
+#include <base/log.h>
 #include <base/math.h>
 
 #include <engine/client/enums.h>
@@ -24,7 +25,6 @@
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
 #include <game/mapitems.h>
-#include <base/log.h>
 
 static float CalculateHandAngle(vec2 Dir, float AngleOffset)
 {
@@ -432,7 +432,7 @@ void CPlayers::RenderHookCollLine(
 		Graphics()->QuadsDrawFreeform(vLineQuadSegments.data(), vLineQuadSegments.size());
 		if(HookTipLineSegment.has_value() && HookCollTipColor.a > 0.0f)
 		{
-			vLineQuadSegments.clear(); 
+			vLineQuadSegments.clear();
 			ConvertLineSegments(HookTipLineSegment.value());
 			Graphics()->SetColor(HookCollTipColor.WithMultipliedAlpha(Alpha));
 			Graphics()->QuadsDrawFreeform(vLineQuadSegments.data(), vLineQuadSegments.size());
@@ -512,10 +512,10 @@ void CPlayers::RenderHook(
 	int QuadOffset = NUM_WEAPONS * 2 + 2;
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 
-		bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
-		bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
-		if(g_Config.m_ClRainbowHook && !DontOthers)
-			Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
+	bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
+	bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
+	if(g_Config.m_ClRainbowHook && !DontOthers)
+		Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
 
 	Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, HookPos.x, HookPos.y);
 
@@ -608,7 +608,7 @@ void CPlayers::RenderPlayer(
 	if(in_range(ClientId, MAX_CLIENTS - 1))
 		Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	else
-	Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Intra);
+		Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Intra);
 
 	if(g_Config.m_TcSwapGhosts && g_Config.m_TcShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		if(ClientId >= 0)
@@ -736,7 +736,7 @@ void CPlayers::RenderPlayer(
 			bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
 			if(g_Config.m_ClRainbowWeapon && !DontOthers)
 				Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
-				
+
 			float Recoil = 0.0f;
 			vec2 WeaponPosition;
 			bool IsSit = Inactive && !InAir && Stationary;
@@ -1240,7 +1240,6 @@ void CPlayers::OnRender()
 			OtherTeamIds.push_back(ClientId);
 		else
 			SameTeamIds.push_back(ClientId);
-		
 	}
 	for(int ClientId : OtherTeamIds)
 	{

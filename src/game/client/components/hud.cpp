@@ -4,42 +4,42 @@
 
 #include "camera.h"
 #include "controls.h"
+#include "tclient/warlist.h"
 #include "voting.h"
 
 #include <base/color.h>
-
-#include <engine/font_icons.h>
-#include <engine/graphics.h>
-#include <engine/shared/config.h>
-#include <engine/textrender.h>
-
-#include <generated/client_data.h>
-#include <generated/protocol.h>
-
-#include <game/client/animstate.h>
-#include <game/client/components/scoreboard.h>
-#include <game/client/gameclient.h>
-#include <game/client/prediction/entities/character.h>
-#include <game/localization.h>
-
-#include <cmath>
-#include <algorithm>
-#include <cstdint>
-#include <vector>
-#include <generated/data_types.h>
-#include <generated/protocol7.h>
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
 #include <base/time.h>
 #include <base/vmath.h>
+
 #include <engine/client.h>
+#include <engine/font_icons.h>
+#include <engine/graphics.h>
+#include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/shared/video.h>
-#include "tclient/warlist.h"
+#include <engine/textrender.h>
+
+#include <generated/client_data.h>
+#include <generated/data_types.h>
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
+
+#include <game/client/animstate.h>
+#include <game/client/components/scoreboard.h>
+#include <game/client/gameclient.h>
+#include <game/client/prediction/entities/character.h>
 #include <game/client/render.h>
 #include <game/client/skin.h>
 #include <game/gamecore.h>
+#include <game/localization.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <vector>
 
 CHud::CHud()
 {
@@ -1990,7 +1990,7 @@ void CHud::FreezeHelpers()
 		if(g_Config.m_ClShowFrozenText > 0)
 			TextRender()->Text(m_Width / 2 - TextRender()->TextWidth(10, aBuf, -1, -1.0f) / 2, 12, 10, aBuf, -1.0f);
 
-		// I told the clanker to rewrite this 
+		// I told the clanker to rewrite this
 		if(g_Config.m_ClShowFrozenHud > 0 && !GameClient()->m_Scoreboard.IsActive() && !(LocalTeamID == 0 && g_Config.m_ClFrozenHudTeamOnly))
 		{
 			CTeeRenderInfo FreezeInfo;
@@ -2081,7 +2081,7 @@ void CHud::FreezeHelpers()
 				5.0f,
 				IGraphics::CORNER_B);
 			Graphics()->QuadsEnd();
-			
+
 			float progressiveOffset = 0.0f;
 			int NumInRow = 0;
 			int CurrentRow = 0;

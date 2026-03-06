@@ -1,12 +1,12 @@
+#include "bindchat.h"
+
 #include <engine/shared/config.h>
+#include <engine/shared/console.h>
 
 #include <game/client/gameclient.h>
 
-#include "bindchat.h"
-
-#include <vector>
 #include <algorithm>
-#include <engine/shared/console.h>
+#include <vector>
 
 CBindChat::CBindChat()
 {
@@ -298,8 +298,8 @@ bool CBindChat::ChatDoBinds(const char *pText)
 	for(const CBind &Bind : m_vBinds)
 	{
 		const bool SendsMessage = str_find(Bind.m_aCommand, "say") ||
-			str_find(Bind.m_aCommand, "reply_last") ||
-			str_find(Bind.m_aCommand, "chai");
+					  str_find(Bind.m_aCommand, "reply_last") ||
+					  str_find(Bind.m_aCommand, "chai");
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{

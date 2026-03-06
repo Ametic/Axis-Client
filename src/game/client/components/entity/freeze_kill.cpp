@@ -1,5 +1,6 @@
 #include "freeze_kill.h"
 
+#include <base/math.h>
 #include <base/system.h>
 #include <base/vmath.h>
 
@@ -12,8 +13,6 @@
 #include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
-#include <base/math.h>
-
 
 void CFreezeKill::ResetTimer()
 {
@@ -57,7 +56,7 @@ void CFreezeKill::OnRender()
 
 	if(m_SentFreezeKill)
 		return;
-	
+
 	// stop when spectating
 	if(GameClient()->m_aClients[LocalId].m_Paused || GameClient()->m_aClients[LocalId].m_Spec)
 	{

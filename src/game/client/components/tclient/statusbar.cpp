@@ -1,13 +1,13 @@
-#include <game/client/render.h>
-#include <game/client/ui.h>
-
-#include <game/client/gameclient.h>
-#include <generated/protocol.h>
+#include "statusbar.h"
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 
-#include "statusbar.h"
+#include <generated/protocol.h>
+
+#include <game/client/gameclient.h>
+#include <game/client/render.h>
+#include <game/client/ui.h>
 
 CStatusItem::CStatusItem(std::function<void()> Render, std::function<float()> Width, const char *pLetters, const char *pName, const char *pDisplayName, const char *pDesc, bool ShowLabel)
 {
@@ -51,7 +51,10 @@ float CStatusBar::GetDurationWidth(int Duration)
 		s_TextWidth000D = TextRender()->TextWidth(m_FontSize, "000d 00:00:00");
 		s_FontSize = m_FontSize;
 	}
-	return Duration >= 3600 * 24 * 100 ? s_TextWidth000D : Duration >= 3600 * 24 * 10 ? s_TextWidth00D : Duration >= 3600 * 24 ? s_TextWidth0D : Duration >= 3600 ? s_TextWidthH : s_TextWidthM;
+	return Duration >= 3600 * 24 * 100 ? s_TextWidth000D : Duration >= 3600 * 24 * 10 ? s_TextWidth00D :
+						       Duration >= 3600 * 24              ? s_TextWidth0D :
+						       Duration >= 3600                   ? s_TextWidthH :
+											    s_TextWidthM;
 }
 
 float CStatusBar::AngleWidth()

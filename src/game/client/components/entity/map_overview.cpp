@@ -1,11 +1,14 @@
 #include "map_overview.h"
 
+#include <base/color.h>
 #include <base/math.h>
 #include <base/vmath.h>
 
+#include <engine/graphics.h>
 #include <engine/shared/config.h>
 
 #include <game/client/gameclient.h>
+#include <game/collision.h>
 #include <game/gamecore.h>
 
 #include <algorithm>
@@ -13,9 +16,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
-#include <base/color.h>
-#include <engine/graphics.h>
-#include <game/collision.h>
 
 constexpr float TileSize = 32.0f;
 constexpr int MaxSolidSearchDist = 55;
@@ -114,7 +114,7 @@ void CMapOverview::OnRender()
 		Reset();
 		return;
 	}
-	
+
 	const vec2 Pos = mix(vec2(GameClient()->m_aClients[LocalId].m_RenderPrev.m_X, GameClient()->m_aClients[LocalId].m_RenderPrev.m_Y), vec2(GameClient()->m_aClients[LocalId].m_RenderCur.m_X, GameClient()->m_aClients[LocalId].m_RenderCur.m_Y), 0);
 
 	bool AddedPoint = AddPoint(Pos);

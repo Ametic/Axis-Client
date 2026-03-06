@@ -2,6 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "infomessages.h"
 
+#include <base/str.h>
+
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
@@ -15,7 +17,6 @@
 #include <game/client/prediction/entities/character.h>
 #include <game/client/prediction/gameworld.h>
 #include <game/localization.h>
-#include <base/str.h>
 
 static constexpr float ROW_HEIGHT = 46.0f;
 static constexpr float FONT_SIZE = 36.0f;

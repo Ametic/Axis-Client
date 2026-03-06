@@ -1,5 +1,6 @@
 ﻿#include "entity.h"
 
+#include <base/log.h>
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
@@ -27,7 +28,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <base/log.h>
 
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {

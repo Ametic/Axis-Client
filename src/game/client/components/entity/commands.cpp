@@ -321,7 +321,7 @@ void CEClient::OnlineInfo()
 	}
 	if(Mutes > 0)
 		HasAny = true;
-	
+
 	if(!HasAny)
 	{
 		GameClient()->ClientMessage("╭──         Online Info");
@@ -384,7 +384,7 @@ void CEClient::PlayerInfo(const char *pName)
 		str_format(aBuf, sizeof(aBuf), "│ Feet Color: %d", GameClient()->m_aClients[Id].m_ColorFeet);
 		GameClient()->ClientMessage(aBuf);
 		GameClient()->ClientMessage("│");
-		
+
 		str_format(aBuf, sizeof(aBuf), "│ Skin Name: %s", GameClient()->m_aClients[Id].m_aSkinName);
 		GameClient()->ClientMessage(aBuf);
 		GameClient()->ClientMessage("│");

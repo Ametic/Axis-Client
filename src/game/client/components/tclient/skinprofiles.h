@@ -1,10 +1,10 @@
 #ifndef GAME_CLIENT_COMPONENTS_TCLIENT_SKINPROFILES_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_SKINPROFILES_H
 
-#include <game/client/component.h>
-
 #include <engine/console.h>
 #include <engine/shared/protocol.h>
+
+#include <game/client/component.h>
 
 #include <vector>
 

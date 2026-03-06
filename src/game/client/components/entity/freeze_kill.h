@@ -1,8 +1,9 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_FREEZEKILL_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_FREEZEKILL_H
 
-#include <cstdint>
 #include <game/client/component.h>
+
+#include <cstdint>
 
 class CFreezeKill : public CComponent
 {
@@ -12,8 +13,8 @@ class CFreezeKill : public CComponent
 
 	bool m_SentFreezeKill = false;
 	int64_t m_LastFreeze = 0;
-public:
 
+public:
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
 	virtual void OnReset() override;

@@ -75,7 +75,7 @@ class CChat : public CComponent
 	{
 		// client IDs for special messages
 		SILENT_MSG = -4, // E-Client
-		ECLIENT_MSG = -3,// E-Client
+		ECLIENT_MSG = -3, // E-Client
 		CLIENT_MSG = -2,
 		SERVER_MSG = -1,
 	};
@@ -170,7 +170,6 @@ class CChat : public CComponent
 	friend class CChatBubbles;
 
 public:
-
 	CChat();
 	int Sizeof() const override { return sizeof(*this); }
 
@@ -230,8 +229,8 @@ public:
 	void AddHistoryEntry(const char *pLine);
 
 private:
-	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); 
-	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData); 
+	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayQueued(IConsole::IResult *pResult, void *pUserData);
 	// E-Client>
 };

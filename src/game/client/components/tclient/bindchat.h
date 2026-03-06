@@ -22,6 +22,7 @@ class CBindChat : public CComponent
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
 	void ExecuteBind(int Bind, const char *pArgs);
+
 public:
 	class CBind
 	{

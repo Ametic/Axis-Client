@@ -859,7 +859,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_aReason, "") != 0)
 		{
 			char Reason[MAX_WARLIST_REASON_LENGTH] = "";
-			str_copy(Reason, Data.m_aReason);	
+			str_copy(Reason, Data.m_aReason);
 			str_copy(Data.m_aReason, Data.m_aName);
 			str_copy(Data.m_aName, Reason);
 		}

@@ -24,7 +24,7 @@ public:
 	// <E-Client
 	CKeyReaderResult DoKeyReader(CButtonContainer *pReaderButton, const CUIRect *pRect, const CBindSlot &CurrentBind, bool Activate);
 	// E-Client>
-	
+
 	bool IsActive() const;
 
 private:

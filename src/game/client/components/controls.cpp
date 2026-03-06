@@ -246,7 +246,7 @@ int CControls::SnapInput(int *pData)
 	{
 		vec2 Pos;
 		if(g_Config.m_ClSubTickAiming && m_aMousePosOnAction[g_Config.m_ClDummy] != vec2(0.0f, 0.0f))
-		{ 
+		{
 			// TClient
 			Pos = GameClient()->m_Controls.m_aMousePosOnAction[g_Config.m_ClDummy];
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);

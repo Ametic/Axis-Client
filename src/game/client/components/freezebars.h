@@ -1,9 +1,9 @@
 #ifndef GAME_CLIENT_COMPONENTS_FREEZEBARS_H
 #define GAME_CLIENT_COMPONENTS_FREEZEBARS_H
 
-#include <game/client/component.h>
-
 #include <base/color.h>
+
+#include <game/client/component.h>
 
 class CFreezeBars : public CComponent
 {

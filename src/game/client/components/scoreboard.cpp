@@ -9,8 +9,8 @@
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 
-#include <generated/client_data7.h>
 #include <generated/client_data.h>
+#include <generated/client_data7.h>
 #include <generated/protocol.h>
 
 #include <game/client/animstate.h>
@@ -609,8 +609,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				}
 				if(NextDDTeam != DDTeam)
 					TeamRectCorners |= IGraphics::CORNER_B;
-
-
 
 				RowAndSpacing.Draw(Color, TeamRectCorners, RoundRadius);
 

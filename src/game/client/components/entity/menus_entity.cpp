@@ -4,6 +4,7 @@
 #include <base/str.h>
 #include <base/system.h>
 
+#include <engine/font_icons.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
@@ -29,7 +30,6 @@
 
 #include <string>
 #include <vector>
-#include <engine/font_icons.h>
 
 using namespace std::chrono_literals;
 
@@ -2693,7 +2693,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
 				Ui()->DoScrollbarOption(&g_Config.m_ClFrozenMaxRows, &g_Config.m_ClFrozenMaxRows, &Button, Localize("Max Rows"), 1, 6);
 				FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
-				Ui()->DoScrollbarOption(&g_Config.m_ClFrozenHudTeeSize, &g_Config.m_ClFrozenHudTeeSize, &Button, Localize	("Tee Size"), 8, 27);
+				Ui()->DoScrollbarOption(&g_Config.m_ClFrozenHudTeeSize, &g_Config.m_ClFrozenHudTeeSize, &Button, Localize("Tee Size"), 8, 27);
 
 				FrozenTeeHud.HSplitTop(LineSize, &Button, &FrozenTeeHud);
 				if(DoButton_CheckBox(&g_Config.m_ClShowFrozenText, Localize("Tees left alive text"), g_Config.m_ClShowFrozenText >= 1, &Button))
@@ -3390,7 +3390,6 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		int Size = 235;
 		if(g_Config.m_ClWhiteFeet)
 			Size += LineSize;
-
 
 		Miscellaneous.VMargin(5.0f, &Miscellaneous);
 		Miscellaneous.HSplitTop(Size, &Miscellaneous, &DiscordRpc);

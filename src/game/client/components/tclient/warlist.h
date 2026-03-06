@@ -3,9 +3,11 @@
 
 #include <engine/console.h>
 #include <engine/shared/protocol.h>
+
 #include <game/client/component.h>
-#include <unordered_map>
+
 #include <string>
+#include <unordered_map>
 
 enum
 {

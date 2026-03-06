@@ -421,7 +421,7 @@ private:
 
 	static bool ParseCommunityFinishes(CCommunity *pCommunity, const json_value &Finishes);
 	static bool ParseCommunityServers(CCommunity *pCommunity, const json_value &Servers);
-	
+
 	// TClient
 	bool m_LoadedCustomCommunities = false;
 	std::function<void(std::vector<json_value *> &)> m_CustomCommunitiesFunction = nullptr;

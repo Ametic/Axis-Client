@@ -3,6 +3,10 @@
 
 #include "chat.h"
 
+#include "entity/entity.h"
+#include "tclient/bindchat.h"
+#include "tclient/warlist.h"
+
 #include <engine/client/client.h>
 #include <engine/editor.h>
 #include <engine/graphics.h>
@@ -22,9 +26,6 @@
 #include <game/client/gameclient.h>
 #include <game/localization.h>
 
-#include "entity/entity.h"
-#include "tclient/bindchat.h"
-#include "tclient/warlist.h"
 #include <vector>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = "";
@@ -53,7 +54,6 @@ void CChat::CLine::Reset(CChat &This)
 CChat::CChat()
 {
 	m_Mode = MODE_NONE;
-
 
 	m_Input.SetClipboardLineCallback([this](const char *pStr) {
 		if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
@@ -1569,7 +1569,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						if(IsFlagSet(g_Config.m_ClWarlistAutoAddFlags, WarlistType))
 							continue;
 						const char *pWarName = GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName;
-							
+
 						if(Cache.m_WarGroupMatches[WarlistType])
 						{
 							GameClient()->m_WarList.AddWarEntry(aNewName, "", aReason, pWarName, true);
@@ -1676,7 +1676,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			{
 				// try to not remove their message if they are just trying to be funny
 				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "ddnet") &&
-					!str_find_nocase(pLine, "tater") &&  !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") &&
+					!str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") &&
 					!str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") &&
 					!str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") &&
 					!str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))

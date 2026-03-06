@@ -1,10 +1,12 @@
-#include <game/client/gameclient.h>
-#include <game/version.h>
+#include "info.h"
 
 #include <engine/shared/json.h>
 
-#include "info.h"
+#include <game/client/gameclient.h>
+#include <game/version.h>
+
 #include <string.h>
+
 #include <tuple>
 
 static constexpr const char *ECLIENT_INFO_FILE = "eclient-info.json";
@@ -130,6 +132,6 @@ void CEntityInfo::FinishEClientInfo()
 
 		str_copy(m_aNews, CurrentNews);
 	}
-		 
+
 	json_value_free(pJson);
 }

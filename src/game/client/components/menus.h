@@ -3,6 +3,8 @@
 #ifndef GAME_CLIENT_COMPONENTS_MENUS_H
 #define GAME_CLIENT_COMPONENTS_MENUS_H
 
+#include "tclient/warlist.h"
+
 #include <base/bytes.h>
 #include <base/types.h>
 #include <base/vmath.h>
@@ -30,8 +32,6 @@
 #include <deque>
 #include <optional>
 #include <vector>
-
-#include "tclient/warlist.h"
 class CMenus : public CComponent
 {
 	static ColorRGBA ms_GuiColor;
@@ -931,7 +931,7 @@ private:
 			return Result < 0 || (Result == 0 && str_comp_nocase(m_aClan, Other.m_aClan) < 0);
 		}
 	};
-	
+
 	std::vector<CWarlistCache> m_vWarlistCache;
 	const CWarlistCache *m_pRemoveEntry = nullptr;
 
@@ -946,7 +946,6 @@ private:
 		return Count;
 	}
 
-
 	void RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion);
 
 public:
@@ -957,7 +956,6 @@ public:
 	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
 
 	bool DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CButtonContainer &ClearButton, const char *pName, const char *pCommand);
-	
 
 	void UpdateWarlistCache();
 

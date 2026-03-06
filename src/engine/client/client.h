@@ -133,7 +133,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	char m_aTimeoutCodes[NUM_DUMMIES][32] = {"", ""};
 	bool m_aDidPostConnect[NUM_DUMMIES] = {false, false};
 	bool m_GenerateTimeoutSeed = true;
-	
+
 	bool m_aInfoDisplay[NUM_DUMMIES] = {false, false};
 
 	char m_aCmdConnect[256] = "";
@@ -554,7 +554,6 @@ private:
 	void SendqxdInfo(int Conn);
 
 public:
-
 	void DiscordRPCchange() override;
 	void SendFastInputsInfo(int Conn) override;
 	// E-Client>

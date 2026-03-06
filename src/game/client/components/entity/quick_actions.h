@@ -1,12 +1,13 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_QUICKACTIONS_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_QUICKACTIONS_H
-#include <game/client/component.h>
+#include <base/system.h>
+#include <base/vmath.h>
 
 #include <engine/console.h>
 
-#include <base/system.h>
+#include <game/client/component.h>
+
 #include <vector>
-#include <base/vmath.h>
 
 class IConfigManager;
 

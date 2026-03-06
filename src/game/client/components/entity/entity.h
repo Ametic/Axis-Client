@@ -1,10 +1,13 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_H
 #include <base/system.h>
+
 #include <engine/console.h>
-#include <game/client/component.h>
-#include <vector>
 #include <engine/shared/protocol.h>
+
+#include <game/client/component.h>
+
+#include <vector>
 
 class CEClient : public CComponent
 {

@@ -1009,7 +1009,6 @@ ColorRGBA CGameClient::GetDDTeamColor(int DDTeam, float Lightness) const
 	// The first DDTeam (team 1) gets angle 0°, i.e. red hue.
 	const float Hue = std::fmod((DDTeam - 1) * (137.50776f / 360.0f), 1.0f);
 	return color_cast<ColorRGBA>(ColorHSLA(Hue, 1.0f, Lightness));
-
 }
 
 void CGameClient::FormatClientId(int ClientId, char (&aClientId)[16], EClientIdFormat Format) const
@@ -5920,7 +5919,7 @@ vec2 CGameClient::GetCursorWorldPos() const
 
 	if(l > 0.0001f) // make sure that this isn't 0
 	{
-		float OffsetAmount = maximum(l -m_Snap.m_SpecInfo.m_Deadzone, 0.0f) * (m_Snap.m_SpecInfo.m_FollowFactor / 100.0f);
+		float OffsetAmount = maximum(l - m_Snap.m_SpecInfo.m_Deadzone, 0.0f) * (m_Snap.m_SpecInfo.m_FollowFactor / 100.0f);
 		TargetCameraOffset = normalize(Target) * OffsetAmount;
 	}
 

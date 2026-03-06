@@ -597,7 +597,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			NewPage = PAGE_DEMOS;
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
-	
+
 		// E-Client
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitRight(33.0f, &Box, &Button);
@@ -615,7 +615,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			g_Config.m_EcUnreadNews = false;
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("News"));
-	
+
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitLeft(33.0f, &Button, &Box);
 
@@ -813,7 +813,6 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			TextRender()->SetRenderFlags(0);
 			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 		}
-
 	}
 
 	if(NewPage != -1)

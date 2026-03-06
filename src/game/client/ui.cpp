@@ -1796,7 +1796,6 @@ bool CUi::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, 
 	return false;
 }
 
-
 void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 {
 	const float Rounding = minimum(5.0f, ProgressBar.h / 2.0f);
@@ -2617,17 +2616,16 @@ float CUi::DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, f
 			}
 		}
 
-	if(!pColorInner && (InsideHandle || Grabbed) && (CheckActiveItem(pId) || HotItem() == pId))
-	{
-		Handle.h += 3.0f;
-		Handle.y -= 1.5f;
-	}
-	
+		if(!pColorInner && (InsideHandle || Grabbed) && (CheckActiveItem(pId) || HotItem() == pId))
+		{
+			Handle.h += 3.0f;
+			Handle.y -= 1.5f;
+		}
 
-	if(InsideRail && !MouseButton(0))
-	{
-		SetHotItem(pId);
-	}
+		if(InsideRail && !MouseButton(0))
+		{
+			SetHotItem(pId);
+		}
 	}
 
 	float ReturnValue = Current;
@@ -2640,7 +2638,7 @@ float CUi::DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, f
 	}
 
 	// render
-	
+
 	const ColorRGBA HandleColor = ms_ScrollBarColorFunction.GetColor(CheckActiveItem(pId), HotItem() == pId);
 	if(pColorInner)
 	{
