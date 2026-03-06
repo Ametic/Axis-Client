@@ -1,6 +1,13 @@
 ﻿#ifndef GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
+#include <base/str.h>
+
+#include <engine/console.h>
+
 #include <game/client/component.h>
+#include <game/client/components/chat.h>
+
+#include <vector>
 
 class IConfigManager;
 

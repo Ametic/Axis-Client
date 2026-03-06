@@ -302,31 +302,29 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		}
 
 		bool SilentMessage = false;
+		bool SendMessage = true;
 
 		if(m_Mode == MODE_SILENT)
 			SilentMessage = true;
 
 		if(GameClient()->m_Bindchat.ChatDoBinds(m_Input.GetString()))
-			SilentMessage = true;
+			SendMessage = false;
 
-		if(SilentMessage)
+		if(SendMessage)
 		{
-			static bool SilentMessageInfo = false;
-			if(g_Config.m_ClSilentMessages)
-				AddLine(SILENT_MSG, TEAM_ALL, m_Input.GetString());
-			if(GameClient()->m_EClient.m_FirstLaunch && !SilentMessageInfo)
+			if(SilentMessage)
 			{
-				GameClient()->ClientMessage("This Message was a Silent Message, no one else can see it!");
-				SilentMessageInfo = true;
+				if(g_Config.m_ClSilentMessages)
+					AddLine(SILENT_MSG, TEAM_ALL, m_Input.GetString());
 			}
+			else if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
+			{
+				SendChat(TEAM_FLOCK, m_Input.GetString());
+				AddHistoryEntry(m_Input.GetString());
+			}
+			else
+				SendChatQueued(m_Input.GetString());
 		}
-		else if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
-		{
-			SendChat(TEAM_FLOCK, m_Input.GetString());
-			AddHistoryEntry(m_Input.GetString());
-		}
-		else
-			SendChatQueued(m_Input.GetString());
 
 		m_pHistoryEntry = nullptr;
 		DisableMode();

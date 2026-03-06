@@ -1,6 +1,10 @@
 #ifndef GAME_CLIENT_COMPONENTS_TCLIENT_WARLIST_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_WARLIST_H
 
+#include <base/color.h>
+#include <base/str.h>
+
+#include <engine/config.h>
 #include <engine/console.h>
 #include <engine/shared/protocol.h>
 
@@ -8,6 +12,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 enum
 {

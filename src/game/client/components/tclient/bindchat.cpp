@@ -1,11 +1,18 @@
 #include "bindchat.h"
 
-#include <engine/shared/config.h>
-#include <engine/shared/console.h>
+#include <base/str.h>
 
+#include <engine/config.h>
+#include <engine/console.h>
+#include <engine/shared/config.h>
+
+#include <generated/protocol.h>
+
+#include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
 
 #include <algorithm>
+#include <cstring>
 #include <vector>
 
 CBindChat::CBindChat()
@@ -303,17 +310,21 @@ bool CBindChat::ChatDoBinds(const char *pText)
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{
+			bool SendMessage = !(IsExclemataion && !SendsMessage);
+
+			if(SendMessage)
+				GameClient()->m_Chat.AddLine(CChat::SILENT_MSG, TEAM_ALL, pText);
 			ExecuteBind(&Bind - m_vBinds.data(), pSpace ? pSpace + 1 : nullptr);
 			// Add to history (see CChat::SendChatQueued)
 			const int Length = str_length(pText);
 			CChat::CHistoryEntry *pEntry = Chat.m_History.Allocate(sizeof(CChat::CHistoryEntry) + Length);
 			pEntry->m_Team = 0; // All
 			str_copy(pEntry->m_aText, pText, Length + 1);
-			if(IsExclemataion && !SendsMessage)
-				return false;
-			return true;
+			return SendMessage;
 		}
 	}
+	if((!g_Config.m_ClSendExclamation &&str_startswith(pText, "!")) || (!g_Config.m_ClSendDotsChat && str_startswith(pText, ".")))
+		GameClient()->m_Chat.AddLine(CChat::SILENT_MSG, TEAM_ALL, pText);
 	return false;
 }
 
