@@ -410,6 +410,10 @@ MACRO_CONFIG_INT(ClColorFrozenTeeFeet, ec_color_frozen_tee_feet, 0, 0, 1, CFGFLA
 MACRO_CONFIG_INT(ClWhiteFeet, ec_white_feet, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render all feet as ec_white_feet_skin and fully white")
 MACRO_CONFIG_STR(ClWhiteFeetSkin, ec_white_feet_skin, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Base skin for white feet")
 
+// Balls
+MACRO_CONFIG_STR(ClPhysicBallsSkin, ec_physic_balls_skin, 24, "volleyball", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Base skin for physic balls")
+
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 

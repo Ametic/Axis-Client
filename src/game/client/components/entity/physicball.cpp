@@ -149,7 +149,7 @@ bool CPhysicBalls::IsBallVisible(const CBall *pBall)
 
 void CPhysicBalls::RenderBall(const CBall *pBall)
 {
-	const CSkin *pSkin = GameClient()->m_Skins.Find(g_Config.m_EcVolleyBallBetterBallSkin);
+	const CSkin *pSkin = GameClient()->m_Skins.Find(g_Config.m_ClPhysicBallsSkin);
 	if(!pSkin)
 		return;
 
