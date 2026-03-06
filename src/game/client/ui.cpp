@@ -1812,7 +1812,7 @@ void CUi::RenderTime(CUIRect TimeRect, float FontSize, int Seconds, bool NotFini
 
 	char aBuf[128];
 
-	str_time(((int64_t)absolute(Seconds)) * 100, TIME_HOURS, aBuf, sizeof(aBuf));
+	str_time(((int64_t)absolute(Seconds)) * 100, ETimeFormat::HOURS, aBuf, sizeof(aBuf));
 
 	// align in vertical middle
 	vec2 Cursor = TimeRect.TopLeft();
@@ -1855,7 +1855,7 @@ void CUi::RenderTime(CUIRect TimeRect, float FontSize, int Seconds, bool NotFini
 	}
 	else
 	{
-		str_time(((int64_t)absolute(Seconds)) * 100, TIME_HOURS, aBuf, sizeof(aBuf));
+		str_time(((int64_t)absolute(Seconds)) * 100, ETimeFormat::HOURS, aBuf, sizeof(aBuf));
 		TextRender()->Text(Cursor.x, Cursor.y, FontSize, aBuf);
 	}
 }
