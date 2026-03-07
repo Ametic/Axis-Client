@@ -3859,7 +3859,7 @@ void CMenus::PopupConfirmRemoveWarType()
 	m_pRemoveWarType = nullptr;
 }
 
-int CMenus::DoButtonForceFontSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float FontSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+int CMenus::DoButtonForceFontSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float _LineSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
 {
 	CUIRect Text = *pRect;
 
@@ -3872,10 +3872,10 @@ int CMenus::DoButtonForceFontSize_Menu(CButtonContainer *pButtonContainer, const
 
 	pRect->Draw(Color, Corners, Rounding);
 
-	Text.HMargin(FontSize / 2.0f, &Text);
+	Text.HMargin(_LineSize / 2.0f, &Text);
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
-	Ui()->DoLabel(&Text, pText, FontSize, TEXTALIGN_MC);
+	Ui()->DoLabel(&Text, pText, _LineSize, TEXTALIGN_MC);
 
 	if(Fake)
 		return 0;
@@ -3883,7 +3883,7 @@ int CMenus::DoButtonForceFontSize_Menu(CButtonContainer *pButtonContainer, const
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
 }
 
-int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float FontSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float _LineSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
 {
 	CUIRect Text = *pRect;
 
@@ -3896,7 +3896,7 @@ int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char
 
 	pRect->Draw(Color, Corners, Rounding);
 
-	Text.HMargin(FontSize / 2.0f, &Text);
+	Text.HMargin(_LineSize / 2.0f, &Text);
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
 	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);

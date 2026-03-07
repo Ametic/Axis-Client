@@ -2808,9 +2808,6 @@ void CGameClient::OnPredict()
 				if(Events & COREEVENT_AIR_JUMP)
 					m_Effects.AirJump(Pos, 1.0f, 1.0f);
 		}
-
-		if(Tick <= FinalTickRegular)
-			HandlePredictedEvents(Tick);
 	}
 
 	if(FastInputTicks > 0)
@@ -2818,6 +2815,9 @@ void CGameClient::OnPredict()
 		m_PredictedWorld.CopyWorld(&m_RegularPredictedWorld);
 		// m_PrevPredictedWorld.CopyWorld(&m_PrevRegularPredictedWorld); // not sure if this is worth performance cost, it seems to not matter
 	}
+
+	if(RealPredTick)
+		HandlePredictedEvents(FinalTickRegular);
 
 	if(g_Config.m_TcRemoveAnti)
 	{
