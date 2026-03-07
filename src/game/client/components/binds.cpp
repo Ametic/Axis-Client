@@ -302,12 +302,11 @@ void CBinds::SetDefaults()
 	Bind(KEY_F4, "vote no");
 
 	Bind(KEY_K, "kill");
-	// Bind(KEY_Q, "say /spec");
-	Bind(KEY_Q, "chai entity/builtinscripts/smartspec.chai"); // E-Client
+	Bind(KEY_Q, "say /spec");
 	Bind(KEY_P, "say /pause");
 
 	Bind(KEY_Q, "+bindwheel"); // TClient
-	Bind(KEY_Y, "+quickactions"); // E-Client
+	Bind(KEY_Y, "+quickactions"); // EClient
 
 	g_Config.m_ClDDRaceBindsSet = 0;
 	SetDDRaceBinds(false);

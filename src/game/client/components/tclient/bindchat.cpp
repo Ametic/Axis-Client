@@ -217,7 +217,7 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("votekick", "votekick");
 	AddDefaultBind("onlineinfo", "OnlineInfo");
 	AddDefaultBind("playerinfo", "PlayerInfo");
-	AddBindDefault(".github", "view_link https://github.com/FoxNet-DDNet/Entity-Client-DDNet");
+	AddBindDefault(".github", "view_link github.com/FoxNet-DDNet/Entity-Client-DDNet");
 	AddDefaultBind("r", "reply_last");
 
 	AddDefaultBind("friend", "add_friend");
@@ -260,6 +260,7 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("unclanteam", "remove_war_clan_index 2");
 
 	AddDefaultBind("firetext", "chai entity/builtinscripts/firetext.chai");
+	AddDefaultBind("antiad", "chai entity/builtinscripts/anti-bot-ad.chai");
 }
 
 void CBindChat::OnInit()
