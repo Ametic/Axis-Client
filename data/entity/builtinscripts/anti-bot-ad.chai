@@ -18,14 +18,9 @@ if(state("community") != "foxnet"){
 
 var Messages = ["download " + ClientName + "client at " + ClientUrl + " to win",
    "if i was pro, i'd use " + ClientUrl,
-   "bro check out this client: " + ClientUrl,
-   "stop beign a noob, get good with: " + ClientUrl,
-   "think you could do better? not without: " + ClientUrl,
    "escape the ddmatrix with " + ClientUrl,
    "only pros use " + ClientUrl,
-   "you know who uses " + ClientUrl + "? qxdFox! and hes amazing",
    "my dad came back after i used " + ClientUrl,
-   "my mom was proud of me after using " + ClientUrl,
    "wanna know why youre losing ? youre not on " + ClientUrl,
    "i was depressed until i found " + ClientUrl,
    ClientShort + " is love, " + ClientShort + " is life | " + ClientUrl,
@@ -47,25 +42,27 @@ var Messages = ["download " + ClientName + "client at " + ClientUrl + " to win",
    "i beat showroom 10 minute slowmode with " + ClientUrl,
    "ever wondered why i'm this good? " + ClientUrl,
    "stopped using " + ClientUrl + " for a day and almost died.. true story!",
-   ClientUrl + " is the reason for everything good in my life",
    "are you a noob? get " + ClientUrl + " and stop being one",
    "does your client suck? get " + ClientUrl,
    "are you depressed? fix it with " + ClientUrl,
    ClientUrl + " helped me find real friends!",
    "use " + ClientUrl + " for free ddcoins",
-   ClientName + "client is the best, get it at " + ClientUrl,
+   ClientName + " client is the best, get it at " + ClientUrl,
    "want quality features? use " + ClientUrl,
    "let's make a deal, use " + ClientUrl + " and I show u twinboobs",
-   "twinbop my love.. I mean, download " + ClientUrl + "!"
+   "twinbop my love.. I mean, download " + ClientUrl + "!",
+   "you know who uses " + ClientUrl + "? qxdFox! and hes amazing",
+   "think you could do better? not without " + ClientUrl,
+   "bro check out this client " + ClientUrl,
+   "stop beign a noob, get good with " + ClientUrl,
+   "my mom was proud of me after using " + ClientUrl
 ]
 
 var Rand = math.random(0, Messages.size().to_int() - 1);
 
 var FancyMessage = Input +  " " + ToFancy(Messages[Rand]);
 var size = FancyMessage.size();
-echo(size.to_string());
 if(size > 255) {
-    echo(FancyMessage);
     echo("String too long: " + to_string(size) + " characters");
     return;
 }
