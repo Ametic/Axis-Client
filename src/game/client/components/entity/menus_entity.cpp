@@ -355,8 +355,8 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	RightView.HSplitTop(LineSize * 2.0f, &Button, &RightView);
 	Button.VSplitMid(&FilesLeft, &FilesRight, MarginSmall);
 
-	static CButtonContainer s_AClientConfig, s_Config, s_Warlist, s_Profiles, s_Chatbinds, s_FontFolder;
-	if(DoButtonLineSize_Menu(&s_AClientConfig, Localize("E-Client Setting"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	static CButtonContainer s_EClientConfig, s_Config, s_Warlist, s_Profiles, s_Chatbinds, s_FontFolder;
+	if(DoButtonLineSize_Menu(&s_EClientConfig, Localize("E-Client Setting"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
 		Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::ENTITY].m_aConfigPath, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);
@@ -410,7 +410,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	{
 		CTeeRenderInfo TeeRenderInfo;
 		TeeRenderInfo.Apply(GameClient()->m_Skins.Find("Catnoa"));
-		TeeRenderInfo.ApplyColors(true, 5374207, 12767844);
+		TeeRenderInfo.ApplyColors(true, 10784768, 15269690);
 		TeeRenderInfo.m_Size = TeeSize;
 
 		RenderDraggableTee(MainView, TeeRect.Center(), TeeEyeDirection(TeeRect.Center()), CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_NORMAL);
@@ -2856,7 +2856,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	CUIRect Label, Button;
 
 	// left side in settings menu
-	CUIRect  Cosmetics, Trails, ServerRainbow, TileOutlines,
+	CUIRect  Cosmetics, Trails, PhysicBalls, ServerRainbow, TileOutlines,
 		Miscellaneous, MapOverview, DiscordRpc, ChatBubbles, PlayerIndicator, BgDraw, SweatMode;
 	MainView.VSplitMid(&Cosmetics, &Miscellaneous);
 
@@ -2979,7 +2979,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	{
 		static float Offset = 0.0f;
 		Trails.HSplitTop(Margin, nullptr, &Trails);
-		Trails.HSplitTop(205.0f + Offset, &Trails, &ServerRainbow);
+		Trails.HSplitTop(205.0f + Offset, &Trails, &PhysicBalls);
 		if(s_ScrollRegion.AddRect(Trails))
 		{
 			Offset = 0.0f;
@@ -3036,7 +3036,76 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailAlpha, &g_Config.m_EcTeeTrailAlpha, &Button, Localize("Trail alpha"), 0, 100);
 		}
 	}
+	/* Physic Balls */
+	{
+		PhysicBalls.HSplitTop(Margin, nullptr, &PhysicBalls);
+		PhysicBalls.HSplitTop(120.0f, &PhysicBalls, &ServerRainbow);
+		if(s_ScrollRegion.AddRect(PhysicBalls))
+		{
+			PhysicBalls.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			PhysicBalls.VMargin(Margin, &PhysicBalls);
 
+			PhysicBalls.HSplitTop(HeaderHeight, &Button, &PhysicBalls);
+			Ui()->DoLabel(&Button, "Physic Balls", HeaderSize, HeaderAlignment);
+
+			PhysicBalls.HSplitTop(LineSize, &Button, &PhysicBalls);
+
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "Ball amount: %" PRIzu, GameClient()->m_PhysicBalls.GetBallCount());
+
+			CUIRect BallAmountLabel, ClearButton;
+			Button.VSplitRight(90.0f, &BallAmountLabel, &ClearButton);
+			BallAmountLabel.VSplitRight(MarginSmall, &BallAmountLabel, nullptr);
+
+			Ui()->DoLabel(&BallAmountLabel, aBuf, FontSize, TEXTALIGN_ML);
+
+			static CButtonContainer s_ClearBallsButton;
+			const ColorRGBA ButtonColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f);
+			if(DoButtonForceFontSize_Menu(&s_ClearBallsButton, Localize("Clear"), 0, &ClearButton, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
+			{
+				GameClient()->m_PhysicBalls.OnReset();
+			}
+			PhysicBalls.HSplitTop(MarginSmall, &Button, &PhysicBalls);
+
+			{
+				static CLineInput s_NotifyMsg;
+				s_NotifyMsg.SetBuffer(g_Config.m_ClPhysicBallsSkin, sizeof(g_Config.m_ClPhysicBallsSkin));
+				s_NotifyMsg.SetEmptyText("Volleyball");
+
+				const char *pLabel = "Ball Skin:";
+				float Length = TextRender()->TextBoundingBox(FontSize, pLabel).m_W + 3.5f; // Give it some breathing room
+
+				PhysicBalls.HSplitTop(20.0f, &Button, nullptr);
+
+				Button.VSplitLeft(Length, &Label, &Button);
+				Button.VSplitLeft(100.0f, &Button, nullptr);
+
+				Ui()->DoEditBox(&s_NotifyMsg, &Button, EditBoxFontSize);
+
+				PhysicBalls.HSplitTop(3.0f, &Button, &PhysicBalls);
+				Ui()->DoLabel(&PhysicBalls, pLabel, FontSize, TEXTALIGN_LEFT);
+			}
+			PhysicBalls.HSplitTop(LineSize, &Button, &PhysicBalls);
+			PhysicBalls.HSplitTop(25.0f, &Button, &PhysicBalls);
+
+			CUIRect SpawnButton, SpawnButtonCursor;
+			Button.VSplitLeft(110.0f, &SpawnButton, &Button);
+			Button.VSplitLeft(MarginSmall, nullptr, &Button);
+			Button.VSplitLeft(110.0f, &SpawnButtonCursor, nullptr);
+
+			static CButtonContainer s_SpawnBall, s_OtherBallButton;
+
+			if(DoButtonForceFontSize_Menu(&s_SpawnBall, Localize("New Ball"), 0, &SpawnButton, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
+			{
+				GameClient()->m_PhysicBalls.NewBallPlayer(60.0f);
+			}
+
+			if(DoButtonForceFontSize_Menu(&s_OtherBallButton, Localize("New Ball Cursor"), 0, &SpawnButtonCursor, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
+			{
+				GameClient()->m_PhysicBalls.NewBallCursor(60.0f);
+			}
+		}
+	}
 	/* Server-Side Rainbow */
 	{
 		ServerRainbow.HSplitTop(Margin, nullptr, &ServerRainbow);
@@ -3790,7 +3859,7 @@ void CMenus::PopupConfirmRemoveWarType()
 	m_pRemoveWarType = nullptr;
 }
 
-int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float Line_Size, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+int CMenus::DoButtonForceFontSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float FontSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
 {
 	CUIRect Text = *pRect;
 
@@ -3803,7 +3872,31 @@ int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char
 
 	pRect->Draw(Color, Corners, Rounding);
 
-	Text.HMargin(Line_Size / 2.0f, &Text);
+	Text.HMargin(FontSize / 2.0f, &Text);
+	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
+	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	Ui()->DoLabel(&Text, pText, FontSize, TEXTALIGN_MC);
+
+	if(Fake)
+		return 0;
+
+	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
+}
+
+int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float FontSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+{
+	CUIRect Text = *pRect;
+
+	if(Checked)
+		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
+
+	if(Fake)
+		Color.a *= 0.5f;
+
+	pRect->Draw(Color, Corners, Rounding);
+
+	Text.HMargin(FontSize / 2.0f, &Text);
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
 	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
