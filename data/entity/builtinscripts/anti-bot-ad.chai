@@ -54,7 +54,7 @@ var Messages = ["download " + ClientName + "client at " + ClientUrl + " to win",
    "you know who uses " + ClientUrl + "? qxdFox! and hes amazing",
    "think you could do better? not without " + ClientUrl,
    "bro check out this client " + ClientUrl,
-   "stop beign a noob, get good with " + ClientUrl,
+   "stop being a noob, get good with " + ClientUrl,
    "my mom was proud of me after using " + ClientUrl
 ]
 
