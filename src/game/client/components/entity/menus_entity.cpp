@@ -2856,7 +2856,8 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	CUIRect Label, Button;
 
 	// left side in settings menu
-	CUIRect Miscellaneous, Cosmetics, Trails, ServerRainbow, TileOutlines, DiscordRpc, ChatBubbles, PlayerIndicator, BgDraw, SweatMode;
+	CUIRect  Cosmetics, Trails, ServerRainbow, TileOutlines,
+		Miscellaneous, MapOverview, DiscordRpc, ChatBubbles, PlayerIndicator, BgDraw, SweatMode;
 	MainView.VSplitMid(&Cosmetics, &Miscellaneous);
 
 	/* Cosmetics */
@@ -3392,7 +3393,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			Size += LineSize;
 
 		Miscellaneous.VMargin(5.0f, &Miscellaneous);
-		Miscellaneous.HSplitTop(Size, &Miscellaneous, &DiscordRpc);
+		Miscellaneous.HSplitTop(Size, &Miscellaneous, &MapOverview);
 		if(s_ScrollRegion.AddRect(Miscellaneous))
 		{
 			Miscellaneous.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -3489,6 +3490,27 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				Miscellaneous.HSplitTop(LineSize, &Button, &Miscellaneous);
 				Ui()->DoScrollbarOption(&g_Config.m_ClCursorOpacitySpec, &g_Config.m_ClCursorOpacitySpec, &Button, Localize("Cursor Opacity in Spec"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
+			}
+		}
+	}
+
+	/* Map Overview */
+	{
+		MapOverview.HSplitTop(Margin, nullptr, &MapOverview);
+		MapOverview.HSplitTop(100.0f, &MapOverview, &DiscordRpc);
+		if(s_ScrollRegion.AddRect(MapOverview))
+		{
+			MapOverview.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			MapOverview.VMargin(Margin, &MapOverview);
+
+			MapOverview.HSplitTop(HeaderHeight, &Button, &MapOverview	);
+			Ui()->DoLabel(&Button, Localize("Map Overview"), HeaderSize, HeaderAlignment);
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMapOverview, "Enable map overview", &g_Config.m_ClMapOverview, &MapOverview, LineSize);
+				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClMapOverview, &Button, "Renders areas darker that you have already explored", FontSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMapOverviewSpectatingOnly, "Only show map overview while spectating", &g_Config.m_ClMapOverviewSpectatingOnly, &MapOverview, LineSize);
+				MapOverview.HSplitTop(LineSize, &Button, &MapOverview);
+				Ui()->DoScrollbarOption(&g_Config.m_ClMapOverviewOpacity, &g_Config.m_ClMapOverviewOpacity, &Button, "Explored area opacity", 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
 			}
 		}
 	}
