@@ -77,6 +77,7 @@
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
 #include "components/entity/map_overview.h"
+#include "components/entity/moving_tiles.h"
 #include "components/entity/physicball.h"
 #include "components/entity/quick_actions.h"
 
@@ -256,6 +257,9 @@ public:
 	CMapOverview m_MapOverview;
 	CPhysicBalls m_PhysicBalls;
 	CQuickActions m_QuickActions;
+
+	CMovingTiles m_MovingTilesBackground = CMovingTiles{false};
+	CMovingTiles m_MovingTilesForeground = CMovingTiles{true};
 
 	// T-Client
 	CBindChat m_Bindchat;

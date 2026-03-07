@@ -2186,8 +2186,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	// left side in settings menu
 
 	CUIRect Automation, FreezeKill, ChatSettings, GoresMode,
-		MenuSettings, AntiLatency, FrozenTeeHud,
-		FastInput, AntiPingSmoothing, GhostTools;
+		MenuSettings, FastInput, AntiLatency, FrozenTeeHud, AntiPingSmoothing, GhostTools;
 	MainView.VSplitMid(&Automation, &GoresMode);
 
 	/* Automation */
@@ -2559,7 +2558,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Gores Mode */
 	{
 		GoresMode.VMargin(5.0f, &GoresMode);
-		GoresMode.HSplitTop(120.0f, &GoresMode, &MenuSettings);
+		GoresMode.HSplitTop(120.0f, &GoresMode, &FastInput);
 		if(s_ScrollRegion.AddRect(GoresMode))
 		{
 			GoresMode.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -2604,6 +2603,33 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					}
 					GameClient()->m_EClient.GoresModeSave();
 				}
+			}
+		}
+	}
+
+	/* Fast Input */
+	{
+		FastInput.HSplitTop(Margin, nullptr, &FastInput);
+		FastInput.HSplitTop(g_Config.m_TcFastInput ? 125.0f : 100.0f, &FastInput, &MenuSettings);
+		if(s_ScrollRegion.AddRect(FastInput))
+		{
+			FastInput.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			FastInput.VMargin(Margin, &FastInput);
+
+			FastInput.HSplitTop(HeaderHeight, &Button, &FastInput);
+			Ui()->DoLabel(&Button, Localize("Input"), HeaderSize, HeaderAlignment);
+			{
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInput, Localize("Fast Input (reduced visual delay)"), &g_Config.m_TcFastInput, &FastInput, LineSize))
+					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
+
+				FastInput.HSplitTop(LineSize, &Button, &FastInput);
+				if(Ui()->DoScrollbarOption(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
+					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
+
+				if(g_Config.m_TcFastInput)
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, Localize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &FastInput, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSubTickAiming, "Sub-Tick aiming", &g_Config.m_ClSubTickAiming, &FastInput, LineSize);
 			}
 		}
 	}
@@ -2798,7 +2824,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Anti Ping Smoothing */
 	{
 		AntiPingSmoothing.HSplitTop(Margin, nullptr, &AntiPingSmoothing);
-		AntiPingSmoothing.HSplitTop(120.0f, &AntiPingSmoothing, &FastInput);
+		AntiPingSmoothing.HSplitTop(120.0f, &AntiPingSmoothing, nullptr);
 		if(s_ScrollRegion.AddRect(AntiPingSmoothing))
 		{
 			AntiPingSmoothing.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -2812,33 +2838,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingNegativeBuffer, Localize("Remember instability for longer"), &g_Config.m_TcAntiPingNegativeBuffer, &AntiPingSmoothing, LineSize);
 				AntiPingSmoothing.HSplitTop(LineSize, &Button, &AntiPingSmoothing);
 				Ui()->DoScrollbarOption(&g_Config.m_TcAntiPingUncertaintyScale, &g_Config.m_TcAntiPingUncertaintyScale, &Button, Localize("Uncertainty duration"), 50, 400, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "%");
-			}
-		}
-	}
-
-	/* Fast Input */
-	{
-		FastInput.HSplitTop(Margin, nullptr, &FastInput);
-		FastInput.HSplitTop(g_Config.m_TcFastInput ? 145.0f : 100.0f, &FastInput, nullptr);
-		if(s_ScrollRegion.AddRect(FastInput))
-		{
-			FastInput.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			FastInput.VMargin(Margin, &FastInput);
-
-			FastInput.HSplitTop(HeaderHeight, &Button, &FastInput);
-			Ui()->DoLabel(&Button, Localize("Input"), HeaderSize, HeaderAlignment);
-			{
-				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInput, Localize("Fast Input (reduced visual delay)"), &g_Config.m_TcFastInput, &FastInput, LineSize))
-					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
-
-				FastInput.HSplitTop(LineSize, &Button, &FastInput);
-				if(Ui()->DoScrollbarOption(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
-					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
-
-				if(g_Config.m_TcFastInput)
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, Localize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &FastInput, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSubTickAiming, "Sub-Tick aiming", &g_Config.m_ClSubTickAiming, &FastInput, LineSize);
 			}
 		}
 	}
@@ -3388,7 +3387,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 	/* Miscellaneous */
 	{
-		int Size = 235;
+		int Size = 260;
 		if(g_Config.m_ClWhiteFeet)
 			Size += LineSize;
 
@@ -3483,6 +3482,9 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreboardOutlineTeams, Localize("Outline Teams in Scoreboard"), &g_Config.m_ClScoreboardOutlineTeams, &Miscellaneous, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRevertTeamColors, Localize("Use Old Team Colors"), &g_Config.m_ClRevertTeamColors, &Miscellaneous, LineSize);
+
+				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMovingTilesEntities, Localize("Show Moving Tiles in entities"), &g_Config.m_ClShowMovingTilesEntities, &Miscellaneous, LineSize);
 
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				Miscellaneous.HSplitTop(LineSize, &Button, &Miscellaneous);

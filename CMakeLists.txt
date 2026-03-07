@@ -2493,6 +2493,8 @@ if(CLIENT)
     components/entity/map_overview.cpp
     components/entity/map_overview.h 
     components/entity/menus_entity.cpp 
+    components/entity/moving_tiles.cpp
+    components/entity/moving_tiles.h 
     components/entity/physicball.cpp
     components/entity/physicball.h 
     components/entity/quick_actions.cpp

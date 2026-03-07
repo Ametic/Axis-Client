@@ -413,6 +413,9 @@ MACRO_CONFIG_STR(ClWhiteFeetSkin, ec_white_feet_skin, 24, "x_ninja", CFGFLAG_CLI
 // Balls
 MACRO_CONFIG_STR(ClPhysicBallsSkin, ec_physic_balls_skin, 24, "volleyball", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Base skin for physic balls")
 
+// Moving Tiles
+MACRO_CONFIG_INT(ClShowMovingTilesEntities, ec_show_moving_tiles_entities, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show server-side moving tiles in entities")
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 
