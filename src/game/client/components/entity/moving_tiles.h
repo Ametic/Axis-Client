@@ -7,6 +7,7 @@
 #include <game/mapitems.h>
 
 #include <vector>
+#include <game/client/components/envelope_state.h>
 
 class CQuad;
 class CMapItemGroup;
@@ -57,6 +58,7 @@ class CMovingTiles : public CComponent
 	std::vector<CQuadData> m_vQuads;
 	
 	bool m_RenderAbove; // hookables are rendered above tilemap, the rest below
+	CEnvelopeState m_EnvEvaluator;
 
 public:
 	CMovingTiles(bool Above) :

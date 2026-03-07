@@ -122,6 +122,8 @@ void CMovingTiles::OnMapLoad()
 		}
 	}
 	log_info("moving-tiles", "%" PRIzu " valid quadlayer%s with %d quads", NumQuadLayers, NumQuadLayers == 1 ? "" : "s", (int)m_vQuads.size());
+	m_EnvEvaluator = CEnvelopeState(GameClient()->Map(), true);
+	m_EnvEvaluator.OnInterfacesInit(GameClient());
 }
 
 void CMovingTiles::OnRender()
@@ -133,15 +135,14 @@ void CMovingTiles::OnRender()
 	if(m_vQuads.empty())
 		return;
 
-	CEnvelopeState &EnvEvaluator = GameClient()->m_MapLayersForeground.EnvEvaluator();
 	const vec2 Center = GameClient()->m_Camera.m_Center;
 	const float Zoom = GameClient()->m_Camera.m_Zoom;
 
-auto ApplyGroupState = [&](const CMapItemGroup *pGroup) {
+	auto ApplyGroupState = [&](const CMapItemGroup *pGroup) -> bool {
 		Graphics()->ClipDisable();
 
 		if(!pGroup)
-			return;
+			return false;
 
 		if(!g_Config.m_GfxNoclip && pGroup->m_Version >= 2 && pGroup->m_UseClipping)
 		{
@@ -157,17 +158,17 @@ auto ApplyGroupState = [&](const CMapItemGroup *pGroup) {
 			const float Right = pGroup->m_ClipX + pGroup->m_ClipW - ScreenX0;
 			const float Bottom = pGroup->m_ClipY + pGroup->m_ClipH - ScreenY0;
 
-			if(!(Right < 0.0f || Left > ScreenWidth || Bottom < 0.0f || Top > ScreenHeight))
-			{
-				const int ClipX = (int)std::round(Left * Graphics()->ScreenWidth() / ScreenWidth);
-				const int ClipY = (int)std::round(Top * Graphics()->ScreenHeight() / ScreenHeight);
+			if(Right < 0.0f || Left > ScreenWidth || Bottom < 0.0f || Top > ScreenHeight)
+				return false;
 
-				Graphics()->ClipEnable(
-					ClipX,
-					ClipY,
-					(int)std::round(Right * Graphics()->ScreenWidth() / ScreenWidth) - ClipX,
-					(int)std::round(Bottom * Graphics()->ScreenHeight() / ScreenHeight) - ClipY);
-			}
+			const int ClipX = (int)std::round(Left * Graphics()->ScreenWidth() / ScreenWidth);
+			const int ClipY = (int)std::round(Top * Graphics()->ScreenHeight() / ScreenHeight);
+
+			Graphics()->ClipEnable(
+				ClipX,
+				ClipY,
+				(int)std::round(Right * Graphics()->ScreenWidth() / ScreenWidth) - ClipX,
+				(int)std::round(Bottom * Graphics()->ScreenHeight() / ScreenHeight) - ClipY);
 		}
 
 		const int ParallaxZoom = std::clamp(maximum(pGroup->m_ParallaxX, pGroup->m_ParallaxY), 0, 100);
@@ -178,6 +179,8 @@ auto ApplyGroupState = [&](const CMapItemGroup *pGroup) {
 			pGroup->m_OffsetX, pGroup->m_OffsetY,
 			Graphics()->ScreenAspect(), Zoom, aPoints);
 		Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
+
+		return true;
 	};
 
 	auto RenderPass = [&](int RenderFlags) {
@@ -194,14 +197,18 @@ auto ApplyGroupState = [&](const CMapItemGroup *pGroup) {
 				continue;
 			}
 
-			ApplyGroupState(pGroup);
-
 			size_t QuadEnd = QuadStart + 1;
 			while(QuadEnd < m_vQuads.size() &&
 				m_vQuads[QuadEnd].m_pGroup == pGroup &&
 				m_vQuads[QuadEnd].m_pLayer == pLayer)
 			{
 				QuadEnd++;
+			}
+
+			if(!ApplyGroupState(pGroup))
+			{
+				QuadStart = QuadEnd;
+				continue;
 			}
 
 			if(pLayer->m_Image >= 0 && pLayer->m_Image < GameClient()->m_MapImages.Num())
@@ -219,7 +226,7 @@ auto ApplyGroupState = [&](const CMapItemGroup *pGroup) {
 					continue;
 
 				ColorRGBA Color(1.0f, 1.0f, 1.0f, 1.0f);
-				EnvEvaluator.EnvelopeEval(pQuad->m_ColorEnvOffset, pQuad->m_ColorEnv, Color, 4);
+				m_EnvEvaluator.EnvelopeEval(pQuad->m_ColorEnvOffset, pQuad->m_ColorEnv, Color, 4);
 				if(Color.a <= 0.0f)
 					continue;
 
@@ -236,7 +243,7 @@ auto ApplyGroupState = [&](const CMapItemGroup *pGroup) {
 					fx2f(pQuad->m_aTexcoords[3].x), fx2f(pQuad->m_aTexcoords[3].y));
 
 				ColorRGBA Position(0.0f, 0.0f, 0.0f, 0.0f);
-				EnvEvaluator.EnvelopeEval(pQuad->m_PosEnvOffset, pQuad->m_PosEnv, Position, 3);
+				m_EnvEvaluator.EnvelopeEval(pQuad->m_PosEnvOffset, pQuad->m_PosEnv, Position, 3);
 
 				const vec2 Offset(Position.r, Position.g);
 				const float Rotation = Position.b / 180.0f * pi + QuadData.m_Angle;
