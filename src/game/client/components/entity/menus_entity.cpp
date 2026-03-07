@@ -2819,7 +2819,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Fast Input */
 	{
 		FastInput.HSplitTop(Margin, nullptr, &FastInput);
-		FastInput.HSplitTop(g_Config.m_TcFastInput ? 125.0f : 80.0f, &FastInput, nullptr);
+		FastInput.HSplitTop(g_Config.m_TcFastInput ? 145.0f : 100.0f, &FastInput, nullptr);
 		if(s_ScrollRegion.AddRect(FastInput))
 		{
 			FastInput.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -2835,9 +2835,10 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				if(Ui()->DoScrollbarOption(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
 					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
 
-				FastInput.HSplitTop(MarginSmall, nullptr, &FastInput);
 				if(g_Config.m_TcFastInput)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, Localize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &FastInput, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSubTickAiming, "Sub-Tick aiming", &g_Config.m_ClSubTickAiming, &FastInput, LineSize);
 			}
 		}
 	}
