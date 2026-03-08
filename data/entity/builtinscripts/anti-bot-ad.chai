@@ -12,20 +12,20 @@ if(Input != "") {
     Input = Input + ": ";
 }
 
-if(state("community") != "foxnet"){
+if(state("community") != "foxnet") {
     Prefix = "say";
 }
 
-var Messages = ["download " + ClientName + "client at " + ClientUrl + " to win",
-   "if i was pro, i'd use " + ClientUrl,
+var Messages = ["download " + ClientShort + "at " + ClientUrl + " to win",
+   "if I was pro, I'd use " + ClientUrl,
    "escape the ddmatrix with " + ClientUrl,
    "only pros use " + ClientUrl,
-   "my dad came back after i used " + ClientUrl,
+   "my dad came back after I used " + ClientUrl,
    "wanna know why youre losing ? youre not on " + ClientUrl,
-   "i was depressed until i found " + ClientUrl,
+   "I was depressed until I found " + ClientUrl,
    ClientShort + " is love, " + ClientShort + " is life | " + ClientUrl,
-   "my grandma promised cookies if i use " + ClientUrl,
-   "i achieved inner peace after getting " + ClientUrl,
+   "my grandma promised cookies if I use " + ClientUrl,
+   "I achieved inner peace after getting " + ClientUrl,
    ClientUrl + " never disappoints, unlike other clients",
    "get free ddcoins at " + ClientUrl,
    "git gud by using " + ClientUrl,
@@ -34,13 +34,13 @@ var Messages = ["download " + ClientName + "client at " + ClientUrl + " to win",
    "no credit card, no signup, " + ClientUrl + " is free",
    "think you could do better? not without " + ClientUrl,
    "claim your free tee nft at " + ClientUrl,
-   "i bought these cheats for free at " + ClientUrl,
+   "I bought these cheats for free at " + ClientUrl,
    "bad ping? fix it with " + ClientUrl,
-   "i sacrificed my newborn for " + ClientUrl,
+   "I sacrificed my newborn for " + ClientUrl,
    "use " + ClientUrl + " to slayyy gurlll",
    "having a bad day? fix it with " + ClientUrl,
-   "i beat showroom 10 minute slowmode with " + ClientUrl,
-   "ever wondered why i'm this good? " + ClientUrl,
+   "I beat showroom 10 minute slowmode with " + ClientUrl,
+   "ever wondered why I'm this good? " + ClientUrl,
    "stopped using " + ClientUrl + " for a day and almost died.. true story!",
    "are you a noob? get " + ClientUrl + " and stop being one",
    "does your client suck? get " + ClientUrl,
