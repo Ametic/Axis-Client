@@ -4,6 +4,10 @@
 Fox's client which mostly consists of stolen code
 If you find any bugs or have an idea for a feature then create a new issue
 
+### To other Devs
+Any of my sloppy code can be stolen, I don't mind, It's open source for a reason.\
+If you do steal my code, you don't have to but I would appreciate if I get mentioned somewhere c: (Changelog, header files, etc.)
+
 ### Scripting
 
 Entity Client supports the [ChaiScript](https://chaiscript.com/) language for simple tasks
