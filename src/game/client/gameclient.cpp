@@ -664,7 +664,7 @@ void CGameClient::OnReset()
 
 	m_GameOver = false;
 	m_GamePaused = false;
-	m_PrevLocalId = -1; // TClient
+	m_PrevLocalId = -1; // EClient
 
 	m_SuppressEvents = false;
 	m_NewTick = false;
@@ -1930,7 +1930,7 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_HasTelegunLaser = pCharacterData->m_Flags & CHARACTERFLAG_TELEGUN_LASER;
 
 					pClient->m_Predicted.ReadDDNet(pCharacterData);
-					// TClient
+					// EClient
 					pClient->m_RegularPredicted.ReadDDNet(pCharacterData);
 
 					m_Teams.SetSolo(Item.m_Id, pClient->m_Solo);
@@ -2524,6 +2524,52 @@ void CGameClient::UpdateEditorIngameMoved()
 	}
 }
 
+bool CGameClient::GetDummyFastInput(CNetObj_PlayerInput &DummyFastInput, const CNetObj_PlayerInput *pDummyInputData, const CCharacter *pDummyChar, int LocalTee, int DummyTee) const
+{
+	if(!PredictDummy() || !pDummyChar)
+		return false;
+
+	if(g_Config.m_ClDummyHammer)
+	{
+		DummyFastInput = m_HammerInput;
+		return true;
+	}
+
+	if(g_Config.m_ClDummyCopyMoves)
+	{
+		DummyFastInput = m_Controls.m_aFastInput[LocalTee];
+		DummyFastInput.m_Fire = m_Controls.m_aFastInput[DummyTee].m_Fire;
+		DummyFastInput.m_WantedWeapon = m_Controls.m_aFastInput[DummyTee].m_WantedWeapon;
+		DummyFastInput.m_NextWeapon = m_Controls.m_aFastInput[DummyTee].m_NextWeapon;
+		DummyFastInput.m_PrevWeapon = m_Controls.m_aFastInput[DummyTee].m_PrevWeapon;
+		if(g_Config.m_ClDummyControl)
+		{
+			const CNetObj_PlayerInput BaseDummyInput = pDummyInputData ? *pDummyInputData : CNetObj_PlayerInput{};
+			DummyFastInput.m_Jump = BaseDummyInput.m_Jump;
+			DummyFastInput.m_Fire = BaseDummyInput.m_Fire;
+			DummyFastInput.m_Hook = BaseDummyInput.m_Hook;
+		}
+		return true;
+	}
+
+	if(g_Config.m_ClDummyControl)
+	{
+		const CNetObj_PlayerInput BaseDummyInput = pDummyInputData ? *pDummyInputData : CNetObj_PlayerInput{};
+		DummyFastInput = BaseDummyInput;
+		DummyFastInput.m_Direction = m_Controls.m_aFastInput[DummyTee].m_Direction;
+		DummyFastInput.m_PlayerFlags = m_Controls.m_aFastInput[DummyTee].m_PlayerFlags;
+		DummyFastInput.m_TargetX = m_Controls.m_aFastInput[DummyTee].m_TargetX;
+		DummyFastInput.m_TargetY = m_Controls.m_aFastInput[DummyTee].m_TargetY;
+		DummyFastInput.m_WantedWeapon = m_Controls.m_aFastInput[DummyTee].m_WantedWeapon;
+		DummyFastInput.m_NextWeapon = m_Controls.m_aFastInput[DummyTee].m_NextWeapon;
+		DummyFastInput.m_PrevWeapon = m_Controls.m_aFastInput[DummyTee].m_PrevWeapon;
+		return true;
+	}
+
+	return false;
+}
+
+
 void CGameClient::ApplyPreInputs(int Tick, bool Direct, CGameWorld &GameWorld)
 {
 	if(!g_Config.m_ClAntiPingPreInput)
@@ -2626,11 +2672,10 @@ void CGameClient::OnPredict()
 
 	bool RealPredTick = false;
 	// predict
-	// <EClient
+
 	int FastInputTicks = 0;
 	if(g_Config.m_TcFastInput)
 		FastInputTicks = (g_Config.m_TcFastInputAmount + 19) / 20;
-	// EClient>
 
 	int FinalTickRegular = Client()->PredGameTick(g_Config.m_ClDummy); // The vanilla final tick disregarding fast input
 
@@ -2667,10 +2712,8 @@ void CGameClient::OnPredict()
 				m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_PrevPredicted = pDummyChar->GetCore();
 		}
 
-		// <EClient
 		if(Tick == FinalTickRegular)
 			m_PrevRegularPredictedWorld.CopyWorldClean(&m_PredictedWorld);
-		// EClient>
 
 		// optionally allow some movement in freeze by not predicting freeze the last one to two ticks
 		if(g_Config.m_ClPredictFreeze == 2 && Client()->PredGameTick(g_Config.m_ClDummy) - 1 - Client()->PredGameTick(g_Config.m_ClDummy) % 2 <= Tick)
@@ -2679,31 +2722,18 @@ void CGameClient::OnPredict()
 		// apply inputs and tick
 		CNetObj_PlayerInput *pInputData = (CNetObj_PlayerInput *)Client()->GetInput(Tick, m_IsDummySwapping);
 		CNetObj_PlayerInput *pDummyInputData = !pDummyChar ? nullptr : (CNetObj_PlayerInput *)Client()->GetInput(Tick, m_IsDummySwapping ^ 1);
+		CNetObj_PlayerInput DummyFastInput{};
 		bool DummyFirst = pInputData && pDummyInputData && pDummyChar->GetCid() < pLocalChar->GetCid();
 
 		if(g_Config.m_TcFastInput && Tick > FinalTickRegular)
 		{
 			pInputData = &m_Controls.m_aFastInput[LocalTee];
-			if(g_Config.m_ClDummyCopyMoves && PredictDummy() && pDummyChar)
-			{
-				CNetObj_PlayerInput DummyFastInput;
-				if(g_Config.m_ClDummyHammer)
-				{
-					DummyFastInput = m_HammerInput;
-				}
-				else
-				{
-					DummyFastInput = m_Controls.m_aFastInput[LocalTee];
-					DummyFastInput.m_Fire = m_Controls.m_aFastInput[DummyTee].m_Fire;
-					DummyFastInput.m_WantedWeapon = m_Controls.m_aFastInput[DummyTee].m_WantedWeapon;
-					DummyFastInput.m_NextWeapon = m_Controls.m_aFastInput[DummyTee].m_NextWeapon;
-					DummyFastInput.m_PrevWeapon = m_Controls.m_aFastInput[DummyTee].m_PrevWeapon;
-				}
+			if(GetDummyFastInput(DummyFastInput, pDummyInputData, pDummyChar, LocalTee, DummyTee))
 				pDummyInputData = &DummyFastInput;
-			}
 		}
 
-		// TClient
+		// EClient
+		// Disable predicted events during fastinput over-run prediction ticks because they are not real
 		// This has to be before direct input because physics happens in there
 		bool TempPredEventState = m_PredictedWorld.m_WorldConfig.m_PredictEvents;
 		if(Tick > FinalTickRegular)
@@ -2728,13 +2758,8 @@ void CGameClient::OnPredict()
 
 		m_PredictedWorld.Tick();
 
-		// TClient
+		// EClient
 		m_PredictedWorld.m_WorldConfig.m_PredictEvents = TempPredEventState;
-
-		// <EClient
-		if(Tick == FinalTickRegular)
-			m_RegularPredictedWorld.CopyWorldClean(&m_PredictedWorld);
-		// EClient>
 
 		// fetch the current characters
 		if(Tick == FinalTickSelf)
@@ -2808,6 +2833,12 @@ void CGameClient::OnPredict()
 				if(Events & COREEVENT_AIR_JUMP)
 					m_Effects.AirJump(Pos, 1.0f, 1.0f);
 		}
+
+		if(Tick <= FinalTickRegular)
+			HandlePredictedEvents(Tick);
+
+		if(Tick == FinalTickRegular)
+			m_RegularPredictedWorld.CopyWorldClean(&m_PredictedWorld);
 	}
 
 	if(FastInputTicks > 0)
@@ -2815,9 +2846,6 @@ void CGameClient::OnPredict()
 		m_PredictedWorld.CopyWorld(&m_RegularPredictedWorld);
 		// m_PrevPredictedWorld.CopyWorld(&m_PrevRegularPredictedWorld); // not sure if this is worth performance cost, it seems to not matter
 	}
-
-	if(RealPredTick)
-		HandlePredictedEvents(FinalTickRegular);
 
 	if(g_Config.m_TcRemoveAnti)
 	{
@@ -2920,7 +2948,7 @@ void CGameClient::OnPredict()
 		}
 	}
 
-	// TClient
+	// EClient
 	// New antiping smoothing
 	CCharacter *pSmoothLocalChar = m_PredSmoothingWorld.GetCharacterById(m_Snap.m_LocalClientId);
 	if(g_Config.m_TcAntiPingImproved &&
@@ -2929,7 +2957,6 @@ void CGameClient::OnPredict()
 		RealPredTick && m_PredictedTick >= MIN_TICK)
 	{
 		int PredTime = std::clamp(Client()->GetPredictionTime(), 0, 8000); // Milliseconds for some reason?? TODO: Use more precision
-
 		const int PredEndTick = FinalTickRegular;
 		const int SmoothTick = PredEndTick;
 
@@ -3349,7 +3376,7 @@ void CGameClient::CClientData::Reset()
 	m_Predicted.Reset();
 	m_PrevPredicted.Reset();
 
-	// TClient
+	// EClient
 	m_RegularPredicted.Reset();
 
 	if(m_pSkinInfo != nullptr)
@@ -4174,7 +4201,7 @@ void CGameClient::UpdateRenderedCharacters()
 		vec2 Pos = UnpredPos;
 		CCharacter *pChar = m_PredictedWorld.GetCharacterById(i);
 
-		// TClient
+		// EClient
 		if(i == m_Snap.m_LocalClientId)
 			Client()->m_IsLocalFrozen = pChar && pChar->m_FreezeTime > 0;
 

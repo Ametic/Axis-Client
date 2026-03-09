@@ -754,6 +754,8 @@ public:
 	void SendKill() const;
 	void SendReadyChange7();
 
+	// EClient
+	bool GetDummyFastInput(CNetObj_PlayerInput &DummyFastInput, const CNetObj_PlayerInput *pDummyInputData, const CCharacter *pDummyChar, int LocalTee, int DummyTee) const;
 	void ApplyPreInputs(int Tick, bool Direct, CGameWorld &GameWorld);
 
 	int m_aNextChangeInfo[NUM_DUMMIES];
