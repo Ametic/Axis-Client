@@ -78,7 +78,7 @@ void CMovingTiles::OnMapLoad()
 	GameClient()->Map()->GetType(MAPITEMTYPE_GROUP, &GroupsStart, &GroupsNum);
 	GameClient()->Map()->GetType(MAPITEMTYPE_LAYER, &LayersStart, &LayersNum);
 
-	size_t NumQuadLayers = 0;
+	// size_t NumQuadLayers = 0;
 	for(int GroupIndex = 0; GroupIndex < GroupsNum; GroupIndex++)
 	{
 		CMapItemGroup *pGroup = static_cast<CMapItemGroup *>(GameClient()->Map()->GetItem(GroupsStart + GroupIndex));
@@ -103,7 +103,7 @@ void CMovingTiles::OnMapLoad()
 					else if(m_RenderAbove && Type != EQType::HOOKABLE && Type != EQType::UNHOOKABLE)
 						continue;
 
-					NumQuadLayers++;
+					// NumQuadLayers++;
 					CQuad *pQuads = (CQuad *)GameClient()->Map()->GetDataSwapped(pTilemap->m_Data);
 					for(int NumQuads = 0; NumQuads < pTilemap->m_NumQuads; NumQuads++)
 					{
@@ -121,7 +121,7 @@ void CMovingTiles::OnMapLoad()
 			}
 		}
 	}
-	log_info("moving-tiles", "%" PRIzu " valid quadlayer%s with %d quads", NumQuadLayers, NumQuadLayers == 1 ? "" : "s", (int)m_vQuads.size());
+	// log_info("moving-tiles", "%" PRIzu " valid quadlayer%s with %d quads", NumQuadLayers, NumQuadLayers == 1 ? "" : "s", (int)m_vQuads.size());
 	m_EnvEvaluator = CEnvelopeState(GameClient()->Map(), true);
 	m_EnvEvaluator.OnInterfacesInit(GameClient());
 }
@@ -163,12 +163,10 @@ void CMovingTiles::OnRender()
 
 			const int ClipX = (int)std::round(Left * Graphics()->ScreenWidth() / ScreenWidth);
 			const int ClipY = (int)std::round(Top * Graphics()->ScreenHeight() / ScreenHeight);
+			const int ClipW = (int)std::round((Right - Left) * Graphics()->ScreenWidth() / ScreenWidth);
+			const int ClipH = (int)std::round((Bottom - Top) * Graphics()->ScreenHeight() / ScreenHeight);
 
-			Graphics()->ClipEnable(
-				ClipX,
-				ClipY,
-				(int)std::round(Right * Graphics()->ScreenWidth() / ScreenWidth) - ClipX,
-				(int)std::round(Bottom * Graphics()->ScreenHeight() / ScreenHeight) - ClipY);
+			Graphics()->ClipEnable(ClipX, ClipY, ClipW, ClipH);
 		}
 
 		const int ParallaxZoom = std::clamp(maximum(pGroup->m_ParallaxX, pGroup->m_ParallaxY), 0, 100);
