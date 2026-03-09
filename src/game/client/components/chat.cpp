@@ -677,37 +677,42 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(ChatDetection(ClientId, Team, pLine))
 		return;
 
-	ColorRGBA Colors = g_Config.m_ClMessageColor;
+	ColorRGBA Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 	if(ClientId >= 0 && GameClient()->m_Snap.m_LocalClientId != ClientId)
 	{
-		if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
-		{
-			char Message[2048];
-			str_format(Message, sizeof(Message), "[Muted] %s", GameClient()->m_aClients[ClientId].m_aName);
+		if(g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend)
+		{	
+			char Message[MAX_LINE_LENGTH];
+			str_format(Message, sizeof(Message), "%s", GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[Muted] ← %s", GameClient()->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "← %s", GameClient()->m_aClients[ClientId].m_aName);
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Color);
+			return;
+		}
+		else if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
+		{
+			char Message[MAX_LINE_LENGTH];
+			str_format(Message, sizeof(Message), "%s", GameClient()->m_aClients[ClientId].m_aName);
+			if(Team == 3)
+				str_format(Message, sizeof(Message), "← %s", GameClient()->m_aClients[ClientId].m_aName);
 
 			if(g_Config.m_ClMutedConsoleColor)
-				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
+				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
 
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Colors);
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Color);
 			return;
 		}
 		else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
 		{
-			char TypeName[512];
-			if(GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
-				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.GetWarTypeName(ClientId));
-
-			char Message[2048];
-			str_format(Message, sizeof(Message), "[%s] %s", TypeName, GameClient()->m_aClients[ClientId].m_aName);
+			char Message[MAX_LINE_LENGTH];
+			str_format(Message, sizeof(Message), "%s", GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[%s] ← %s", TypeName, GameClient()->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "← %s",GameClient()->m_aClients[ClientId].m_aName);
 
 			if(g_Config.m_ClMutedConsoleColor)
-				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
+				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
 
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Colors);
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Color);
 			return;
 		}
 	}
@@ -715,7 +720,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(*pLine == 0 || (ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (GameClient()->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
 					  GameClient()->m_aClients[ClientId].m_ChatIgnore ||
-					  (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend) ||
+					  // (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend) ||
 					  (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
 					  (GameClient()->m_Snap.m_LocalClientId != ClientId && GameClient()->m_aClients[ClientId].m_Foe))))
 		return;
@@ -773,9 +778,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			else // regular message
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 		}
-
-		char TypeName[512];
-		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(Line.m_ClientId));
 
 		const char *pFrom;
 		if(Line.m_Whisper)
