@@ -57,7 +57,7 @@ class CMovingTiles : public CComponent
 	void Reset();
 	std::vector<CQuadData> m_vQuads;
 	
-	bool m_RenderAbove; // hookables are rendered above tilemap, the rest below
+	bool m_RenderAbove; // solids are rendered above tilemap, the rest below
 	CEnvelopeState m_EnvEvaluator;
 
 public:
