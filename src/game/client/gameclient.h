@@ -68,8 +68,6 @@
 #include "components/touch_controls.h"
 #include "components/voting.h"
 
-#include <memory>
-
 // Entity
 #include "components/entity/anti_spawn_block.h"
 #include "components/entity/chat_bubbles.h"

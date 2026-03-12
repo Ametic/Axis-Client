@@ -8,10 +8,10 @@
 #include "voting.h"
 
 #include <base/color.h>
-#include <base/time.h>
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
+#include <base/time.h>
 #include <base/vmath.h>
 
 #include <engine/client.h>
@@ -1966,7 +1966,7 @@ void CHud::FreezeHelpers()
 				char aBuf[64];
 				str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClNotifyWhenLastText);
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClNotifyWhenLastColor)));
-				TextRender()->Text(170, 4, 14, aBuf, -1.0f);
+				TextRender()->Text(170, 4, 14, aBuf, -1);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 			}
 		}
@@ -2071,25 +2071,25 @@ void CHud::FreezeHelpers()
 				IGraphics::CORNER_B);
 			Graphics()->QuadsEnd();
 
-			float progressiveOffset = 0.0f;
+			float ProgressiveOffset = 0.0f;
 			int NumInRow = 0;
 			int CurrentRow = 0;
 
 			for(int n = 0; n < NumDisplayable; ++n)
 			{
-				const int i = vOrdered[n];
+				const int Id = vOrdered[n];
 
-				bool Frozen = GameClient()->m_aClients[i].m_FreezeEnd > 0 || GameClient()->m_aClients[i].m_DeepFrozen;
+				bool Frozen = GameClient()->m_aClients[Id].m_FreezeEnd > 0 || GameClient()->m_aClients[Id].m_DeepFrozen;
 
 				NumInRow++;
 				if(NumInRow > MaxTees)
 				{
 					NumInRow = 1;
-					progressiveOffset = 0.0f;
+					ProgressiveOffset = 0.0f;
 					CurrentRow++;
 				}
 
-				CTeeRenderInfo TeeInfo = GameClient()->m_aClients[i].m_RenderInfo;
+				CTeeRenderInfo TeeInfo = GameClient()->m_aClients[Id].m_RenderInfo;
 				if(Frozen && !g_Config.m_ClShowFrozenHudSkins)
 				{
 					TeeInfo = FreezeInfo;
@@ -2098,10 +2098,10 @@ void CHud::FreezeHelpers()
 				TeeInfo.m_Size = TeeSize;
 				const CAnimState *pIdleState = CAnimState::GetIdle();
 				vec2 OffsetToMid;
-				RenderTools()->GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
-				vec2 TeeRenderPos(StartPos + progressiveOffset, TeeSize * 0.7f + CurrentRow * TeeSize);
+				CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+				vec2 TeeRenderPos(StartPos + ProgressiveOffset, TeeSize * 0.7f + CurrentRow * TeeSize);
 				float Alpha = 1.0f;
-				CNetObj_Character CurChar = GameClient()->m_aClients[i].m_RenderCur;
+				CNetObj_Character CurChar = GameClient()->m_aClients[Id].m_RenderCur;
 
 				if(g_Config.m_ClShowFrozenHudSkins && Frozen)
 				{
@@ -2118,7 +2118,7 @@ void CHud::FreezeHelpers()
 				else
 					RenderTools()->RenderTee(pIdleState, &TeeInfo, CurChar.m_Emote, vec2(1.0f, 0.0f), TeeRenderPos);
 
-				progressiveOffset += TeeSize;
+				ProgressiveOffset += TeeSize;
 			}
 		}
 	}

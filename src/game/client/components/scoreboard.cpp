@@ -811,7 +811,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					TextRender()->TextEx(&Cursor, "✓");
 				}
 
-				if(pInfo->m_ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted)
+				if(pInfo->m_ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].m_IsMuted)
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 
@@ -1202,7 +1202,7 @@ CUi::EPopupMenuFunctionResult CScoreboard::CScoreboardPopupContext::Render(void 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);
 		Container.VSplitLeft(ActionSize, &Action, &Container);
 
-		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].IsMuted; // E-Client
+		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].m_IsMuted; // E-Client
 
 		if(pUi->DoButton_FontIcon(&pPopupContext->m_MuteAction, FontIcon::BAN, Muted, &Action, BUTTONFLAG_LEFT, ActionCorners))
 		{

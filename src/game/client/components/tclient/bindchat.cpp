@@ -324,7 +324,7 @@ bool CBindChat::ChatDoBinds(const char *pText)
 			return SendMessage;
 		}
 	}
-	if((!g_Config.m_ClSendExclamation &&str_startswith(pText, "!")) || (!g_Config.m_ClSendDotsChat && str_startswith(pText, ".")))
+	if((!g_Config.m_ClSendExclamation && str_startswith(pText, "!")) || (!g_Config.m_ClSendDotsChat && str_startswith(pText, ".")))
 		GameClient()->m_Chat.AddLine(CChat::SILENT_MSG, TEAM_ALL, pText);
 	return false;
 }
@@ -463,15 +463,9 @@ void CBindChat::SortChatBinds()
 
 bool CBindChat::ValidPrefix(char Prefix) const
 {
-	for(const auto &Command : m_vChatCommands)
-	{
-		if(Command.m_Prefix == '\0')
-			continue;
-
-		if(Prefix == Command.m_Prefix)
-			return true;
-	}
-	return false;
+	return std::ranges::any_of(m_vChatCommands, [Prefix](const auto &Command) {
+		return Command.m_Prefix != '\0' && Prefix == Command.m_Prefix;
+	});
 }
 
 void CBindChat::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

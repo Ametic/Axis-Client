@@ -2877,3 +2877,51 @@ void CMenus::JoinTutorial()
 	m_JoinTutorial.m_LocalServerState = CJoinTutorial::ELocalServerState::NOT_TRIED;
 	m_JoinTutorial.m_StateChange = time_get_nanoseconds();
 }
+
+int CMenus::DoButtonForceFontSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+{
+	CUIRect Text = *pRect;
+
+	if(Checked)
+		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
+
+	if(Fake)
+		Color.a *= 0.5f;
+
+	pRect->Draw(Color, Corners, Rounding);
+
+	Text.HMargin(LineSize / 2.0f, &Text);
+	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
+	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	Ui()->DoLabel(&Text, pText, LineSize, TEXTALIGN_MC);
+
+	if(Fake)
+		return 0;
+
+	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
+}
+
+int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+{
+	CUIRect Text = *pRect;
+
+	if(Checked)
+		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
+
+	if(Fake)
+		Color.a *= 0.5f;
+
+	pRect->Draw(Color, Corners, Rounding);
+
+	Text.HMargin(LineSize / 2.0f, &Text);
+	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
+	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+
+	if(Fake)
+		return 0;
+
+	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
+}

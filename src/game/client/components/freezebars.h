@@ -8,7 +8,7 @@
 class CFreezeBars : public CComponent
 {
 	bool RenderKillBar();
-	void RenderFreezeBar(const int ClientId);
+	void RenderFreezeBar(int ClientId);
 	void RenderFreezeBarPos(float x, float y, float Width, float Height, float Progress, ColorRGBA Color);
 	bool IsPlayerInfoAvailable(int ClientId) const;
 

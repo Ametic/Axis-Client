@@ -108,12 +108,12 @@ public:
 class CWarDataCache
 {
 public:
-	ColorRGBA m_NameColor = ColorRGBA(1, 1, 1, 1);
-	ColorRGBA m_ClanColor = ColorRGBA(1, 1, 1, 1);
-	bool IsWarName = false;
-	bool IsWarClan = false;
+	ColorRGBA m_NameColor = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+	ColorRGBA m_ClanColor = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+	bool m_IsWarName = false;
+	bool m_IsWarClan = false;
 
-	bool IsMuted = false; // E-Client [Mutes]
+	bool m_IsMuted = false; // E-Client [Mutes]
 
 	std::vector<char> m_WarGroupMatches = {false, false, false, false};
 
@@ -181,7 +181,7 @@ class CWarList : public CComponent
 
 public:
 	CWarList();
-	~CWarList();
+	~CWarList() override;
 
 	/*
 	 * duplicate war types are NOT allowed
@@ -210,9 +210,9 @@ public:
 
 	CWarDataCache m_WarPlayers[MAX_CLIENTS];
 
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnNewSnapshot() override;
-	virtual void OnConsoleInit() override;
+	int Sizeof() const override { return sizeof(*this); }
+	void OnNewSnapshot() override;
+	void OnConsoleInit() override;
 
 	// Fps Increase
 	std::unordered_map<std::string, CWarEntry *> m_NameWarMap;

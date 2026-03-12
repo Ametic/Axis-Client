@@ -2091,22 +2091,22 @@ void CMenus::UpdateWarlistCache()
 
 	for(CWarEntry &Entry : GameClient()->m_WarList.m_vWarEntries)
 	{
-		if(Entry.m_aName[0] && NameMap.count(Entry.m_aName))
+		if(Entry.m_aName[0] && NameMap.contains(Entry.m_aName))
 		{
 			const CServerInfo::CClient *pClient = NameMap[Entry.m_aName].first;
-			if(MatchedClients.find(pClient) == MatchedClients.end())
+			if(!MatchedClients.contains(pClient))
 			{
-				m_vWarlistCache.push_back({&Entry, pClient, NameMap[Entry.m_aName].second});
+				m_vWarlistCache.emplace_back(&Entry, pClient, NameMap[Entry.m_aName].second);
 				MatchedClients.insert(pClient);
 				continue;
 			}
 		}
-		if(Entry.m_aClan[0] && ClanMap.count(Entry.m_aClan))
+		if(Entry.m_aClan[0] && ClanMap.contains(Entry.m_aClan))
 		{
 			const CServerInfo::CClient *pClient = ClanMap[Entry.m_aClan].first;
-			if(MatchedClients.find(pClient) == MatchedClients.end())
+			if(!MatchedClients.contains(pClient))
 			{
-				m_vWarlistCache.push_back({&Entry, pClient, ClanMap[Entry.m_aClan].second});
+				m_vWarlistCache.emplace_back(&Entry, pClient, ClanMap[Entry.m_aClan].second);
 				MatchedClients.insert(pClient);
 			}
 		}

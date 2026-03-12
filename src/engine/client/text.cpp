@@ -2484,19 +2484,19 @@ public:
 		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>> {
 			if(isdigit(p[0]) && isdigit(p[1]))
 			{
-				int code = (p[0] - '0') * 10 + (p[1] - '0');
-				float sat = 1.0f;
+				int Code = (p[0] - '0') * 10 + (p[1] - '0');
+				float Sat = 1.0f;
 				int Length = 2;
 				if(isdigit(p[2]))
 				{
-					sat = (p[2] - '0') / 10.0f;
+					Sat = (p[2] - '0') / 10.0f;
 					Length = 3;
 				}
 
-				if(code >= 0 && code <= 99)
+				if(Code >= 0 && Code <= 99)
 				{
-					float hue = code / 100.0f;
-					return std::make_pair(HSVtoRGB(hue, sat, 1.0f), Length);
+					float Hue = Code / 100.0f;
+					return std::make_pair(HSVtoRGB(Hue, Sat, 1.0f), Length);
 				}
 			}
 			return std::nullopt;

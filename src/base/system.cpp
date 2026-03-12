@@ -1,6 +1,7 @@
-// E-Client
-
 #include "system.h"
+
+#include "str.h"
+
 #include <cctype> // std::toupper
 #include <cstdlib> // std::malloc, std::free
 

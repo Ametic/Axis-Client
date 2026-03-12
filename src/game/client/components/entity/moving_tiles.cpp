@@ -1,24 +1,23 @@
 #include "moving_tiles.h"
 
+#include <base/color.h>
+#include <base/dbg.h>
+#include <base/log.h>
+#include <base/math.h>
+#include <base/str.h>
 #include <base/vmath.h>
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 
-
+#include <game/client/components/envelope_state.h>
 #include <game/client/gameclient.h>
+#include <game/map/render_map.h>
+#include <game/mapitems.h>
 
-#include <base/dbg.h>
-#include <base/str.h>
-#include <base/log.h>
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <base/color.h>
-#include <base/math.h>
-#include <game/client/components/envelope_state.h>
-#include <game/mapitems.h>
-#include <game/map/render_map.h>
 
 inline static void RotatePoint(const vec2 &Center, vec2 &Point, float Rotation)
 {

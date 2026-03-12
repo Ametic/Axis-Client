@@ -366,7 +366,7 @@ static IOHANDLE BgDrawOpenFile(CGameClient &This, const char *pFilename, int Fla
 
 bool CBgDraw::Save(const char *pFilename, bool Verbose)
 {
-	if(m_pvItems->size() == 0)
+	if(m_pvItems->empty())
 	{
 		if(Verbose)
 			GameClient()->Echo(("No items to write"));

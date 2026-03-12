@@ -209,25 +209,25 @@ vec2 CMapOverview::GetCloseSolidTile(vec2 Pos, int MaxDistance) const
 bool CMapOverview::AddPoint(vec2 Pos)
 {
 	const float Size = 32.0f;
-	ivec2 wPos = ivec2((Pos.x + 16) / Size, (Pos.y + 16) / Size);
+	ivec2 IdxPos = ivec2((Pos.x + 16) / Size, (Pos.y + 16) / Size);
 
 	vec2 CloseSolid = (Pos - GetCloseSolidTile(Pos, MaxSolidSearchDist));
-	CloseSolid = vec2(abs(CloseSolid.x), abs(CloseSolid.y));
+	CloseSolid = vec2(std::abs(CloseSolid.x), std::abs(CloseSolid.y));
 
 	int TileDistance = CloseSolid.x > CloseSolid.y ? int(CloseSolid.x / Size) : int(CloseSolid.y / Size);
 	TileDistance = std::clamp(TileDistance, 4, MaxSolidSearchDist) + 4; // Paddiing
 
 	for(CPoint &p : m_vPoints)
 	{
-		if(wPos.x + p.m_TileDist > p.m_Pos.x &&
-			wPos.x - p.m_TileDist < p.m_Pos.x &&
-			wPos.y + p.m_TileDist > p.m_Pos.y &&
-			wPos.y - p.m_TileDist < p.m_Pos.y)
+		if(IdxPos.x + p.m_TileDist > p.m_Pos.x &&
+			IdxPos.x - p.m_TileDist < p.m_Pos.x &&
+			IdxPos.y + p.m_TileDist > p.m_Pos.y &&
+			IdxPos.y - p.m_TileDist < p.m_Pos.y)
 			return false;
 	}
 
 	CPoint NewPoint;
-	NewPoint.m_Pos = wPos;
+	NewPoint.m_Pos = IdxPos;
 	NewPoint.m_TileDist = TileDistance;
 
 	m_vPoints.push_back(NewPoint);

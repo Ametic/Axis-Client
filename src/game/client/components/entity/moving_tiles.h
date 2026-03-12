@@ -4,10 +4,10 @@
 #include <base/vmath.h>
 
 #include <game/client/component.h>
+#include <game/client/components/envelope_state.h>
 #include <game/mapitems.h>
 
 #include <vector>
-#include <game/client/components/envelope_state.h>
 
 class CQuad;
 class CMapItemGroup;
@@ -56,7 +56,7 @@ class CMovingTiles : public CComponent
 {
 	void Reset();
 	std::vector<CQuadData> m_vQuads;
-	
+
 	bool m_RenderAbove; // solids are rendered above tilemap, the rest below
 	CEnvelopeState m_EnvEvaluator;
 

@@ -79,6 +79,7 @@
 #endif
 
 #include <chrono>
+#include <exception>
 #include <limits>
 #include <stack>
 #include <thread>
@@ -4755,6 +4756,7 @@ int SDL_main(int argc, char *argv2[])
 #else
 int main(int argc, const char **argv)
 #endif
+try
 {
 	const int64_t MainStart = time_get();
 
@@ -5211,6 +5213,18 @@ int main(int argc, const char **argv)
 	PerformFinalCleanup();
 
 	return 0;
+}
+catch(const std::exception &Exception)
+{
+	log_error("client", "Unhandled exception: %s", Exception.what());
+	ShowMessageBoxWithoutGraphics({.m_pTitle = "Unhandled Exception", .m_pMessage = Exception.what()});
+	return -1;
+}
+catch(...)
+{
+	log_error("client", "Unhandled unknown exception");
+	ShowMessageBoxWithoutGraphics({.m_pTitle = "Unhandled Exception", .m_pMessage = "An unknown exception occurred."});
+	return -1;
 }
 
 // DDRace

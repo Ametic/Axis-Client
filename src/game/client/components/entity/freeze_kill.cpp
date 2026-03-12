@@ -25,10 +25,15 @@ void CFreezeKill::ResetTimer()
 void CFreezeKill::OnRender()
 {
 	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
-	CCharacterCore *pLocalCore = &GameClient()->m_aClients[LocalId].m_Predicted;
+
+	if(LocalId < 0 || LocalId >= MAX_CLIENTS)
+	{
+		ResetTimer();
+		return;
+	}
 
 	// Don't render if we can't find our own tee
-	if(LocalId == -1 || !GameClient()->m_Snap.m_aCharacters[LocalId].m_Active)
+	if(!GameClient()->m_Snap.m_aCharacters[LocalId].m_Active)
 	{
 		ResetTimer();
 		return;
@@ -97,7 +102,7 @@ void CFreezeKill::OnRender()
 
 	if(g_Config.m_ClFreezeKillOnlyFullFrozen)
 	{
-		if(!pLocalCore->m_IsInFreeze)
+		if(!GameClient()->m_aClients[LocalId].m_Predicted.m_IsInFreeze)
 		{
 			ResetTimer();
 			return;

@@ -1158,12 +1158,12 @@ void CPlayers::OnRender()
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			if(g_Config.m_ClWarList)
 			{
-				if(GameClient()->m_WarList.GetWarData(i).IsWarClan)
+				if(GameClient()->m_WarList.GetWarData(i).m_IsWarClan)
 					Color = GameClient()->m_WarList.GetClanColor(i);
 
-				if(GameClient()->m_WarList.GetWarData(i).IsWarName)
+				if(GameClient()->m_WarList.GetWarData(i).m_IsWarName)
 					Color = GameClient()->m_WarList.GetNameplateColor(i);
-				else if(GameClient()->m_WarList.GetWarData(i).IsWarClan)
+				else if(GameClient()->m_WarList.GetWarData(i).m_IsWarClan)
 					Color = GameClient()->m_WarList.GetClanColor(i);
 			}
 
@@ -1171,7 +1171,7 @@ void CPlayers::OnRender()
 				continue;
 
 			if(!(GameClient()->m_aClients[i].m_FreezeEnd > 0))
-				aRenderInfo[i].m_CustomColoredSkin = 1;
+				aRenderInfo[i].m_CustomColoredSkin = true;
 			aRenderInfo[i].m_ColorBody = Color;
 			aRenderInfo[i].m_ColorFeet = Color;
 		}
@@ -1364,7 +1364,7 @@ void CPlayers::OnInit()
 	CreateSpectatorTeeRenderInfo();
 }
 
-void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha)
+void CPlayers::RenderEffects(bool Frozen, bool Local, vec2 BodyPos, vec2 Vel, float Alpha)
 {
 	const bool ShowEffectSelf = g_Config.m_ClEffect ? true : false;
 	const bool ShowEffectOthers = g_Config.m_ClEffectOthers;
@@ -1389,14 +1389,14 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 		{
 			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
 		}
-		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
+		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (std::abs(Vel.x) > 0.15f || std::abs(Vel.y) > 0.15f))
 		{
 			GameClient()->m_Effects.FireTrailEffect(BodyPos, Alpha);
 		}
 		else if(g_Config.m_ClEffect == EFFECT_SWITCH && !Frozen)
 		{
-			static int64_t Change = time_get() + time_freq() * 30;
-			static float Sin = 5;
+			static int64_t s_Change = time_get() + time_freq() * 30;
+			static float s_Sin = 5;
 
 			const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 750) % 10000 / 100.f);
 
@@ -1404,13 +1404,13 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 			if(Changer > 50.0f)
 				RotSpeed = 50.0f + 100.0f - Changer;
 
-			vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / time_freq() + RotSpeed));
+			vec2 Move = vec2(100 * std::cos(Time / time_freq() * s_Sin), 15 * std::sin(Time / time_freq() + RotSpeed));
 			vec2 EffectPos = BodyPos + Move;
 
-			if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
+			if(s_Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
 			{
-				Sin = round_to_int(random_float(3.0f, 6.0f));
-				Change = time_get() + time_freq() * 15;
+				s_Sin = round_to_int(random_float(3.0f, 6.0f));
+				s_Change = time_get() + time_freq() * 15;
 			}
 			GameClient()->m_Effects.SwitchEffect(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
 			GameClient()->m_Effects.SwitchEffect(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));

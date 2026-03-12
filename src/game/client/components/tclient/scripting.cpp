@@ -359,7 +359,7 @@ private:
 		}
 		else if(Str == "muted")
 		{
-			return GameClient()->m_WarList.GetWarData(ClientId).IsMuted;
+			return GameClient()->m_WarList.GetWarData(ClientId).m_IsMuted;
 		}
 		else if(Str == "auth_level")
 		{

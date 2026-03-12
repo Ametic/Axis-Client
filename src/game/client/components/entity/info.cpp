@@ -5,8 +5,6 @@
 #include <game/client/gameclient.h>
 #include <game/version.h>
 
-#include <string.h>
-
 #include <tuple>
 
 static constexpr const char *ECLIENT_INFO_FILE = "eclient-info.json";
@@ -75,7 +73,7 @@ void CEntityInfo::FetchEClientInfo()
 typedef std::tuple<int, int, int> EcVersion;
 static const EcVersion gs_InvalidECVersion = std::make_tuple(-1, -1, -1);
 
-EcVersion ToECVersion(char *pStr)
+static EcVersion ToECVersion(char *pStr)
 {
 	int aVersion[3] = {0, 0, 0};
 	const char *p = strtok(pStr, ".");

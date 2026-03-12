@@ -3,12 +3,12 @@
 
 #include "chat.h"
 
-#include <base/io.h>
-#include <base/time.h>
-
 #include "entity/entity.h"
 #include "tclient/bindchat.h"
 #include "tclient/warlist.h"
+
+#include <base/io.h>
+#include <base/time.h>
 
 #include <engine/client/client.h>
 #include <engine/editor.h>
@@ -684,7 +684,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(ClientId >= 0 && GameClient()->m_Snap.m_LocalClientId != ClientId)
 	{
 		if(g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend)
-		{	
+		{
 			char Message[MAX_LINE_LENGTH];
 			str_format(Message, sizeof(Message), "%s", GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
@@ -692,7 +692,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Color);
 			return;
 		}
-		else if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
+		else if(GameClient()->m_WarList.m_WarPlayers[ClientId].m_IsMuted)
 		{
 			char Message[MAX_LINE_LENGTH];
 			str_format(Message, sizeof(Message), "%s", GameClient()->m_aClients[ClientId].m_aName);
@@ -710,7 +710,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			char Message[MAX_LINE_LENGTH];
 			str_format(Message, sizeof(Message), "%s", GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "← %s",GameClient()->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "← %s", GameClient()->m_aClients[ClientId].m_aName);
 
 			if(g_Config.m_ClMutedConsoleColor)
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
@@ -1069,7 +1069,7 @@ void CChat::OnPrepareLines(float y)
 				{
 					TextRender()->TextEx(&MeasureCursor, g_Config.m_ClSpecPrefix);
 				}
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].IsMuted) // E-Client
+				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].m_IsMuted) // E-Client
 				{
 					TextRender()->TextEx(&MeasureCursor, g_Config.m_ClWarlistPrefix);
 				}
@@ -1527,20 +1527,18 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					const char *pOldName = str_find_nocase(pLine, "'");
 					const char *pNameLength = str_find_nocase(pLine, "' ");
 
-					int Length = str_length(pName);
-					std::string sNewName(pName);
-					sNewName.erase(sNewName.begin() + Length - 1);
-					sNewName.erase(sNewName.begin());
-					sNewName.erase(sNewName.begin());
+					std::string NewName(pName);
+					NewName.erase(NewName.begin() + str_length(pName) - 1);
+					NewName.erase(NewName.begin());
+					NewName.erase(NewName.begin());
 
-					str_copy(aNewName, sNewName.c_str(), sizeof(aNewName));
+					str_copy(aNewName, NewName.c_str(), sizeof(aNewName));
 
-					int nLength = str_length(pOldName) - str_length(pNameLength);
-					std::string sOldName(pOldName);
-					sOldName.erase(nLength);
-					sOldName.erase(sOldName.begin());
+					std::string OldName(pOldName);
+					OldName.erase(str_length(pOldName) - str_length(pNameLength));
+					OldName.erase(OldName.begin());
 
-					str_copy(aOldName, sOldName.c_str(), sizeof(aOldName));
+					str_copy(aOldName, OldName.c_str(), sizeof(aOldName));
 				}
 
 				int PlayerCid = GameClient()->GetClientId(aOldName);
@@ -1581,7 +1579,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 								GameClient()->ClientMessage(aBuf);
 						}
 					}
-					if(Cache.IsMuted)
+					if(Cache.m_IsMuted)
 					{
 						GameClient()->m_WarList.AddMute(aNewName, true, true);
 						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", aNewName);
@@ -1600,13 +1598,13 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				const char *NameLength = str_find_nocase(pLine, "' ");
 				if(str_find_nocase(pLine, g_Config.m_ClAutoJoinTeamName))
 				{
-					int nLength = str_length(PName) - str_length(NameLength);
+					int Length = str_length(PName) - str_length(NameLength);
 					std::string Name(PName);
-					Name.erase(nLength);
+					Name.erase(Length);
 					Name.erase(Name.begin());
 
 					char PlayerName[16];
-					strcpy(PlayerName, Name.c_str());
+					str_copy(PlayerName, Name.c_str(), sizeof(PlayerName));
 					if(!str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName))
 					{
 						char aBuf[2048] = "/Join ";
@@ -1631,13 +1629,13 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					const char *NameLength = str_find_nocase(pLine, "' ");
 					if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
 					{
-						int nLength = str_length(PName) - str_length(NameLength);
+						int Length = str_length(PName) - str_length(NameLength);
 						std::string Name(PName);
-						Name.erase(nLength);
+						Name.erase(Length);
 						Name.erase(Name.begin());
 
 						char PlayerName[16];
-						strcpy(PlayerName, Name.c_str());
+						str_copy(PlayerName, Name.c_str(), sizeof(PlayerName));
 
 						int NameToJoin = str_comp(g_Config.m_ClAutoNotifyName, PlayerName);
 						if(NameToJoin == 0)

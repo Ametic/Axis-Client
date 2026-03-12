@@ -46,7 +46,7 @@ class CPlayers : public CComponent
 	int m_aWeaponSpriteMuzzleQuadContainerIndex[NUM_WEAPONS];
 
 	// E-Client
-	void RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha);
+	void RenderEffects(bool Frozen, bool Local, vec2 BodyPos, vec2 Vel, float Alpha);
 
 	void CreateNinjaTeeRenderInfo();
 	void CreateSpectatorTeeRenderInfo();

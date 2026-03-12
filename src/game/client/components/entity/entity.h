@@ -1,5 +1,6 @@
-#ifndef GAME_CLIENT_COMPONENTS_ENTITY_H
-#define GAME_CLIENT_COMPONENTS_ENTITY_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H
+#include <base/math.h>
 #include <base/system.h>
 
 #include <engine/console.h>
@@ -28,12 +29,12 @@ class CEClient : public CComponent
 	CLastPing m_aLastPing;
 
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
-	virtual void OnMessage(int MsgType, void *pRawMsg) override;
+	void OnMessage(int MsgType, void *pRawMsg) override;
 
 	int m_LastReplyId = -1;
 
 	// Console Commands
-	virtual void OnConsoleInit() override;
+	void OnConsoleInit() override;
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
@@ -100,9 +101,9 @@ public:
 
 	int getIntFromColor(float Hue, float Sat, float LhT)
 	{
-		int R = round(255 * Hue);
-		int G = round(255 * Sat);
-		int B = round(255 * LhT);
+		int R = round_to_int(255 * Hue);
+		int G = round_to_int(255 * Sat);
+		int B = round_to_int(255 * LhT);
 		R = (R << 16) & 0x00FF0000;
 		G = (G << 8) & 0x0000FF00;
 		B = B & 0x000000FF;
@@ -131,13 +132,13 @@ public:
 	bool m_FirstLaunch = false;
 
 private:
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnInit() override;
-	virtual void OnRender() override;
-	virtual void OnStateChange(int NewState, int OldState) override;
-	virtual void OnNewSnapshot() override;
-	virtual void OnShutdown() override;
-	virtual void OnSelfDeath() override;
+	int Sizeof() const override { return sizeof(*this); }
+	void OnInit() override;
+	void OnRender() override;
+	void OnStateChange(int NewState, int OldState) override;
+	void OnNewSnapshot() override;
+	void OnShutdown() override;
+	void OnSelfDeath() override;
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H

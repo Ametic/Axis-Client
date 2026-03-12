@@ -49,17 +49,17 @@ static const auto NAMESPACE_MATH = [](chaiscript::Namespace &Math) {
 	Math["ceil"] = chaiscript::var(chaiscript::fun([](double x) { return ceil(x); }));
 	Math["floor"] = chaiscript::var(chaiscript::fun([](double x) { return floor(x); }));
 	Math["round"] = chaiscript::var(chaiscript::fun([](double x) { return round(x); }));
-	Math["abs"] = chaiscript::var(chaiscript::fun([](double x) { return fabs(x); }));
-	Math["abs"] = chaiscript::var(chaiscript::fun([](int x) { return fabs(x); }));
+	Math["abs"] = chaiscript::var(chaiscript::fun([](double x) { return std::fabs(x); }));
+	Math["abs"] = chaiscript::var(chaiscript::fun([](int x) { return std::fabs(x); }));
 	// <E-Client
-	Math["clamp"] = chaiscript::var(chaiscript::fun([](double val, double min, double max) { return std::clamp(val, min, max); }));
-	Math["clamp"] = chaiscript::var(chaiscript::fun([](int val, int min, int max) { return std::clamp(val, min, max); }));
+	Math["clamp"] = chaiscript::var(chaiscript::fun([](double Val, double Min, double Max) { return std::clamp(Val, Min, Max); }));
+	Math["clamp"] = chaiscript::var(chaiscript::fun([](int Val, int Min, int Max) { return std::clamp(Val, Min, Max); }));
 	Math["min"] = chaiscript::var(chaiscript::fun([](double a, double b) { return std::min(a, b); }));
 	Math["min"] = chaiscript::var(chaiscript::fun([](int a, int b) { return std::min(a, b); }));
 	Math["max"] = chaiscript::var(chaiscript::fun([](double a, double b) { return std::max(a, b); }));
 	Math["max"] = chaiscript::var(chaiscript::fun([](int a, int b) { return std::max(a, b); }));
-	Math["random"] = chaiscript::var(chaiscript::fun([](double min, double max) { return (double)random_float((float)min, (float)max); }));
-	Math["random"] = chaiscript::var(chaiscript::fun([](int min, int max) { return min + rand() % (max - min + 1); }));
+	Math["random"] = chaiscript::var(chaiscript::fun([](double Min, double Max) { return (double)random_float((float)Min, (float)Max); }));
+	Math["random"] = chaiscript::var(chaiscript::fun([](int Min, int Max) { return Min + rand() % (Max - Min + 1); }));
 	// E-Client>
 };
 

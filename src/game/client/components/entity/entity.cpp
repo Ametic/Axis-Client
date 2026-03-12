@@ -49,7 +49,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Client()->DummyConnected() && !str_comp(aName, GameClient()->m_aClients[GameClient()->m_aLocalIds[1]].m_aName))
 		return;
 
-	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1]));
+	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].m_IsMuted || (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1]));
 
 	if(!HiddenMessage)
 	{
@@ -64,7 +64,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(ClientId != m_LastReplyId)
 	{
 		char Reply[MAX_LINE_LENGTH];
-		if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
+		if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].m_IsMuted)
 		{
 			str_format(Reply, sizeof(Reply), "%s: %s", aName, g_Config.m_ClAutoReplyMutedMsg);
 
@@ -134,18 +134,18 @@ void CEClient::AutoJoinTeam()
 					return;
 
 				int Team = GameClient()->m_Teams.Team(ClientId);
-				char TeamChar[256];
+				char TeamChar[8];
 				str_format(TeamChar, sizeof(TeamChar), "%d", Team);
 
 				int PrevTeam = -1;
 
 				if(!GameClient()->m_Teams.SameTeam(Local, ClientId) && (Team > 0) && !m_JoinedTeam)
 				{
-					char aBuf[2048] = "/team ";
+					char aBuf[48] = "/team ";
 					str_append(aBuf, TeamChar);
 					GameClient()->m_Chat.SendChat(0, aBuf);
 
-					char Joined[2048] = "attempting to auto Join ";
+					char Joined[48] = "attempting to auto Join ";
 					str_append(Joined, GameClient()->m_aClients[ClientId].m_aName);
 					GameClient()->ClientMessage(Joined);
 
@@ -154,7 +154,7 @@ void CEClient::AutoJoinTeam()
 				}
 				if(GameClient()->m_Teams.SameTeam(Local, ClientId) && m_JoinedTeam)
 				{
-					char Joined[2048] = "Successfully Joined The Team of ";
+					char Joined[48] = "Successfully Joined The Team of ";
 					str_append(Joined, GameClient()->m_aClients[ClientId].m_aName);
 					GameClient()->ClientMessage(Joined);
 
@@ -166,7 +166,7 @@ void CEClient::AutoJoinTeam()
 				}
 				if(!GameClient()->m_Teams.SameTeam(Local, ClientId) && m_AttemptedJoinTeam)
 				{
-					char Joined[2048] = "Couldn't Join The Team of ";
+					char Joined[48] = "Couldn't Join The Team of ";
 					str_append(Joined, GameClient()->m_aClients[ClientId].m_aName);
 					GameClient()->ClientMessage(Joined);
 
@@ -185,9 +185,7 @@ void CEClient::AutoJoinTeam()
 				}
 				if(LocalTeam != Team)
 				{
-					PrevTeam = Team;
 					m_AttemptedJoinTeam = false;
-					LocalTeam = GameClient()->m_Teams.Team(Local);
 				}
 				return;
 			}
@@ -295,8 +293,8 @@ void CEClient::OnConnect()
 	// if current server is type "Gores", turn the config on, else turn it off
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
-	static bool SentInfoMessage = false;
-	if(m_FirstLaunch && SentInfoMessage)
+	static bool s_SentInfoMessage = false;
+	if(m_FirstLaunch && !s_SentInfoMessage)
 	{
 		GameClient()->ClientMessage("╭──                 E-Client Info");
 		GameClient()->ClientMessage("│ Seems like it's your first time running the client!");
@@ -309,7 +307,7 @@ void CEClient::OnConnect()
 		GameClient()->ClientMessage("│ which means no one will see them.");
 		GameClient()->ClientMessage("│ Messages that start with \"!\" will be sent");
 		GameClient()->ClientMessage("╰───────────────────────");
-		SentInfoMessage = true;
+		s_SentInfoMessage = true;
 	}
 	else
 	{
@@ -368,8 +366,8 @@ void CEClient::NotifyOnMove()
 			const CNetObj_Character *pOtherChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
 			vec2 OtherPos = GameClient()->m_aClients[ClientId].m_RenderPos;
 
-			float dist = distance(LocalPos, OtherPos);
-			if(dist < MaxDist + MaxDist)
+			float Dist = distance(LocalPos, OtherPos);
+			if(Dist < MaxDist + MaxDist)
 				Moved = true;
 
 			// check if the player is hooked to the local player
@@ -378,8 +376,8 @@ void CEClient::NotifyOnMove()
 
 			// Check for hammer firing
 			bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
-			dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
-			if(Hammering && dist < 70.0f)
+			Dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
+			if(Hammering && Dist < 70.0f)
 				Moved = true;
 		}
 
@@ -410,26 +408,25 @@ void CEClient::UpdateVolleyball()
 
 void CEClient::UpdateRainbow()
 {
-	static bool m_RainbowWasOn = false;
+	static bool s_RainbowWasOn = false;
 
-	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
+	if(g_Config.m_ClServerRainbow && !s_RainbowWasOn)
 	{
-		m_RainbowWasOn = false;
+		s_RainbowWasOn = true;
 	}
-	if(m_RainbowWasOn && !g_Config.m_ClServerRainbow)
+	if(s_RainbowWasOn && !g_Config.m_ClServerRainbow)
 	{
 		GameClient()->SendInfo(false);
 		GameClient()->SendDummyInfo(false);
-		m_RainbowWasOn = false;
+		s_RainbowWasOn = false;
 	}
 	// Makes the slider look smoother
-	static float Speed = 1.0f;
-	Speed = Speed + m_RainbowSpeed * Client()->FrameTimeAverage() * 0.1f;
+	static float s_Speed = 1.0f;
+	s_Speed = s_Speed + m_RainbowSpeed * Client()->FrameTimeAverage() * 0.1f;
 
-	if(Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
-		Speed = 1.0f;
-
-	float h = round_to_int(Speed) % 255 / 255.f;
+	if(s_Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
+		s_Speed = 1.0f;
+	float h = round_to_int(s_Speed) % 255 / 255.f;
 	float s = abs(m_RainbowSat[g_Config.m_ClDummy] - 255);
 	float l = abs(m_RainbowLht[g_Config.m_ClDummy] - 255);
 

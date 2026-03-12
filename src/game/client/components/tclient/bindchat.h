@@ -74,4 +74,4 @@ public:
 	bool ValidPrefix(char Prefix) const;
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H

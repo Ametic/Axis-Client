@@ -25,11 +25,11 @@ CStatusItem::CStatusItem(std::function<void()> Render, std::function<float()> Wi
 
 int CStatusBar::GetDigitsIndex(const int Value, const int Max)
 {
-	int s_Value = Value;
-	if(s_Value < 0) // Normalize
-		s_Value *= -1;
+	int a = Value;
+	if(a < 0) // Normalize
+		a *= -1;
 
-	int DigitsIndex = static_cast<int>(log10((s_Value ? s_Value : 1)));
+	int DigitsIndex = static_cast<int>(log10((a ? a : 1)));
 
 	if(DigitsIndex > Max)
 		DigitsIndex = Max;

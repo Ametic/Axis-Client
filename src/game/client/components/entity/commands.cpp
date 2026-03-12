@@ -278,7 +278,7 @@ void CEClient::OnlineInfo()
 
 			CWarDataCache &WarData = GameClient()->m_WarList.GetWarData(Client.ClientId());
 			bool Matches = WarData.m_WarGroupMatches[WarlistType];
-			bool Muted = WarData.IsMuted;
+			bool Muted = WarData.m_IsMuted;
 
 			if(Muted && WarlistType == 1)
 				Mutes++;
@@ -300,10 +300,10 @@ void CEClient::OnlineInfo()
 				str_append(Label, "'", sizeof(Label));
 			else if(str_endswith(Label, "y"))
 			{
-				const int len = str_length(Label);
-				if(len >= 1)
+				const int Len = str_length(Label);
+				if(Len >= 1)
 				{
-					Label[len - 1] = '\0';
+					Label[Len - 1] = '\0';
 					str_append(Label, "ies", sizeof(Label));
 				}
 			}
@@ -344,13 +344,13 @@ void CEClient::OnlineInfo()
 
 		if(ActiveAmount == 0)
 			continue;
-		char bBuf[32] = "";
+		char aTemp[32] = "";
 
 		str_format(aBuf, sizeof(aBuf), "│ %d %s", ActiveAmount, Info.m_aLabel);
 
 		if(AfkAmount > 0)
-			str_format(bBuf, sizeof(bBuf), " (+%d afk)", AfkAmount);
-		str_append(aBuf, bBuf);
+			str_format(aTemp, sizeof(aTemp), " (+%d afk)", AfkAmount);
+		str_append(aBuf, aTemp, sizeof(aBuf));
 
 		GameClient()->ClientMessage(aBuf);
 		HasAny = true;
