@@ -165,7 +165,7 @@ public:
 		m_UpdateActivity = true;
 	}
 
-	void UpdateServerInfo(const CServerInfo &ServerInfo) override
+	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pDetail, bool ShowMap) override
 	{
 		if(!m_Activity.instance)
 			return;
@@ -177,6 +177,7 @@ public:
 		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
 		if(m_ShowMap)
 			str_copy(m_Activity.state, ServerInfo.m_aMap, sizeof(m_Activity.state));
+		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
 		m_UpdateActivity = true;
 	}

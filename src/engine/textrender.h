@@ -5,6 +5,7 @@
 #include "kernel.h"
 
 #include <base/color.h>
+#include <string>
 
 #include <engine/graphics.h>
 
