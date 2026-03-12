@@ -3,6 +3,9 @@
 
 #include "chat.h"
 
+#include <base/io.h>
+#include <base/time.h>
+
 #include "entity/entity.h"
 #include "tclient/bindchat.h"
 #include "tclient/warlist.h"

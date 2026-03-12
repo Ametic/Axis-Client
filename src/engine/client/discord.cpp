@@ -131,7 +131,7 @@ public:
 		m_UpdateActivity = true;
 	}
 
-	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) override
+	void SetGameInfo(const CServerInfo &ServerInfo, const char *pDetail, bool ShowMap, bool Registered) override
 	{
 		if(!m_Enabled || !m_pActivityManager)
 			return;
@@ -145,7 +145,7 @@ public:
 		m_Activity.instance = true;
 		m_Activity.timestamps.start = m_TimeStamp;
 		if(m_ShowMap)
-			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
+			str_copy(m_Activity.state, ServerInfo.m_aMap, sizeof(m_Activity.state));
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 
 		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
@@ -165,7 +165,7 @@ public:
 		m_UpdateActivity = true;
 	}
 
-	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName) override
+	void UpdateServerInfo(const CServerInfo &ServerInfo) override
 	{
 		if(!m_Activity.instance)
 			return;
@@ -174,9 +174,11 @@ public:
 
 		UpdateServerIp(ServerInfo);
 
-		// E-Client
+		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
 		if(m_ShowMap)
-			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
+			str_copy(m_Activity.state, ServerInfo.m_aMap, sizeof(m_Activity.state));
+		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
+		m_UpdateActivity = true;
 	}
 
 	void UpdatePlayerCount(int Count) override
@@ -258,8 +260,8 @@ class CDiscordStub : public IDiscord
 {
 	void Update(bool RPC) override {}
 	void ClearGameInfo(const char *pDetail) override {}
-	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) override {}
-	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName) override {}
+	void SetGameInfo(const CServerInfo &ServerInfo, const char *pDetail, bool ShowMap, bool Registered) override {}
+	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pDetail, bool ShowMap) override {}
 	void UpdatePlayerCount(int Count) override {}
 };
 

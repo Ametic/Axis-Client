@@ -6,6 +6,7 @@
 #include "gameclient.h"
 
 #include <base/math.h>
+#include <base/str.h>
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>

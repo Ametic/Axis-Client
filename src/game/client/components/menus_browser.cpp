@@ -2,6 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "menus.h"
 
+#include <base/log.h>
+#include <base/time.h>
+
+#include <engine/engine.h>
 #include <engine/favorites.h>
 #include <engine/font_icons.h>
 #include <engine/friends.h>
