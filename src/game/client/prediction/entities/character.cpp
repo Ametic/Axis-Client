@@ -260,6 +260,9 @@ void CCharacter::FireWeapon()
 	if(m_ReloadTimer != 0)
 		return;
 
+	if(m_Core.m_ActiveWeapon == -1)
+		return;
+
 	DoWeaponSwitch();
 	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
@@ -1502,7 +1505,7 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 
 	// in most cases the reload timer can be determined from the last attack tick
 	// (this is only needed for autofire weapons to prevent the predicted reload timer from desyncing)
-	if(IsLocal && m_Core.m_ActiveWeapon != WEAPON_HAMMER && !m_Core.m_aWeapons[WEAPON_NINJA].m_Got)
+	if(IsLocal && m_Core.m_ActiveWeapon != -1 && m_Core.m_ActiveWeapon != WEAPON_HAMMER && !m_Core.m_aWeapons[WEAPON_NINJA].m_Got)
 	{
 		if(maximum(m_LastTuneZoneTick, m_LastWeaponSwitchTick) + GameWorld()->GameTickSpeed() < GameWorld()->GameTick())
 		{
