@@ -434,11 +434,6 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 	pSelf->GameClient()->m_Chat.SendChat(0, Text);
 }
 
-void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
-{
-	exit(666);
-}
-
 void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
@@ -447,6 +442,11 @@ void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
 	char pCmd[64];
 	str_format(pCmd, sizeof(pCmd), "/spec %s", pName);
 	pSelf->GameClient()->m_Chat.SendChat(0, pCmd);
+}
+
+void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
+{
+	exit(666);
 }
 
 void CEClient::OnConsoleInit()
@@ -498,7 +498,8 @@ void CEClient::OnConsoleInit()
 	Console()->Chain("ec_discord_rpc", ConchainDiscordUpdate, this);
 	Console()->Chain("ec_discord_map_status", ConchainDiscordUpdate, this);
 	Console()->Chain("ec_discord_online_status", ConchainDiscordUpdate, this);
-	Console()->Chain("ec_discord_offline_status", ConchainDiscordUpdate, this);
+	Console()->Chain("ec_high_process_priority", ConchainDDNetProcessPriority, this);
+	Console()->Chain("ec_discord_normal_process_priority", ConchainDiscordProcessPriority, this);
 }
 
 void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -525,6 +526,28 @@ void CEClient::ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData
 	pfnCallback(pResult, pCallbackUserData);
 	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->Client()->DiscordRPCchange();
+}
+
+void CEClient::ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	if(pResult->NumArguments())
+	{
+		bool Value = pResult->GetInteger(0) != 0;
+		pSelf->SetDDNetProcessPriority(Value);
+	}
+}
+
+void CEClient::ConchainDiscordProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	if(pResult->NumArguments())
+	{
+		if(pResult->GetInteger(0) != 0)
+			pSelf->StartDiscordPriorityThread();
+	}
 }
 
 void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

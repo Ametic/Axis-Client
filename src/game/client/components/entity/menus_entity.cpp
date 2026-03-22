@@ -1,4 +1,3 @@
-
 #include <base/color.h>
 #include <base/math.h>
 #include <base/str.h>
@@ -2185,9 +2184,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	CUIRect Label, Button;
 	// left side in settings menu
 
-	CUIRect Automation, FreezeKill, ChatSettings, GoresMode,
-		MenuSettings, FastInput, AntiLatency, FrozenTeeHud, AntiPingSmoothing, GhostTools;
-	MainView.VSplitMid(&Automation, &GoresMode);
+	CUIRect Automation, FreezeKill, ChatSettings,
+		Performance, GoresMode, MenuSettings, FastInput, AntiLatency, FrozenTeeHud, AntiPingSmoothing, GhostTools;
+	MainView.VSplitMid(&Automation, &Performance);
 
 	/* Automation */
 	{
@@ -2555,9 +2554,32 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	}
 	// right side
 
+	/* Performance */
+	{
+		Performance.VMargin(5.0f, &Performance);
+		Performance.HSplitTop(80.0f, &Performance, &GoresMode);
+		if(s_ScrollRegion.AddRect(Performance))
+		{
+			Performance.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			Performance.VMargin(Margin, &Performance);
+
+			Performance.HSplitTop(HeaderHeight, &Button, &Performance);
+			Ui()->DoLabel(&Button, Localize("Performance"), HeaderSize, HeaderAlignment);
+
+			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHighProcessPriority, ("High DDNet Process Priority"), &g_Config.m_ClHighProcessPriority, &Performance, LineSize))
+				GameClient()->m_EClient.SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
+
+			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordNormalProcessPriority, ("Lower Discords Process Priority"), &g_Config.m_ClDiscordNormalProcessPriority, &Performance, LineSize))
+			{
+				if(g_Config.m_ClDiscordNormalProcessPriority)
+					GameClient()->m_EClient.StartDiscordPriorityThread();
+			}
+		}
+	}
+
 	/* Gores Mode */
 	{
-		GoresMode.VMargin(5.0f, &GoresMode);
+		GoresMode.HSplitTop(Margin, nullptr, &GoresMode);
 		GoresMode.HSplitTop(120.0f, &GoresMode, &FastInput);
 		if(s_ScrollRegion.AddRect(GoresMode))
 		{

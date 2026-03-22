@@ -8,6 +8,7 @@
 
 #include <game/client/component.h>
 
+#include <atomic>
 #include <vector>
 
 class CEClient : public CComponent
@@ -58,13 +59,18 @@ class CEClient : public CComponent
 
 	static void ConReplyLast(IConsole::IResult *pResult, void *pUserData);
 
-	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
-
 	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
+
+	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	
+	static void ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainDiscordProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
+	static void DiscordPriorityThread(void *pUserData);
 
 public:
 	int m_KillCount;
@@ -131,6 +137,13 @@ public:
 
 	bool m_FirstLaunch = false;
 
+	void SetDDNetProcessPriority(bool Set);
+	std::atomic<int64_t> m_DiscordPriorityDelay{0};
+	std::atomic_bool m_DiscordPriorityThreadRunning{false};
+	void *m_pDiscordPriorityThread = nullptr;
+	void StartDiscordPriorityThread();
+	void SetDiscordProcessesNormalPriority();
+
 private:
 	int Sizeof() const override { return sizeof(*this); }
 	void OnInit() override;
@@ -139,6 +152,7 @@ private:
 	void OnNewSnapshot() override;
 	void OnShutdown() override;
 	void OnSelfDeath() override;
+	void OnFocusChange(bool IsFocused) override;
 };
 
 #endif // GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H

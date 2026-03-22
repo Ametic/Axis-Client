@@ -870,6 +870,16 @@ void CGameClient::OnRender()
 	// render all systems
 	for(auto &pComponent : m_vpAll)
 		pComponent->OnRender();
+	IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
+	if(pGraphics)
+	{
+		if(m_WasWindowActive != pGraphics->WindowActive())
+		{
+			for(auto &pComponent : m_vpAll)
+				pComponent->OnFocusChange(pGraphics->WindowActive());
+			m_WasWindowActive = pGraphics->WindowActive();
+		}
+	}
 
 	// clear all events/input for this frame
 	Input()->Clear();

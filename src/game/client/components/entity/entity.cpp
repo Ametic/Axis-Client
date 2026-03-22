@@ -4,6 +4,7 @@
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
+#include <base/thread.h>
 #include <base/vmath.h>
 
 #include <engine/client.h>
@@ -28,6 +29,22 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#if defined(CONF_FAMILY_WINDOWS)
+#include <Windows.h>
+#endif
+
+#if defined(CONF_FAMILY_WINDOWS)
+#include <TlHelp32.h>
+#include <processthreadsapi.h>
+
+static bool IsDiscordProcessName(const wchar_t *pProcessName)
+{
+	return _wcsicmp(pProcessName, L"Discord.exe") == 0 ||
+	       _wcsicmp(pProcessName, L"DiscordCanary.exe") == 0 ||
+	       _wcsicmp(pProcessName, L"DiscordPTB.exe") == 0 ||
+	       _wcsicmp(pProcessName, L"DiscordSystemHelper.exe") == 0;
+}
+#endif
 
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
@@ -481,8 +498,97 @@ void CEClient::OnShutdown()
 	g_Config.m_ClKillCounter = m_KillCount;
 }
 
+void CEClient::SetDDNetProcessPriority(bool Set)
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	if(!SetPriorityClass(GetCurrentProcess(), Set ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS))
+	{
+		log_info("entity-client", Set ? "Failed to set process priority" : "Failed to reset process priority");
+		return;
+	}
+	if(!SetThreadPriority(GetCurrentThread(), Set ? THREAD_PRIORITY_HIGHEST : THREAD_PRIORITY_NORMAL))
+	{
+		log_info("entity-client", Set ? "Failed to set thread priority" : "Failed to reset thread priority");
+		return;
+	}
+#endif
+}
+
+void CEClient::DiscordPriorityThread(void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+	pSelf->SetDiscordProcessesNormalPriority();
+	pSelf->m_DiscordPriorityDelay.store(time_get() + time_freq() * 30);
+	pSelf->m_DiscordPriorityThreadRunning.store(false);
+}
+
+void CEClient::StartDiscordPriorityThread()
+{
+	// Don't start the thread if it's already running
+	if(m_DiscordPriorityThreadRunning.load())
+		return;
+
+	if(m_pDiscordPriorityThread)
+	{
+		thread_wait(m_pDiscordPriorityThread);
+		m_pDiscordPriorityThread = nullptr;
+	}
+
+	m_DiscordPriorityDelay.store(0);
+	m_DiscordPriorityThreadRunning.store(true);
+	m_pDiscordPriorityThread = thread_init(DiscordPriorityThread, this, "discord-priority");
+}
+
+void CEClient::SetDiscordProcessesNormalPriority()
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if(hSnapshot == INVALID_HANDLE_VALUE)
+	{
+		log_info("entity-client", "Failed to create process snapshot");
+		return;
+	}
+
+	PROCESSENTRY32 Entry;
+	mem_zero(&Entry, sizeof(Entry));
+	Entry.dwSize = sizeof(Entry);
+
+	int Changed = 0;
+	int Failed = 0;
+
+	if(Process32First(hSnapshot, &Entry))
+	{
+		do
+		{
+			if(!IsDiscordProcessName(Entry.szExeFile))
+				continue;
+
+			HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, Entry.th32ProcessID);
+			if(!hProcess)
+			{
+				Failed++;
+				continue;
+			}
+
+			if(SetPriorityClass(hProcess, NORMAL_PRIORITY_CLASS))
+				Changed++;
+			else
+				Failed++;
+
+			CloseHandle(hProcess);
+		} while(Process32Next(hSnapshot, &Entry));
+	}
+
+	CloseHandle(hSnapshot);
+#endif
+}
+
 void CEClient::OnInit()
 {
+	SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
+	if(g_Config.m_ClDiscordNormalProcessPriority)
+		StartDiscordPriorityThread();
+
 	// On client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
@@ -527,6 +633,12 @@ void CEClient::OnStateChange(int NewState, int OldState)
 
 void CEClient::OnRender()
 {
+	const int64_t DiscordPriorityDelay = m_DiscordPriorityDelay.load();
+	if(g_Config.m_ClDiscordNormalProcessPriority && !m_DiscordPriorityThreadRunning.load() && DiscordPriorityDelay < time_get())
+	{
+		StartDiscordPriorityThread();
+	}
+
 	UpdateRainbow();
 
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
@@ -544,4 +656,9 @@ void CEClient::OnRender()
 void CEClient::OnSelfDeath()
 {
 	m_KillCount++;
+}
+
+void CEClient::OnFocusChange(bool IsFocused)
+{
+	SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
 }

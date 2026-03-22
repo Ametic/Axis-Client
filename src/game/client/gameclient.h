@@ -1092,6 +1092,8 @@ public:
 	int GetClientId(const char *pName) override;
 	const char *GetClientName(int ClientId) override { return m_aClients[ClientId].m_aName; }
 	vec2 GetCursorWorldPos() const;
+
+	int m_WasWindowActive = 1;
 };
 
 ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL);
