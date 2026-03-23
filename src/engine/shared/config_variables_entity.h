@@ -265,11 +265,9 @@ MACRO_CONFIG_INT(ClFreezeKillDebug, ec_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIEN
 MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something") // Aiodob Menu color plates
 
 // Gores Mode
-MACRO_CONFIG_INT(ClGoresMode, ec_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
-MACRO_CONFIG_INT(ClGoresModeKey, ec_gores_mode_key, 291, 0, 512, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The key it binds to")
+MACRO_CONFIG_INT(ClGoresMode, ec_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically switches to gun, when firing it switches to hammer and then back")
 MACRO_CONFIG_INT(ClGoresModeDisableIfWeapons, ec_gores_mode_disable_weapons, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable Gores Mode When The Player Has Another Weapon")
 MACRO_CONFIG_INT(ClAutoEnableGoresMode, ec_gores_mode_auto_enable, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enables it on Gores gametype and disables on others")
-MACRO_CONFIG_STR(ClGoresModeSaved, ec_gores_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")
 
 // Tee
 MACRO_CONFIG_INT(ClOwnTeeSkin, ec_own_tee_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")

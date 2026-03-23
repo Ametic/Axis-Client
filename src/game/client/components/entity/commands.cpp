@@ -491,7 +491,6 @@ void CEClient::OnConsoleInit()
 	Console()->Register("specid", "i[id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
 	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Crash your own client");
 
-	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
 	Console()->Chain("ec_fast_input", ConchainFastInputs, this);
 	Console()->Chain("ec_fast_input_amount", ConchainFastInputs, this);
 
@@ -500,17 +499,6 @@ void CEClient::OnConsoleInit()
 	Console()->Chain("ec_discord_online_status", ConchainDiscordUpdate, this);
 	Console()->Chain("ec_high_process_priority", ConchainDDNetProcessPriority, this);
 	Console()->Chain("ec_discord_normal_process_priority", ConchainDiscordProcessPriority, this);
-}
-
-void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
-{
-	pfnCallback(pResult, pCallbackUserData);
-	CEClient *pSelf = (CEClient *)pUserData;
-	if(pResult->NumArguments())
-	{
-		int GoresMode = pResult->GetInteger(0);
-		pSelf->ToggleGoresMode(GoresMode);
-	}
 }
 
 void CEClient::ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

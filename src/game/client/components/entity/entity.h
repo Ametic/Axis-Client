@@ -16,7 +16,6 @@ class CEClient : public CComponent
 	bool m_AttemptedJoinTeam;
 	bool m_JoinedTeam;
 
-	bool m_WeaponsGot;
 	bool m_GoresServer;
 
 	// Reply to Ping
@@ -63,16 +62,16 @@ class CEClient : public CComponent
 
 	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
 
-	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	
+
 	static void ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainDiscordProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	static void DiscordPriorityThread(void *pUserData);
 
 public:
+	bool m_WeaponsGot;
 	int m_KillCount;
 
 	void Votekick(const char *pName, const char *pReason);
@@ -119,10 +118,6 @@ public:
 	int64_t m_RainbowDelay;
 
 	void GoresMode();
-
-	void GoresModeSave();
-	void GoresModeRestore();
-	void ToggleGoresMode(bool Value);
 
 	int64_t m_JoinTeam;
 	void AutoJoinTeam();

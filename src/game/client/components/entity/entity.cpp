@@ -232,74 +232,8 @@ void CEClient::GoresMode()
 			return;
 	}
 
-	int Key = g_Config.m_ClGoresModeKey;
-	if(Key < KEY_FIRST || Key >= KEY_LAST)
-	{
-		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %d", Key);
-		return;
-	}
-	const char *pKeyName = Input()->KeyName(Key);
-	const CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
-	const char *pBind = GameClient()->m_Binds.GetKeyBinding(BindSlot.m_ModifierMask, BindSlot.m_Key);
-	if(!pBind)
-		return;
-
-	bool GoresBind = false;
-
-	if(!str_comp(pBind, "+fire;+prevweapon"))
-		GoresBind = true;
-
-	if(!GoresBind)
-		return;
-
-	if(GoresBind)
-	{
-		if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
-		{
-			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
-		}
-	}
-}
-
-void CEClient::GoresModeSave()
-{
-	int Key = g_Config.m_ClGoresModeKey;
-	if(Key < KEY_FIRST || Key >= KEY_LAST)
-	{
-		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %d", Key);
-		return;
-	}
-	const char *pKeyName = Input()->KeyName(Key);
-
-	const CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
-	const char *pBind = GameClient()->m_Binds.GetKeyBinding(BindSlot.m_ModifierMask, BindSlot.m_Key);
-	if(!pBind)
-		return;
-	str_copy(g_Config.m_ClGoresModeSaved, pBind);
-
-	GameClient()->m_Binds.Bind(Key, "+fire;+prevweapon");
-}
-
-void CEClient::GoresModeRestore()
-{
-	int Key = g_Config.m_ClGoresModeKey;
-	if(Key < KEY_FIRST || Key >= KEY_LAST)
-	{
-		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %d", Key);
-		return;
-	}
-	GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
-}
-
-void CEClient::ToggleGoresMode(bool Value)
-{
-	if(Value)
-		GoresModeSave();
-	else
-		GoresModeRestore();
+	if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
+		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = WEAPON_GUN + 1;
 }
 
 void CEClient::OnConnect()
@@ -330,7 +264,7 @@ void CEClient::OnConnect()
 	{
 		if(g_Config.m_ClAutoEnableGoresMode)
 		{
-			if(str_find(CurrentServerInfo.m_aGameType, "Gores"))
+			if(str_find_nocase(CurrentServerInfo.m_aGameType, "Gores"))
 			{
 				m_GoresServer = true;
 				g_Config.m_ClGoresMode = 1;
