@@ -413,12 +413,18 @@ public:
 		});
 
 		// E-Client>
+		m_ScriptingCtx.SaveState();
 	}
 	void Run(const char *pFilename, const char *pArgs)
 	{
 		m_ScriptingCtx.Run(Storage(), pFilename, pArgs);
 	}
 };
+
+CScripting::~CScripting()
+{
+	delete m_pRunner;
+}
 
 void CScripting::ConExecScript(IConsole::IResult *pResult, void *pUserData)
 {
@@ -428,8 +434,9 @@ void CScripting::ConExecScript(IConsole::IResult *pResult, void *pUserData)
 
 void CScripting::ExecScript(const char *pFilename, const char *pArgs)
 {
-	CScriptRunner Runner(GameClient());
-	Runner.Run(pFilename, pArgs);
+	if(!m_pRunner)
+		m_pRunner = new CScriptRunner(GameClient());
+	m_pRunner->Run(pFilename, pArgs);
 }
 
 void CScripting::OnConsoleInit()

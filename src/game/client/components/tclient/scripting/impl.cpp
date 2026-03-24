@@ -5,6 +5,7 @@
 #include <engine/external/regex.h>
 #include <engine/storage.h>
 
+#include <map>
 #include <variant>
 
 #define CHAISCRIPT_NO_THREADS
@@ -77,13 +78,19 @@ class CScriptingCtx::CScriptingCtxData
 public:
 	IStorage *m_pStorage;
 	chaiscript::ChaiScript m_Chai;
+	chaiscript::ChaiScript::State m_BaseState;
+	std::map<std::string, chaiscript::Boxed_Value> m_BaseLocals;
+	bool m_HasBaseState;
 };
 
 CScriptingCtx::CScriptingCtx()
 {
 	m_pData = new CScriptingCtxData{
 		nullptr,
-		chaiscript::ChaiScript({}, {}, {chaiscript::Options::No_Load_Modules, chaiscript::Options::No_External_Scripts})};
+		chaiscript::ChaiScript({}, {}, {chaiscript::Options::No_Load_Modules, chaiscript::Options::No_External_Scripts}),
+		{},
+		{},
+		false};
 	static const auto s_PrintStr = chaiscript::fun([](const std::string &Msg) {
 		log_info(SCRIPTING_IMPL "/print", "%s", Msg.c_str());
 	});
@@ -110,6 +117,13 @@ CScriptingCtx::CScriptingCtx()
 		"file_exists");
 	m_pData->m_Chai.register_namespace(NAMESPACE_RE, "re");
 	m_pData->m_Chai.register_namespace(NAMESPACE_MATH, "math");
+}
+
+void CScriptingCtx::SaveState()
+{
+	m_pData->m_BaseState = m_pData->m_Chai.get_state();
+	m_pData->m_BaseLocals = m_pData->m_Chai.get_locals();
+	m_pData->m_HasBaseState = true;
 }
 
 CScriptingCtx::~CScriptingCtx()
@@ -175,6 +189,11 @@ void CScriptingCtx::Run(IStorage *pStorage, const char *pFilename, const char *p
 	const char *pScript = nullptr;
 	try
 	{
+		if(m_pData->m_HasBaseState)
+		{
+			m_pData->m_Chai.set_state(m_pData->m_BaseState);
+			m_pData->m_Chai.set_locals(m_pData->m_BaseLocals);
+		}
 		m_pData->m_Chai.add_global_const(chaiscript::const_var(std::string(pArgs)), "args");
 		pScript = ReadScript(pStorage, pFilename);
 		m_pData->m_Chai.eval(pScript, chaiscript::Exception_Handler(), pFilename);
