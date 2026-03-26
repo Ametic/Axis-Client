@@ -2580,7 +2580,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Gores Mode */
 	{
 		GoresMode.HSplitTop(Margin, nullptr, &GoresMode);
-		GoresMode.HSplitTop(120.0f, &GoresMode, &FastInput);
+		GoresMode.HSplitTop(100.0f, &GoresMode, &FastInput);
 		if(s_ScrollRegion.AddRect(GoresMode))
 		{
 			GoresMode.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
