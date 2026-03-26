@@ -2071,8 +2071,10 @@ void CMenus::UpdateCommunityCache(bool Force)
 void CMenus::UpdateWarlistCache()
 {
 	m_vWarlistCache.clear();
-	std::unordered_map<std::string, std::pair<const CServerInfo::CClient *, const CServerInfo *>> NameMap;
-	std::unordered_map<std::string, std::pair<const CServerInfo::CClient *, const CServerInfo *>> ClanMap;
+
+	using SWarlistMatch = std::pair<const CServerInfo::CClient *, const CServerInfo *>;
+	std::unordered_map<std::string, std::vector<SWarlistMatch>> NameMap;
+	std::unordered_map<std::string, std::vector<SWarlistMatch>> ClanMap;
 
 	for(int ServerIdx = 0; ServerIdx < ServerBrowser()->NumSortedServers(); ++ServerIdx)
 	{
@@ -2081,9 +2083,9 @@ void CMenus::UpdateWarlistCache()
 		{
 			const CServerInfo::CClient *pClient = &pCurServer->m_aClients[ClientIdx];
 			if(pClient->m_aName[0])
-				NameMap[pClient->m_aName] = {pClient, pCurServer};
+				NameMap[pClient->m_aName].emplace_back(pClient, pCurServer);
 			if(pClient->m_aClan[0])
-				ClanMap[pClient->m_aClan] = {pClient, pCurServer};
+				ClanMap[pClient->m_aClan].emplace_back(pClient, pCurServer);
 		}
 	}
 
@@ -2091,23 +2093,34 @@ void CMenus::UpdateWarlistCache()
 
 	for(CWarEntry &Entry : GameClient()->m_WarList.m_vWarEntries)
 	{
-		if(Entry.m_aName[0] && NameMap.contains(Entry.m_aName))
+		if(Entry.m_aName[0])
 		{
-			const CServerInfo::CClient *pClient = NameMap[Entry.m_aName].first;
-			if(!MatchedClients.contains(pClient))
+			const auto It = NameMap.find(Entry.m_aName);
+			if(It != NameMap.end())
 			{
-				m_vWarlistCache.emplace_back(&Entry, pClient, NameMap[Entry.m_aName].second);
-				MatchedClients.insert(pClient);
-				continue;
+				for(const auto &[pClient, pServer] : It->second)
+				{
+					if(MatchedClients.contains(pClient))
+						continue;
+
+					m_vWarlistCache.emplace_back(&Entry, pClient, pServer);
+					MatchedClients.insert(pClient);
+				}
 			}
 		}
-		if(Entry.m_aClan[0] && ClanMap.contains(Entry.m_aClan))
+		else if(Entry.m_aClan[0])
 		{
-			const CServerInfo::CClient *pClient = ClanMap[Entry.m_aClan].first;
-			if(!MatchedClients.contains(pClient))
+			const auto It = ClanMap.find(Entry.m_aClan);
+			if(It != ClanMap.end())
 			{
-				m_vWarlistCache.emplace_back(&Entry, pClient, ClanMap[Entry.m_aClan].second);
-				MatchedClients.insert(pClient);
+				for(const auto &[pClient, pServer] : It->second)
+				{
+					if(MatchedClients.contains(pClient))
+						continue;
+
+					m_vWarlistCache.emplace_back(&Entry, pClient, pServer);
+					MatchedClients.insert(pClient);
+				}
 			}
 		}
 	}
