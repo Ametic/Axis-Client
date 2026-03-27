@@ -2449,6 +2449,8 @@ ColorRGBA CServerInfo::GametypeColor(const char *pGametype)
 		HslaColor = ColorHSLA(0.75f, 1.0f, 0.75f);
 	else if(str_find_nocase(pGametype, "race") || str_find_nocase(pGametype, "fastcap"))
 		HslaColor = ColorHSLA(0.46f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "foxnet"))
+		HslaColor = ColorHSLA(0.72f, 0.68f, 0.73f);
 	else
 		HslaColor = ColorHSLA(1.0f, 1.0f, 1.0f);
 	return color_cast<ColorRGBA>(HslaColor);

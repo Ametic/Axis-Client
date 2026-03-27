@@ -196,13 +196,11 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 
 	// --- Begin scroll region ---
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = Ui()->IsPopupOpen() ? 0.0f : ScrollSpeed;
-	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
+	s_ScrollRegion.Begin(&MainView, &ScrollParams);
 
 	CUIRect ContentView = MainView;
-	ContentView.y += ScrollOffset.y;
 
 	CUIRect Label;
 	const char *pStr = GameClient()->m_EntityInfo.m_aNews;
@@ -2175,11 +2173,9 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 void CMenus::RenderSettingsEClient(CUIRect MainView)
 {
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = Ui()->IsPopupOpen() ? 0.0f : ScrollSpeed;
-	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
-	MainView.y += ScrollOffset.y;
+	s_ScrollRegion.Begin(&MainView, &ScrollParams);
 
 	CUIRect Label, Button;
 	// left side in settings menu
@@ -2836,11 +2832,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 void CMenus::RenderSettingsVisual(CUIRect MainView)
 {
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = Ui()->IsPopupOpen() ? 0.0f : ScrollSpeed;
-	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
-	MainView.y += ScrollOffset.y;
+	s_ScrollRegion.Begin(&MainView, &ScrollParams);
 
 	CUIRect Label, Button;
 
