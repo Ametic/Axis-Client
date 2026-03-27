@@ -534,7 +534,7 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 			s_FilterInput.SelectAll();
 		}
 		if(Ui()->DoClearableEditBox(&s_FilterInput, &QuickSearch, 12.0f))
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 	}
 
 	// render quick exclude
@@ -563,7 +563,7 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 			s_ExcludeInput.SelectAll();
 		}
 		if(Ui()->DoClearableEditBox(&s_ExcludeInput, &QuickExclude, 12.0f))
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 	}
 
 	// render status
@@ -725,7 +725,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	Button.VSplitRight(60.0f, nullptr, &Button);
 	static CLineInput s_GametypeInput(g_Config.m_BrFilterGametype, sizeof(g_Config.m_BrFilterGametype));
 	if(Ui()->DoEditBox(&s_GametypeInput, &Button, FontSize))
-		Client()->ServerBrowserUpdate();
+		ServerBrowserUpdate();
 
 	// server address
 	View.HSplitTop(6.0f, nullptr, &View);
@@ -735,7 +735,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	Button.VSplitRight(60.0f, nullptr, &Button);
 	static CLineInput s_FilterServerAddressInput(g_Config.m_BrFilterServerAddress, sizeof(g_Config.m_BrFilterServerAddress));
 	if(Ui()->DoEditBox(&s_FilterServerAddressInput, &Button, FontSize))
-		Client()->ServerBrowserUpdate();
+		ServerBrowserUpdate();
 
 	// player country
 	{
@@ -773,7 +773,10 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		{
 			g_Config.m_BrIndicateFinished ^= 1;
 			if(g_Config.m_BrIndicateFinished)
+			{
 				ServerBrowser()->Refresh(ServerBrowser()->GetCurrentType());
+				UpdateWarlistCache(); // EClient
+			}
 		}
 
 		if(g_Config.m_BrIndicateFinished)
@@ -869,7 +872,7 @@ void CMenus::ResetServerbrowserFilters()
 		UpdateCommunityCache(true);
 	}
 
-	Client()->ServerBrowserUpdate();
+	ServerBrowserUpdate();
 }
 
 void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
@@ -964,7 +967,7 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 				}
 			}
 
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 			if(UpdateCommunityCacheOnChange)
 				UpdateCommunityCache(true);
 		}
@@ -975,7 +978,7 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 			{
 				Filter.Remove(GetItemName(j));
 			}
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 			if(UpdateCommunityCacheOnChange)
 				UpdateCommunityCache(true);
 		}
@@ -1161,7 +1164,7 @@ CUi::EPopupMenuFunctionResult CMenus::PopupCountrySelection(void *pContext, CUIR
 	{
 		g_Config.m_BrFilterCountry = 1;
 		g_Config.m_BrFilterCountryIndex = pPopupContext->m_Selection;
-		pMenus->Client()->ServerBrowserUpdate();
+		pMenus->ServerBrowserUpdate();
 		return CUi::POPUP_CLOSE_CURRENT;
 	}
 
@@ -1223,7 +1226,7 @@ void CMenus::RenderServerbrowserInfo(CUIRect View)
 						Favorites()->AllowPing(pSelectedServer->m_aAddresses, pSelectedServer->m_NumAddresses, true);
 					}
 				}
-				Client()->ServerBrowserUpdate();
+				ServerBrowserUpdate();
 			}
 			if(pSelectedServer->m_Favorite != TRISTATE::NONE)
 			{
@@ -1231,7 +1234,7 @@ void CMenus::RenderServerbrowserInfo(CUIRect View)
 				if(DoButton_CheckBox_Tristate(&s_LeakIpButton, Localize("Leak IP"), pSelectedServer->m_FavoriteAllowPing, &ButtonLeakIp))
 				{
 					Favorites()->AllowPing(pSelectedServer->m_aAddresses, pSelectedServer->m_NumAddresses, pSelectedServer->m_FavoriteAllowPing == TRISTATE::NONE);
-					Client()->ServerBrowserUpdate();
+					ServerBrowserUpdate();
 				}
 			}
 		}
@@ -1443,7 +1446,7 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 		else
 			GameClient()->Friends()->AddFriend(SelectedClient.m_aName, SelectedClient.m_aClan);
 		FriendlistOnUpdate();
-		Client()->ServerBrowserUpdate();
+		ServerBrowserUpdate();
 	}
 }
 
@@ -1763,7 +1766,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 			s_NameInput.Clear();
 			s_ClanInput.Clear();
 			FriendlistOnUpdate();
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 		}
 	}
 }
@@ -1777,7 +1780,7 @@ void CMenus::PopupConfirmRemoveFriend()
 {
 	GameClient()->Friends()->RemoveFriend(m_pRemoveFriend->FriendState() == IFriends::FRIEND_PLAYER ? m_pRemoveFriend->Name() : "", m_pRemoveFriend->Clan());
 	FriendlistOnUpdate();
-	Client()->ServerBrowserUpdate();
+	ServerBrowserUpdate();
 	m_pRemoveFriend = nullptr;
 }
 
@@ -1855,6 +1858,12 @@ void CMenus::RenderServerbrowserToolBox(CUIRect ToolBox)
 void CMenus::RenderServerbrowser(CUIRect MainView)
 {
 	UpdateCommunityCache(false);
+
+	if(m_WarlistCacheDirty)
+	{
+		UpdateWarlistCache();
+		m_WarlistCacheDirty = false;
+	}
 
 	switch(g_Config.m_UiPage)
 	{
@@ -1972,7 +1981,7 @@ void CMenus::ConchainFriendlistUpdate(IConsole::IResult *pResult, void *pUserDat
 	if(pResult->NumArguments() >= 1 && (pThis->Client()->State() == IClient::STATE_OFFLINE || pThis->Client()->State() == IClient::STATE_ONLINE))
 	{
 		pThis->FriendlistOnUpdate();
-		pThis->Client()->ServerBrowserUpdate();
+		pThis->ServerBrowserUpdate();
 	}
 }
 
@@ -1980,7 +1989,10 @@ void CMenus::ConchainFavoritesUpdate(IConsole::IResult *pResult, void *pUserData
 {
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments() >= 1 && g_Config.m_UiPage == PAGE_FAVORITES)
+	{
 		((CMenus *)pUserData)->ServerBrowser()->Refresh(IServerBrowser::TYPE_FAVORITES);
+		((CMenus *)pUserData)->UpdateWarlistCache(); // EClient
+	}
 }
 
 void CMenus::ConchainCommunitiesUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -1990,7 +2002,7 @@ void CMenus::ConchainCommunitiesUpdate(IConsole::IResult *pResult, void *pUserDa
 	if(pResult->NumArguments() >= 1 && (g_Config.m_UiPage == PAGE_INTERNET || g_Config.m_UiPage == PAGE_FAVORITES || (g_Config.m_UiPage >= PAGE_FAVORITE_COMMUNITY_1 && g_Config.m_UiPage <= PAGE_FAVORITE_COMMUNITY_5)))
 	{
 		pThis->UpdateCommunityCache(true);
-		pThis->Client()->ServerBrowserUpdate();
+		pThis->ServerBrowserUpdate();
 	}
 }
 
@@ -2083,6 +2095,11 @@ void CMenus::UpdateWarlistCache()
 			}
 		}
 	}
+}
+void CMenus::ServerBrowserUpdate()
+{
+	Client()->ServerBrowserUpdate();
+	m_WarlistCacheDirty = true;
 }
 
 void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion)

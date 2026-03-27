@@ -932,7 +932,9 @@ private:
 		}
 	};
 
+	void ServerBrowserUpdate();
 	std::vector<CWarlistCache> m_vWarlistCache;
+	bool m_WarlistCacheDirty = true;
 	const CWarlistCache *m_pRemoveEntry = nullptr;
 
 	int GetWartypePlayerCount(const CWarType *pWarType) const

@@ -2847,7 +2847,7 @@ void CMenus::RefreshBrowserTab(bool Force)
 			UpdateCommunityCache(true);
 		}
 	}
-	UpdateWarlistCache();
+	UpdateWarlistCache(); // EClient
 }
 
 void CMenus::ForceRefreshLanPage()
