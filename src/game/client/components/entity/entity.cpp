@@ -573,8 +573,6 @@ void CEClient::OnRender()
 		StartDiscordPriorityThread();
 	}
 
-	UpdateRainbow();
-
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;
 
