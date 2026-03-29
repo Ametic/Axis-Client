@@ -63,7 +63,7 @@ CChat::CChat()
 		{
 			if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
 			{
-				SendChat(TEAM_FLOCK, pStr);
+				SendChat(m_Mode == MODE_ALL ? 0 : 1, pStr);
 				AddHistoryEntry(pStr);
 			}
 		}
@@ -322,7 +322,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			}
 			else if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
 			{
-				SendChat(TEAM_FLOCK, m_Input.GetString());
+				SendChat(m_Mode == MODE_ALL ? 0 : 1, m_Input.GetString());
 				AddHistoryEntry(m_Input.GetString());
 			}
 			else
