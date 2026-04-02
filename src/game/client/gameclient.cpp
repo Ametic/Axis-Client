@@ -140,7 +140,8 @@ void CGameClient::OnConsoleInit()
 					      &m_Particles.m_RenderTrail,
 					      &m_Particles.m_RenderTrailExtra,
 					      &m_Items,
-					      &m_Trails,
+					      &m_Trails, // TClient
+					      &m_Translate, // TClient
 					      &m_Ghost,
 					      &m_Players,
 					      &m_PhysicBalls, // EClient

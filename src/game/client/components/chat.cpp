@@ -51,7 +51,9 @@ void CChat::CLine::Reset(CChat &This)
 	m_TimesRepeated = 0;
 	m_pManagedTeeRenderInfo = nullptr;
 
-	m_Paused = false; // E-Client
+	// EClient
+	m_pTranslateResponse = nullptr;
+	m_Paused = false; // EClient
 }
 
 CChat::CChat()
@@ -268,8 +270,8 @@ void CChat::OnConsoleInit()
 	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClientMessage, this, "Echo the text in chat window");
 	Console()->Register("clear_chat", "", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClearChat, this, "Clear chat messages");
 
-	Console()->Register("set_input", "r[input]", CFGFLAG_CLIENT, ConSetChatInput, this, "Opens chat and sets the input as the message"); // E-Client [Quick Actions]
-	Console()->Register("say_queued", "r[message]", CFGFLAG_CLIENT, ConSayQueued, this, "Say in queue chat"); // E-Client
+	Console()->Register("set_input", "r[input]", CFGFLAG_CLIENT, ConSetChatInput, this, "Opens chat and sets the input as the message"); // EClient [Quick Actions]
+	Console()->Register("say_queued", "r[message]", CFGFLAG_CLIENT, ConSayQueued, this, "Say in queue chat"); // EClient
 }
 
 void CChat::OnInit()
@@ -300,7 +302,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(m_ServerCommandsNeedSorting)
 		{
 			std::sort(m_vServerCommands.begin(), m_vServerCommands.end());
-			GameClient()->m_Bindchat.SortChatBinds(); // E-Client
+			GameClient()->m_Bindchat.SortChatBinds(); // EClient
 			m_ServerCommandsNeedSorting = false;
 		}
 
@@ -912,7 +914,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if(LineAuthor.m_Active)
 		{
 			CurrentLine.m_Friend = LineAuthor.m_Friend;
-			CurrentLine.m_Paused = LineAuthor.m_Paused; // E-Client
+			CurrentLine.m_Paused = LineAuthor.m_Paused; // EClient
 			CurrentLine.m_pManagedTeeRenderInfo = GameClient()->CreateManagedTeeRenderInfo(LineAuthor);
 		}
 	}
@@ -976,6 +978,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			}
 		}
 	}
+
+	// TClient
+	GameClient()->m_Translate.AutoTranslate(CurrentLine);
 }
 
 void CChat::OnPrepareLines(float y)
@@ -1052,6 +1057,28 @@ void CChat::OnPrepareLines(float y)
 			}
 		}
 
+		const char *pTranslatedError = nullptr;
+		const char *pTranslatedText = nullptr;
+		const char *pTranslatedLanguage = nullptr;
+		if(Line.m_pTranslateResponse != nullptr && Line.m_pTranslateResponse->m_Text[0])
+		{
+			// If hidden and there is translated text
+			if(pText != Line.m_aText)
+			{
+				pTranslatedError = Localize("Translated text hidden due to streamer mode");
+			}
+			else if(Line.m_pTranslateResponse->m_Error)
+			{
+				pTranslatedError = Line.m_pTranslateResponse->m_Text;
+			}
+			else
+			{
+				pTranslatedText = Line.m_pTranslateResponse->m_Text;
+				if(Line.m_pTranslateResponse->m_Language[0] != '\0')
+					pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
+			}
+		}
+
 		// get the y offset (calculate it if we haven't done that yet)
 		if(Line.m_aYOffset[OffsetType] < 0.0f)
 		{
@@ -1069,7 +1096,7 @@ void CChat::OnPrepareLines(float y)
 				{
 					TextRender()->TextEx(&MeasureCursor, g_Config.m_ClSpecPrefix);
 				}
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].m_IsMuted) // E-Client
+				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].m_IsMuted) // EClient
 				{
 					TextRender()->TextEx(&MeasureCursor, g_Config.m_ClWarlistPrefix);
 				}
@@ -1097,11 +1124,41 @@ void CChat::OnPrepareLines(float y)
 				AppendCursor.m_LineWidth -= MeasureCursor.m_LongestLineWidth;
 			}
 
-			// This is here so that the background has the correct size
-			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
-				TextRender()->ColorParsing(Line.m_aText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
-			else
+			if(pTranslatedText)
+			{
+				// This is here so that the background has the correct size
+				if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
+					TextRender()->ColorParsing(pTranslatedText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
+				else
+					TextRender()->TextEx(&AppendCursor, pTranslatedText);
+				if(pTranslatedLanguage)
+				{
+					TextRender()->TextEx(&AppendCursor, " [");
+					TextRender()->TextEx(&AppendCursor, pTranslatedLanguage);
+					TextRender()->TextEx(&AppendCursor, "]");
+				}
+				TextRender()->TextEx(&AppendCursor, "\n");
+				AppendCursor.m_FontSize *= 0.8f;
 				TextRender()->TextEx(&AppendCursor, pText);
+				AppendCursor.m_FontSize /= 0.8f;
+			}
+			else if(pTranslatedError)
+			{
+				TextRender()->TextEx(&AppendCursor, pText);
+				TextRender()->TextEx(&AppendCursor, "\n");
+				AppendCursor.m_FontSize *= 0.8f;
+				TextRender()->TextEx(&AppendCursor, pTranslatedError);
+				AppendCursor.m_FontSize /= 0.8f;
+			}
+			else
+			{
+				// This is here so that the background has the correct size
+				if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
+					TextRender()->ColorParsing(pText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
+				else
+					TextRender()->TextEx(&AppendCursor, pText);
+			}
+
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
 		}
@@ -1219,10 +1276,57 @@ void CChat::OnPrepareLines(float y)
 			AppendCursor.m_LineWidth -= LineCursor.m_LongestLineWidth;
 		}
 
-		if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
-			TextRender()->ColorParsing(Line.m_aText, &AppendCursor, Color, &Line.m_TextContainerIndex);
-		else
+		if(pTranslatedText)
+		{
+			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
+				TextRender()->ColorParsing(pTranslatedText, &AppendCursor, Color, &Line.m_TextContainerIndex);
+			else
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedText);
+
+			if(pTranslatedLanguage)
+			{
+				ColorRGBA ColorLang = Color;
+				ColorLang.r *= 0.8f;
+				ColorLang.g *= 0.8f;
+				ColorLang.b *= 0.8f;
+				TextRender()->TextColor(ColorLang);
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, " [");
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedLanguage);
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, "]");
+			}
+			ColorRGBA ColorSub = Color;
+			ColorSub.r *= 0.7f;
+			ColorSub.g *= 0.7f;
+			ColorSub.b *= 0.7f;
+			TextRender()->TextColor(ColorSub);
+			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, "\n");
+			AppendCursor.m_FontSize *= 0.8f;
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
+			AppendCursor.m_FontSize /= 0.8f;
+			TextRender()->TextColor(Color);
+		}
+		else if(pTranslatedError)
+		{
+			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
+			ColorRGBA ColorSub = Color;
+			ColorSub.r = 0.7f;
+			ColorSub.g = 0.6f;
+			ColorSub.b = 0.6f;
+			TextRender()->TextColor(ColorSub);
+			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, "\n");
+			AppendCursor.m_FontSize *= 0.8f;
+			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedError);
+			AppendCursor.m_FontSize /= 0.8f;
+			TextRender()->TextColor(Color);
+		}
+		else
+		{
+			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
+				TextRender()->ColorParsing(pText, &AppendCursor, Color, &Line.m_TextContainerIndex);
+			else
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
+			AppendCursor.m_vColorSplits.clear();
+		}
 
 		if(!g_Config.m_ClChatOld && (Line.m_aText[0] != '\0' || Line.m_aName[0] != '\0'))
 		{
@@ -1508,7 +1612,7 @@ void CChat::SendChatQueued(const char *pLine)
 	}
 }
 
-// E-Client
+// EClient
 bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 {
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
@@ -1679,7 +1783,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "ddnet") &&
 					!str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") &&
 					!str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") &&
-					!str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") &&
+					!str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "EClient") && !str_find_nocase(pLine, "eclient") &&
 					!str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
 					AdBotFound = true;
 				if(str_find(pLine, " ")) // This is the little white space it uses between some letters

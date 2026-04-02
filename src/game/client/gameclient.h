@@ -93,6 +93,7 @@
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/statusbar.h"
 #include "components/tclient/trails.h"
+#include "components/tclient/translate.h"
 #include "components/tclient/warlist.h"
 #include "ui.h"
 
@@ -270,6 +271,7 @@ public:
 	CSkinProfiles m_SkinProfiles;
 	CStatusBar m_StatusBar;
 	CTrails m_Trails;
+	CTranslate m_Translate;
 	CWarList m_WarList;
 	CScripting m_Scripting;
 	CCustomCommunities m_CustomCommunities;

@@ -18,6 +18,15 @@
 
 #include <vector>
 
+// TClient
+class CTranslateResponse
+{
+public:
+	bool m_Error = false;
+	char m_Text[1024] = "";
+	char m_Language[16] = "";
+};
+
 constexpr auto SAVES_FILE = "ddnet-saves.txt";
 
 enum
@@ -64,6 +73,8 @@ class CChat : public CComponent
 		float m_TextYOffset;
 
 		int m_TimesRepeated;
+
+		std::shared_ptr<CTranslateResponse> m_pTranslateResponse;
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
@@ -170,6 +181,7 @@ class CChat : public CComponent
 	void StoreSave(const char *pText);
 
 	friend class CBindChat;
+	friend class CTranslate;
 	friend class CChatBubbles;
 
 public:

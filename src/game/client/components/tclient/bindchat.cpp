@@ -259,6 +259,9 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("delclanteam", "remove_war_clan_index 2");
 	AddDefaultBind("unclanteam", "remove_war_clan_index 2");
 
+	AddDefaultBind("translate", "translate");
+	AddDefaultBind("translate_id", "translate_id");
+
 	AddDefaultBind("firetext", "chai entity/builtinscripts/firetext.chai");
 	AddDefaultBind("antiad", "chai entity/builtinscripts/anti-bot-ad.chai");
 }
