@@ -8,6 +8,7 @@
 #include "tclient/warlist.h"
 
 #include <base/io.h>
+#include <base/math.h>
 #include <base/time.h>
 
 #include <engine/client/client.h>
@@ -29,6 +30,7 @@
 #include <game/client/gameclient.h>
 #include <game/localization.h>
 
+#include <algorithm>
 #include <vector>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = "";
@@ -59,6 +61,10 @@ void CChat::CLine::Reset(CChat &This)
 CChat::CChat()
 {
 	m_Mode = MODE_NONE;
+	m_BacklogCurLine = 0;
+	m_LinesRendered = 0;
+	m_LastMousePos = std::nullopt;
+	m_MouseUnlocked = false;
 
 	m_Input.SetClipboardLineCallback([this](const char *pStr) {
 		if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
@@ -143,6 +149,8 @@ void CChat::ClearLines()
 		Line.Reset(*this);
 	m_PrevScoreBoardShowed = false;
 	m_PrevShowChat = false;
+	m_BacklogCurLine = 0;
+	m_LinesRendered = 0;
 }
 
 void CChat::OnWindowResize()
@@ -169,6 +177,10 @@ void CChat::Reset()
 	m_ServerSupportsCommandInfo = false;
 	m_ServerCommandsNeedSorting = false;
 	m_aCurrentInputText[0] = '\0';
+	m_BacklogCurLine = 0;
+	m_LinesRendered = 0;
+	m_LastMousePos = std::nullopt;
+	m_MouseUnlocked = false;
 	DisableMode();
 	m_vServerCommands.clear();
 
@@ -179,6 +191,8 @@ void CChat::Reset()
 void CChat::OnRelease()
 {
 	m_Show = false;
+	if(m_MouseUnlocked)
+		LockMouse();
 }
 
 void CChat::OnStateChange(int NewState, int OldState)
@@ -282,10 +296,107 @@ void CChat::OnInit()
 	Console()->Chain("cl_chat_width", ConchainChatWidth, this);
 }
 
+void CChat::SetUiMousePos(vec2 Pos)
+{
+	const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
+	const CUIRect *pScreen = Ui()->Screen();
+
+	const vec2 UpdatedMousePos = Ui()->UpdatedMousePos();
+	Pos = Pos / vec2(pScreen->w, pScreen->h) * WindowSize;
+	Ui()->OnCursorMove(Pos.x - UpdatedMousePos.x, Pos.y - UpdatedMousePos.y);
+}
+
+void CChat::LockMouse()
+{
+	m_MouseUnlocked = false;
+	if(m_LastMousePos != std::nullopt)
+		SetUiMousePos(m_LastMousePos.value());
+	m_LastMousePos = Ui()->MousePos();
+}
+
+void CChat::UnlockMouse()
+{
+	if(m_MouseUnlocked)
+		return;
+
+	m_MouseUnlocked = true;
+
+	vec2 OldMousePos = Ui()->MousePos();
+	if(m_LastMousePos == std::nullopt)
+		SetUiMousePos(Ui()->Screen()->Center());
+	else
+		SetUiMousePos(m_LastMousePos.value());
+	m_LastMousePos = OldMousePos;
+}
+
+bool CChat::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
+{
+	if(m_Mode == MODE_NONE || !m_MouseUnlocked)
+		return false;
+
+	Ui()->ConvertMouseMove(&x, &y, CursorType);
+	Ui()->OnCursorMove(x, y);
+	return true;
+}
+
+int CChat::GetLinesToScroll(int Direction, int LinesToScroll) const
+{
+	const int RenderableLines = NumInitializedLines();
+
+	int LinesToSkip = Direction == -1 ? m_BacklogCurLine + m_LinesRendered : m_BacklogCurLine - 1;
+	LinesToSkip = std::clamp(LinesToSkip, 0, RenderableLines);
+
+	int RemainingAbove = maximum(0, RenderableLines - LinesToSkip);
+	int Amount = Direction == -1 ? minimum(RemainingAbove, maximum(LinesToScroll, 0)) : minimum(m_BacklogCurLine, maximum(LinesToScroll, 0));
+	if(LinesToScroll <= 0)
+		Amount = Direction == -1 ? RemainingAbove : m_BacklogCurLine;
+	return maximum(0, Amount);
+}
+
+int CChat::NumInitializedLines() const
+{
+	int Count = 0;
+	for(int i = 0; i < MAX_LINES; i++)
+	{
+		const CLine &Line = m_aLines[((m_CurrentLine - i) + MAX_LINES) % MAX_LINES];
+		if(!Line.m_Initialized)
+			break;
+		Count++;
+	}
+	return Count;
+}
+
+void CChat::ScrollToTop()
+{
+	m_BacklogCurLine += GetLinesToScroll(-1, -1);
+}
+
+void CChat::ScrollToBottom()
+{
+	m_BacklogCurLine = 0;
+}
+
+void CChat::ScrollPageUp()
+{
+	m_BacklogCurLine += GetLinesToScroll(-1, maximum(1, m_LinesRendered));
+}
+
+void CChat::ScrollPageDown()
+{
+	m_BacklogCurLine -= GetLinesToScroll(1, maximum(1, m_LinesRendered));
+	if(m_BacklogCurLine < 0)
+		m_BacklogCurLine = 0;
+}
+
 bool CChat::OnInput(const IInput::CEvent &Event)
 {
 	if(m_Mode == MODE_NONE)
 		return false;
+
+	if(!m_MouseUnlocked)
+		UnlockMouse();
+
+	const int BacklogPrevLine = m_BacklogCurLine;
 
 	if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
 	{
@@ -335,6 +446,32 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		DisableMode();
 		GameClient()->OnRelease();
 		m_Input.Clear();
+	}
+	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_PAGEUP)
+	{
+		ScrollPageUp();
+	}
+	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_PAGEDOWN)
+	{
+		ScrollPageDown();
+	}
+	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_MOUSE_WHEEL_UP)
+	{
+		m_BacklogCurLine += GetLinesToScroll(-1, 1);
+	}
+	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_MOUSE_WHEEL_DOWN)
+	{
+		m_BacklogCurLine -= GetLinesToScroll(1, 1);
+		if(m_BacklogCurLine < 0)
+			m_BacklogCurLine = 0;
+	}
+	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_HOME && m_Input.IsEmpty())
+	{
+		ScrollToTop();
+	}
+	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_END && m_Input.IsEmpty())
+	{
+		ScrollToBottom();
 	}
 	if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_TAB)
 	{
@@ -508,6 +645,13 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		}
 	}
 
+	if(m_BacklogCurLine != BacklogPrevLine)
+		m_BacklogCurLine = maximum(0, m_BacklogCurLine);
+
+	const int MaxBacklogCurLine = maximum(0, NumInitializedLines() - 1);
+	if(m_BacklogCurLine > MaxBacklogCurLine)
+		m_BacklogCurLine = MaxBacklogCurLine;
+
 	return true;
 }
 
@@ -528,7 +672,9 @@ void CChat::EnableMode(int Team)
 		Input()->Clear();
 		m_CompletionChosen = -1;
 		m_CompletionUsed = false;
+		m_BacklogCurLine = 0;
 		m_Input.Activate(EInputPriority::CHAT);
+		UnlockMouse();
 	}
 }
 
@@ -538,6 +684,9 @@ void CChat::DisableMode()
 	{
 		m_Mode = MODE_NONE;
 		m_Input.Deactivate();
+		m_BacklogCurLine = 0;
+		if(m_MouseUnlocked)
+			LockMouse();
 	}
 }
 
@@ -921,6 +1070,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 	FChatMsgCheckAndPrint(CurrentLine);
 
+	if(m_BacklogCurLine > 0)
+		m_BacklogCurLine = minimum(m_BacklogCurLine + 1, maximum(0, NumInitializedLines() - 1));
+
 	// play sound
 	int64_t Now = time();
 	if(ClientId == SERVER_MSG)
@@ -1013,6 +1165,8 @@ void CChat::OnPrepareLines(float y)
 	float Begin = x;
 	float TextBegin = Begin + RealMsgPaddingX / 2.0f;
 	int OffsetType = IsScoreBoardOpen ? 1 : 0;
+	m_LinesRendered = 0;
+	int LinesSkipped = 0;
 
 	for(int i = 0; i < MAX_LINES; i++)
 	{
@@ -1021,6 +1175,12 @@ void CChat::OnPrepareLines(float y)
 			break;
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
+
+		if(LinesSkipped < m_BacklogCurLine)
+		{
+			LinesSkipped++;
+			continue;
+		}
 
 		if(Line.m_TextContainerIndex.Valid() && !ForceRecreate)
 			continue;
@@ -1167,6 +1327,8 @@ void CChat::OnPrepareLines(float y)
 		// cut off if msgs waste too much space
 		if(y < HeightLimit)
 			break;
+
+		m_LinesRendered++;
 
 		// the position the text was created
 		Line.m_TextYOffset = y + RealMsgPaddingY / 2.0f;
@@ -1355,6 +1517,12 @@ void CChat::OnRender()
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
+	if(m_Mode != MODE_NONE)
+	{
+		Ui()->StartCheck();
+		Ui()->Update();
+	}
+
 	// send pending chat messages
 	if(m_PendingChatCounter > 0 && m_LastChatSend + time_freq() < time())
 	{
@@ -1379,6 +1547,9 @@ void CChat::OnRender()
 	float ScaledFontSize = FontSize() * (8.0f / 6.0f);
 	if(m_Mode != MODE_NONE)
 	{
+		if(!m_MouseUnlocked)
+			UnlockMouse();
+
 		// render chat input
 		CTextCursor InputCursor;
 		InputCursor.SetPosition(vec2(x, y));
@@ -1465,6 +1636,8 @@ void CChat::OnRender()
 #endif
 		return;
 
+	m_BacklogCurLine = std::clamp(m_BacklogCurLine, 0, maximum(0, NumInitializedLines() - 1));
+
 	y -= ScaledFontSize;
 
 	OnPrepareLines(y);
@@ -1477,6 +1650,7 @@ void CChat::OnRender()
 
 	float RealMsgPaddingX = MessagePaddingX();
 	float RealMsgPaddingY = MessagePaddingY();
+	m_LinesRendered = 0;
 
 	if(g_Config.m_ClChatOld)
 	{
@@ -1491,12 +1665,16 @@ void CChat::OnRender()
 			break;
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
+		if(i < m_BacklogCurLine)
+			continue;
 
 		y -= Line.m_aYOffset[OffsetType];
 
 		// cut off if msgs waste too much space
 		if(y < HeightLimit)
 			break;
+
+		++m_LinesRendered;
 
 		float Blend = Now > Line.m_Time + 14 * time_freq() && !m_PrevShowChat ? 1.0f - (Now - Line.m_Time - 14 * time_freq()) / (2.0f * time_freq()) : 1.0f;
 
@@ -1534,6 +1712,14 @@ void CChat::OnRender()
 			const ColorRGBA TextOutlineColor = TextRender()->DefaultTextOutlineColor().WithMultipliedAlpha(Blend);
 			TextRender()->RenderTextContainer(Line.m_TextContainerIndex, TextColor, TextOutlineColor, 0, (y + RealMsgPaddingY / 2.0f) - Line.m_TextYOffset);
 		}
+	}
+
+	if(m_Mode != MODE_NONE)
+	{
+		Ui()->MapScreen();
+		if(m_MouseUnlocked)
+			RenderTools()->RenderCursor(Ui()->MousePos(), 24.0f);
+		Ui()->FinishCheck();
 	}
 }
 

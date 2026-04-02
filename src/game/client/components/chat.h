@@ -31,7 +31,7 @@ constexpr auto SAVES_FILE = "ddnet-saves.txt";
 
 enum
 {
-	MAX_LINES = 64,
+	MAX_LINES = 384,
 	MAX_LINE_LENGTH = 256
 };
 
@@ -81,6 +81,10 @@ class CChat : public CComponent
 
 	bool m_PrevScoreBoardShowed;
 	bool m_PrevShowChat;
+	int m_BacklogCurLine;
+	int m_LinesRendered;
+	std::optional<vec2> m_LastMousePos;
+	bool m_MouseUnlocked;
 
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;
@@ -208,9 +212,19 @@ public:
 	void OnMessage(int MsgType, void *pRawMsg) override;
 	bool OnInput(const IInput::CEvent &Event) override;
 	void OnInit() override;
+	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
 
 	void RebuildChat();
 	void ClearLines();
+	int GetLinesToScroll(int Direction, int LinesToScroll) const;
+	int NumInitializedLines() const;
+	void ScrollToTop();
+	void ScrollToBottom();
+	void ScrollPageUp();
+	void ScrollPageDown();
+	void UnlockMouse();
+	void LockMouse();
+	void SetUiMousePos(vec2 Pos);
 
 	void EnsureCoherentFontSize() const;
 	void EnsureCoherentWidth() const;
