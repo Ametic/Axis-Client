@@ -16,6 +16,7 @@
 #include <game/client/lineinput.h>
 #include <game/client/render.h>
 
+#include <string>
 #include <vector>
 
 // TClient
@@ -75,6 +76,10 @@ class CChat : public CComponent
 		int m_TimesRepeated;
 
 		std::shared_ptr<CTranslateResponse> m_pTranslateResponse;
+
+		// Full rendered text for selection/copying (built in OnPrepareLines)
+		std::string m_RenderedText;
+		int m_NamePartChars; // Number of characters in the name part (for cursor splitting)
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
@@ -85,6 +90,14 @@ class CChat : public CComponent
 	int m_LinesRendered;
 	std::optional<vec2> m_LastMousePos;
 	bool m_MouseUnlocked;
+
+	// Selection state for copying from chat
+	bool m_Selecting;
+	vec2 m_SelectionMousePress;
+	vec2 m_SelectionMouseRelease;
+	bool m_HasSelection;
+	std::string m_SelectionText;
+	int m_NewLineCounter; // Track new lines while selecting to adjust mouse position
 
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;
@@ -252,7 +265,7 @@ public:
 	// It uses team or public chat depending on m_Mode.
 	void SendChatQueued(const char *pLine);
 
-	//<E-Client
+	// <EClient
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
 	void AddHistoryEntry(const char *pLine);
@@ -261,6 +274,6 @@ private:
 	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayQueued(IConsole::IResult *pResult, void *pUserData);
-	// E-Client>
+	// EClient>
 };
 #endif

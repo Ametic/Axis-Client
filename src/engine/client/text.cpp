@@ -2572,6 +2572,43 @@ public:
 				TextEx(pCursor, SegStart, p - SegStart);
 		}
 	}
+	
+	std::string RemoveColorCodes(const char *pText) override
+	{
+		std::string Result = "";
+		if(!pText)
+			return Result;
+
+		const char *p = pText;
+		while(*p)
+		{
+			if(*p == '&' && *(p + 1))
+			{
+				if(*(p + 1) == 'x')
+				{
+					p += 2;
+				}
+				else if(isdigit(p[1]) && isdigit(p[2]))
+				{
+					int CodeLength = 2;
+					if(isdigit(p[3]))
+						CodeLength = 3;
+					p += 1 + CodeLength; // & + code length
+				}
+				else
+				{
+					Result += *p;
+					++p;
+				}
+			}
+			else
+			{
+				Result += *p;
+				++p;
+			}
+		}
+		return Result;
+	}
 };
 
 IEngineTextRender *CreateEngineTextRender() { return new CTextRender; }

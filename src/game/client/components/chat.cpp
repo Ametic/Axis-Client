@@ -56,6 +56,10 @@ void CChat::CLine::Reset(CChat &This)
 	// EClient
 	m_pTranslateResponse = nullptr;
 	m_Paused = false; // EClient
+
+	// Selection text
+	m_RenderedText.clear();
+	m_NamePartChars = 0;
 }
 
 CChat::CChat()
@@ -65,6 +69,13 @@ CChat::CChat()
 	m_LinesRendered = 0;
 	m_LastMousePos = std::nullopt;
 	m_MouseUnlocked = false;
+
+	// Selection state initialization
+	m_Selecting = false;
+	m_SelectionMousePress = vec2(0.0f, 0.0f);
+	m_SelectionMouseRelease = vec2(0.0f, 0.0f);
+	m_HasSelection = false;
+	m_NewLineCounter = 0;
 
 	m_Input.SetClipboardLineCallback([this](const char *pStr) {
 		if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
@@ -179,10 +190,17 @@ void CChat::Reset()
 	m_aCurrentInputText[0] = '\0';
 	m_BacklogCurLine = 0;
 	m_LinesRendered = 0;
-	m_LastMousePos = std::nullopt;
 	m_MouseUnlocked = false;
 	DisableMode();
 	m_vServerCommands.clear();
+
+	// Reset selection state
+	m_Selecting = false;
+	m_SelectionMousePress = vec2(0.0f, 0.0f);
+	m_SelectionMouseRelease = vec2(0.0f, 0.0f);
+	m_HasSelection = false;
+	m_SelectionText.clear();
+	m_NewLineCounter = 0;
 
 	for(int64_t &LastSoundPlayed : m_aLastSoundPlayed)
 		LastSoundPlayed = 0;
@@ -447,23 +465,40 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		GameClient()->OnRelease();
 		m_Input.Clear();
 	}
+	else if(Input()->ModifierIsPressed() && Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_C)
+	{
+		// Copy selection to clipboard
+		if(m_HasSelection && !m_SelectionText.empty())
+		{
+			Input()->SetClipboardText(m_SelectionText.c_str());
+			m_HasSelection = false;
+		}
+	}
 	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_PAGEUP)
 	{
-		ScrollPageUp();
+		if(!m_Selecting && !m_HasSelection)
+			ScrollPageUp();
 	}
 	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_PAGEDOWN)
 	{
-		ScrollPageDown();
+		if(!m_Selecting && !m_HasSelection)
+			ScrollPageDown();
 	}
 	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_MOUSE_WHEEL_UP)
 	{
-		m_BacklogCurLine += GetLinesToScroll(-1, 1);
+		if(!m_Selecting && !m_HasSelection)
+		{
+			m_BacklogCurLine += GetLinesToScroll(-1, 1);
+		}
 	}
 	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_MOUSE_WHEEL_DOWN)
 	{
-		m_BacklogCurLine -= GetLinesToScroll(1, 1);
-		if(m_BacklogCurLine < 0)
-			m_BacklogCurLine = 0;
+		if(!m_Selecting && !m_HasSelection)
+		{
+			m_BacklogCurLine -= GetLinesToScroll(1, 1);
+			if(m_BacklogCurLine < 0)
+				m_BacklogCurLine = 0;
+		}
 	}
 	else if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_HOME && m_Input.IsEmpty())
 	{
@@ -976,6 +1011,12 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		return;
 	}
 
+	// Track new lines while selecting to prevent scroll offset issues
+	if(m_Selecting || m_HasSelection)
+	{
+		m_NewLineCounter++;
+	}
+
 	m_CurrentLine = (m_CurrentLine + 1) % MAX_LINES;
 
 	CLine &CurrentLine = m_aLines[m_CurrentLine];
@@ -1269,7 +1310,9 @@ void CChat::OnPrepareLines(float y)
 			TextRender()->TextEx(&MeasureCursor, aClientId);
 			TextRender()->TextEx(&MeasureCursor, Line.m_aName);
 			if(Line.m_TimesRepeated > 0)
+			{
 				TextRender()->TextEx(&MeasureCursor, aCount);
+			}
 
 			if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
 			{
@@ -1297,7 +1340,8 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&AppendCursor, pTranslatedLanguage);
 					TextRender()->TextEx(&AppendCursor, "]");
 				}
-				TextRender()->TextEx(&AppendCursor, "\n");
+				// Dont add this to raw message
+				TextRender()->TextEx(&AppendCursor, " \n");
 				AppendCursor.m_FontSize *= 0.8f;
 				TextRender()->TextEx(&AppendCursor, pText);
 				AppendCursor.m_FontSize /= 0.8f;
@@ -1342,6 +1386,8 @@ void CChat::OnPrepareLines(float y)
 		LineCursor.m_FontSize = FontSize;
 		LineCursor.m_LineWidth = LineWidth;
 
+		std::string RawMessage = "";
+
 		// Message is from valid player
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
 		{
@@ -1351,17 +1397,20 @@ void CChat::OnPrepareLines(float y)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClSpecPrefix);
+				RawMessage += g_Config.m_ClSpecPrefix;
 			}
 
 			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
 			{
 				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClWarlistPrefix);
+				RawMessage += g_Config.m_ClWarlistPrefix;
 			}
 			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(1.0f));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClFriendPrefix);
+				RawMessage += g_Config.m_ClFriendPrefix;
 			}
 		}
 
@@ -1394,20 +1443,24 @@ void CChat::OnPrepareLines(float y)
 		else
 			NameColor = ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f);
 
+		std::string NameCid = "";
+		NameCid += aClientId + std::string(Line.m_aName);
 		TextRender()->TextColor(NameColor);
-		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, aClientId);
-		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, Line.m_aName);
+		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, NameCid.c_str());
+		RawMessage += NameCid;
 
 		if(Line.m_TimesRepeated > 0)
 		{
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.3f);
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, aCount);
+			RawMessage += aCount;
 		}
 
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
 		{
 			TextRender()->TextColor(NameColor);
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, ": ");
+			RawMessage += ": ";
 		}
 
 		ColorRGBA Color;
@@ -1443,17 +1496,18 @@ void CChat::OnPrepareLines(float y)
 				TextRender()->ColorParsing(pTranslatedText, &AppendCursor, Color, &Line.m_TextContainerIndex);
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedText);
+			RawMessage += TextRender()->RemoveColorCodes(pTranslatedText);
 
 			if(pTranslatedLanguage)
 			{
+				std::string Lang = "[" + std::string(pTranslatedLanguage) + "]";
 				ColorRGBA ColorLang = Color;
 				ColorLang.r *= 0.8f;
 				ColorLang.g *= 0.8f;
 				ColorLang.b *= 0.8f;
 				TextRender()->TextColor(ColorLang);
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, " [");
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedLanguage);
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, "]");
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, Lang.c_str());
+				RawMessage += Lang;
 			}
 			ColorRGBA ColorSub = Color;
 			ColorSub.r *= 0.7f;
@@ -1465,6 +1519,7 @@ void CChat::OnPrepareLines(float y)
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
 			AppendCursor.m_FontSize /= 0.8f;
 			TextRender()->TextColor(Color);
+			// dont append this to raw message
 		}
 		else if(pTranslatedError)
 		{
@@ -1479,6 +1534,9 @@ void CChat::OnPrepareLines(float y)
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedError);
 			AppendCursor.m_FontSize /= 0.8f;
 			TextRender()->TextColor(Color);
+			RawMessage += pText;
+			RawMessage += "\n";
+			RawMessage += pTranslatedError;
 		}
 		else
 		{
@@ -1486,6 +1544,7 @@ void CChat::OnPrepareLines(float y)
 				TextRender()->ColorParsing(pText, &AppendCursor, Color, &Line.m_TextContainerIndex);
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
+			RawMessage += TextRender()->RemoveColorCodes(pText);
 			AppendCursor.m_vColorSplits.clear();
 		}
 
@@ -1503,6 +1562,8 @@ void CChat::OnPrepareLines(float y)
 			Graphics()->SetColor(1, 1, 1, 1);
 			Line.m_QuadContainerIndex = Graphics()->CreateRectQuadContainer(Begin, y, FullWidth, Line.m_aYOffset[OffsetType], MessageRounding(), IGraphics::CORNER_ALL);
 		}
+
+		Line.m_RenderedText = RawMessage;
 
 		TextRender()->SetRenderFlags(CurRenderFlags);
 		if(Line.m_TextContainerIndex.Valid())
@@ -1545,6 +1606,70 @@ void CChat::OnRender()
 	float x = 5.0f;
 	float y = 300.0f - 20.0f * FontSize() / 6.0f;
 	float ScaledFontSize = FontSize() * (8.0f / 6.0f);
+
+	// Handle mouse selection for chat when chat mode is active
+	if(m_Mode != MODE_NONE)
+	{
+		const vec2 ScreenSize = vec2(Width, Height);
+
+		// Get mouse position in chat screen coordinates
+		// UI uses height=600, chat uses height=300, so we need to convert
+		const CUIRect *pUiScreen = Ui()->Screen();
+		const auto &&GetMousePosition = [&]() -> vec2 {
+			const vec2 UiMousePos = Ui()->MousePos();
+			// Convert from UI coordinates to chat coordinates
+			return UiMousePos / vec2(pUiScreen->w, pUiScreen->h) * ScreenSize;
+		};
+
+		const vec2 MousePos = GetMousePosition();
+
+		// Chat input area bounds (rough estimate - below the input line)
+		const float ChatInputAreaY = y;
+
+		// Use KeyIsPressed for mouse button state (works with UI mouse system)
+		const bool MousePressed = Input()->KeyIsPressed(KEY_MOUSE_1);
+
+		// Check if mouse is pressed (start selection) - only if above chat input (lower Y value)
+		if(!m_Selecting && MousePressed && MousePos.y < ChatInputAreaY)
+		{
+			m_Selecting = true;
+			m_SelectionMousePress = MousePos;
+			m_SelectionMouseRelease = m_SelectionMousePress;
+			m_HasSelection = false;
+			m_SelectionText.clear();
+		}
+
+		// Update release position while selecting
+		if(m_Selecting)
+		{
+			m_SelectionMouseRelease = GetMousePosition();
+		}
+
+		// Check if mouse is released (end selection)
+		if(m_Selecting && !MousePressed)
+		{
+			m_Selecting = false;
+			// Keep selection state if we have a valid selection
+		}
+
+		// Clear selection if clicking in the input area
+		if(MousePressed && MousePos.y >= ChatInputAreaY && m_HasSelection)
+		{
+			m_HasSelection = false;
+			m_SelectionText.clear();
+		}
+	}
+	else
+	{
+		// Clear selection when chat mode is disabled
+		if(m_Selecting || m_HasSelection)
+		{
+			m_Selecting = false;
+			m_HasSelection = false;
+			m_SelectionText.clear();
+		}
+	}
+
 	if(m_Mode != MODE_NONE)
 	{
 		if(!m_MouseUnlocked)
@@ -1658,6 +1783,36 @@ void CChat::OnRender()
 		RealMsgPaddingY = 0;
 	}
 
+	// For selection handling
+	const bool IsSelecting = m_Mode != MODE_NONE && (m_Selecting || m_HasSelection);
+
+	// When selecting, skip rendering new lines to keep the view stable
+	// Instead of adjusting mouse positions, we simply don't show the new messages until selection ends
+	int LinesToSkipForSelection = 0;
+	if(IsSelecting && m_NewLineCounter > 0 && m_BacklogCurLine == 0)
+	{
+		LinesToSkipForSelection = m_NewLineCounter;
+	}
+	// Only reset counter when not selecting
+	if(!IsSelecting)
+		m_NewLineCounter = 0;
+
+	// Determine selection Y range
+	float SelectionMinY = minimum(m_SelectionMousePress.y, m_SelectionMouseRelease.y);
+	float SelectionMaxY = maximum(m_SelectionMousePress.y, m_SelectionMouseRelease.y);
+
+	// Track lines for building selection text (we process from newest to oldest, so we need to reverse later)
+	struct SLineSelectionInfo
+	{
+		int m_LineIndex;
+		float m_Y;
+		float m_Height;
+		std::string m_Text;
+		int m_SelectionStart;
+		int m_SelectionEnd;
+	};
+	std::vector<SLineSelectionInfo> vSelectedLines;
+
 	for(int i = 0; i < MAX_LINES; i++)
 	{
 		CLine &Line = m_aLines[((m_CurrentLine - i) + MAX_LINES) % MAX_LINES];
@@ -1665,7 +1820,14 @@ void CChat::OnRender()
 			break;
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
-		if(i < m_BacklogCurLine)
+
+		// Skip new lines that arrived during selection to keep view stable
+		if(i < LinesToSkipForSelection)
+			continue;
+
+		// Adjust index for skipped lines when checking backlog
+		const int AdjustedIndex = i - LinesToSkipForSelection;
+		if(AdjustedIndex < m_BacklogCurLine)
 			continue;
 
 		y -= Line.m_aYOffset[OffsetType];
@@ -1687,6 +1849,25 @@ void CChat::OnRender()
 				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChatBackgroundColor, true)).WithMultipliedAlpha(Blend));
 				Graphics()->RenderQuadContainerEx(Line.m_QuadContainerIndex, 0, -1, 0, ((y + RealMsgPaddingY / 2.0f) - Line.m_TextYOffset));
 			}
+		}
+
+		// Check if this line is in the selection range
+		const float LineTop = y;
+		const float LineBottom = y + Line.m_aYOffset[OffsetType];
+
+		if(IsSelecting && LineBottom >= SelectionMinY && LineTop <= SelectionMaxY)
+		{
+			// This line overlaps with selection - store info for later rendering
+			SLineSelectionInfo Info;
+			Info.m_LineIndex = i;
+			Info.m_Y = y;
+			Info.m_Height = Line.m_aYOffset[OffsetType];
+			// Text will be built in the selection loop below where we have all the same logic
+			Info.m_Text = "";
+			Info.m_SelectionStart = -1;
+			Info.m_SelectionEnd = -1;
+
+			vSelectedLines.push_back(Info);
 		}
 
 		if(Line.m_TextContainerIndex.Valid())
@@ -1714,11 +1895,109 @@ void CChat::OnRender()
 		}
 	}
 
+	// Render selection highlights and build selection text
+	if(IsSelecting && !vSelectedLines.empty())
+	{
+		const float LineWidth = (IsScoreBoardOpen ? maximum(85.0f, (FontSize() * 85.0f / 6.0f)) : g_Config.m_ClChatWidth) - (RealMsgPaddingX * 1.5f);
+		const int TeeSize = MessageTeeSize();
+		const float RealMsgPaddingTee = g_Config.m_ClChatOld ? 0.0f : (TeeSize + MESSAGE_TEE_PADDING_RIGHT);
+		const float TextBegin = 5.0f + RealMsgPaddingX / 2.0f;
+
+		// First pass: render text with selection mode to calculate character-level selection
+		m_SelectionText.clear();
+		bool AnySelection = false;
+
+		TextRender()->TextSelectionColor(TextRender()->DefaultTextSelectionColor());
+
+		for(auto &Info : vSelectedLines)
+		{
+			CLine &Line = m_aLines[((m_CurrentLine - Info.m_LineIndex) + MAX_LINES) % MAX_LINES];
+
+			// Set up cursor exactly like OnPrepareLines does - use LineCursor for name part
+			CTextCursor LineCursor;
+			LineCursor.SetPosition(vec2(TextBegin, Info.m_Y + RealMsgPaddingY / 2.0f));
+			LineCursor.m_FontSize = FontSize();
+			LineCursor.m_LineWidth = LineWidth - RealMsgPaddingTee;
+			LineCursor.m_Flags = TEXTFLAG_RENDER;
+			LineCursor.m_CalculateSelectionMode = TEXT_CURSOR_SELECTION_MODE_CALCULATE;
+			LineCursor.m_PressMouse = m_SelectionMousePress;
+			LineCursor.m_ReleaseMouse = m_SelectionMouseRelease;
+			LineCursor.m_SelectionHeightFactor = 1.0f;
+
+			if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
+				LineCursor.m_X += RealMsgPaddingTee;
+
+			// Render name part with invisible text
+			TextRender()->TextColor(ColorRGBA(0, 0, 0, 0));
+			TextRender()->TextEx(&LineCursor, Line.m_RenderedText.c_str(), -1);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+			// Store the full text for copying
+			Info.m_Text = Line.m_RenderedText;
+
+			int SelStart = -1;
+			int SelEnd = -1;
+
+			// Check LineCursor selection (name part)
+			int LineSelStart = minimum(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
+			int LineSelEnd = maximum(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
+
+			// Combine selections
+			if(LineSelStart >= 0 && LineSelEnd > LineSelStart)
+			{
+				SelStart = LineSelStart;
+				SelEnd = LineSelEnd;
+			}
+
+			if(SelStart >= 0 && SelEnd >= 0 && SelStart < SelEnd)
+			{
+				Info.m_SelectionStart = SelStart;
+				Info.m_SelectionEnd = SelEnd;
+			}
+			else
+			{
+				Info.m_SelectionStart = -1;
+				Info.m_SelectionEnd = -1;
+			}
+		}
+
+		// Build selection text (lines are in reverse order, so reverse to get correct order)
+		for(auto it = vSelectedLines.rbegin(); it != vSelectedLines.rend(); ++it)
+		{
+			if(it->m_SelectionStart >= 0 && it->m_SelectionEnd >= 0 && it->m_SelectionStart != it->m_SelectionEnd)
+			{
+				AnySelection = true;
+				if(!m_SelectionText.empty())
+					m_SelectionText += "\n";
+
+				// Extract selected portion of text (Info.m_Text contains name: message)
+				const size_t OffStart = str_utf8_offset_chars_to_bytes(it->m_Text.c_str(), it->m_SelectionStart);
+				const size_t OffEnd = str_utf8_offset_chars_to_bytes(it->m_Text.c_str(), it->m_SelectionEnd);
+				if(OffEnd > OffStart && OffEnd <= it->m_Text.length())
+					m_SelectionText += it->m_Text.substr(OffStart, OffEnd - OffStart);
+			}
+		}
+
+		m_HasSelection = AnySelection;
+		if(!AnySelection)
+			m_SelectionText.clear();
+	}
+	else if(!m_Selecting)
+	{
+		// Clear selection when not selecting and no selection exists
+		if(!m_HasSelection)
+		{
+			m_SelectionText.clear();
+		}
+	}
+
 	if(m_Mode != MODE_NONE)
 	{
 		Ui()->MapScreen();
 		if(m_MouseUnlocked)
+		{
 			RenderTools()->RenderCursor(Ui()->MousePos(), 24.0f);
+		}
 		Ui()->FinishCheck();
 	}
 }
