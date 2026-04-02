@@ -1159,7 +1159,6 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&AppendCursor, pText);
 			}
 
-
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
 		}
 

@@ -302,6 +302,132 @@ public:
 	}
 };
 
+class CTranslateBackendDeeplFree : public ITranslateBackendHttp
+{
+private:
+	bool ParseResponseJson(const json_value *pObj, CTranslateResponse &Out)
+	{
+		if(!pObj)
+		{
+			str_copy(Out.m_Text, "Response is not JSON");
+			return false;
+		}
+
+		if(pObj->type != json_object)
+		{
+			str_copy(Out.m_Text, "Response is not object");
+			return false;
+		}
+
+		const json_value *pMessage = json_object_get(pObj, "message");
+		if(pMessage != &json_value_none)
+		{
+			if(pMessage->type == json_string)
+				str_copy(Out.m_Text, pMessage->u.string.ptr);
+			else
+				str_copy(Out.m_Text, "DeepL error");
+			return false;
+		}
+
+		const json_value *pTranslations = json_object_get(pObj, "translations");
+		if(pTranslations == &json_value_none)
+		{
+			str_copy(Out.m_Text, "No translations");
+			return false;
+		}
+		if(pTranslations->type != json_array || json_array_length(pTranslations) <= 0)
+		{
+			str_copy(Out.m_Text, "translations is invalid");
+			return false;
+		}
+
+		const json_value *pTranslation = json_array_get(pTranslations, 0);
+		if(pTranslation == &json_value_none || pTranslation->type != json_object)
+		{
+			str_copy(Out.m_Text, "translation is invalid");
+			return false;
+		}
+
+		const json_value *pTranslatedText = json_object_get(pTranslation, "text");
+		if(pTranslatedText == &json_value_none)
+		{
+			str_copy(Out.m_Text, "No text");
+			return false;
+		}
+		if(pTranslatedText->type != json_string)
+		{
+			str_copy(Out.m_Text, "text is not string");
+			return false;
+		}
+
+		const json_value *pDetectedLanguage = json_object_get(pTranslation, "detected_source_language");
+		if(pDetectedLanguage != &json_value_none && pDetectedLanguage->type != json_string)
+		{
+			str_copy(Out.m_Text, "detected_source_language is not string");
+			return false;
+		}
+
+		str_copy(Out.m_Text, pTranslatedText->u.string.ptr);
+		if(pDetectedLanguage != &json_value_none)
+			str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr);
+		else
+			Out.m_Language[0] = '\0';
+
+		return true;
+	}
+
+protected:
+	bool ParseResponse(CTranslateResponse &Out) override
+	{
+		json_value *pObj = m_pHttpRequest->ResultJson();
+		bool Res = ParseResponseJson(pObj, Out);
+		json_value_free(pObj);
+		return Res;
+	}
+	bool ParseHttpError() const override { return true; }
+
+public:
+	const char *EncodeTarget(const char *pTarget) const override
+	{
+		if(!pTarget || pTarget[0] == '\0')
+			return DefaultConfig::EcTranslateTarget;
+		if(str_comp_nocase(pTarget, "zh") == 0)
+			return "ZH";
+		if(str_comp_nocase(pTarget, "en") == 0)
+			return "EN";
+		if(str_comp_nocase(pTarget, "pt") == 0)
+			return "PT-PT";
+		static char s_aTarget[16];
+		str_copy(s_aTarget, pTarget);
+		for(char *p = s_aTarget; *p; ++p)
+			*p = str_uppercase(*p);
+		return s_aTarget;
+	}
+	const char *Name() const override
+	{
+		return "DeepL Free";
+	}
+	CTranslateBackendDeeplFree(IHttp &Http, const char *pText)
+	{
+		CJsonStringWriter Json;
+		Json.BeginObject();
+		Json.WriteAttribute("text");
+		Json.BeginArray();
+		Json.WriteStrValue(pText);
+		Json.EndArray();
+		Json.WriteAttribute("target_lang");
+		Json.WriteStrValue(EncodeTarget(g_Config.m_EcTranslateTarget));
+		Json.EndObject();
+
+		CreateHttpRequest(Http, g_Config.m_EcTranslateEndpoint[0] == '\0' ? "https://api-free.deepl.com/v2/translate" : g_Config.m_EcTranslateEndpoint);
+		char aAuth[320];
+		str_format(aAuth, sizeof(aAuth), "DeepL-Auth-Key %s", g_Config.m_EcTranslateKey);
+		m_pHttpRequest->HeaderString("Authorization", aAuth);
+		const char *pJson = Json.GetOutputString().c_str();
+		m_pHttpRequest->PostJson(pJson);
+	}
+};
+
 void CTranslate::ConTranslate(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *pName;
@@ -406,6 +532,8 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 		Job.m_pBackend = std::make_unique<CTranslateBackendLibretranslate>(*Http(), Job.m_pLine->m_aText);
 	else if(str_comp_nocase(g_Config.m_EcTranslateBackend, "ftapi") == 0)
 		Job.m_pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), Job.m_pLine->m_aText);
+	else if(str_comp_nocase(g_Config.m_EcTranslateBackend, "deeplfree") == 0 || str_comp_nocase(g_Config.m_EcTranslateBackend, "deepl") == 0)
+		Job.m_pBackend = std::make_unique<CTranslateBackendDeeplFree>(*Http(), Job.m_pLine->m_aText);
 	else
 	{
 		GameClient()->m_Chat.Echo("Invalid translate backend");
@@ -473,5 +601,7 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 		// It may shut down if we spam it too hard
 		return;
 	}
+	if((str_comp(g_Config.m_EcTranslateBackend, "deeplfree") == 0 || str_comp(g_Config.m_EcTranslateBackend, "deepl") == 0) && g_Config.m_EcTranslateKey[0] == '\0')
+		return;
 	Translate(Line, false);
 }
