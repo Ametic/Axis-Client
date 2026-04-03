@@ -225,12 +225,15 @@ class CCommunityCache : public ICommunityCache
 	std::optional<SHA256_DIGEST> m_InfoSha256;
 	int m_LastType = IServerBrowser::NUM_TYPES; // initial value does not appear normally, marking uninitialized cache
 	unsigned m_SelectedCommunitiesHash = 0;
+	std::vector<CCommunity> m_vSelectedCommunities;
 	std::vector<const CCommunity *> m_vpSelectedCommunities;
+	std::vector<CCommunityCountry> m_vSelectableCountries;
 	std::vector<const CCommunityCountry *> m_vpSelectableCountries;
+	std::vector<CCommunityType> m_vSelectableTypes;
 	std::vector<const CCommunityType *> m_vpSelectableTypes;
 	bool m_AnyRanksAvailable = false;
 	bool m_CountryTypesFilterAvailable = false;
-	const char *m_pCountryTypeFilterKey = IServerBrowser::COMMUNITY_ALL;
+	CCommunityId m_CountryTypeFilterKey = IServerBrowser::COMMUNITY_ALL;
 
 public:
 	CCommunityCache(IServerBrowser *pServerBrowser) :
@@ -244,7 +247,7 @@ public:
 	const std::vector<const CCommunityType *> &SelectableTypes() const override { return m_vpSelectableTypes; }
 	bool AnyRanksAvailable() const override { return m_AnyRanksAvailable; }
 	bool CountriesTypesFilterAvailable() const override { return m_CountryTypesFilterAvailable; }
-	const char *CountryTypeFilterKey() const override { return m_pCountryTypeFilterKey; }
+	const char *CountryTypeFilterKey() const override { return m_CountryTypeFilterKey.Id(); }
 };
 
 class CServerBrowser : public IServerBrowser
