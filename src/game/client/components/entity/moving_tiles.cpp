@@ -7,6 +7,7 @@
 #include <base/str.h>
 #include <base/vmath.h>
 
+#include <engine/gfx/image_manipulation.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 
@@ -96,10 +97,10 @@ void CMovingTiles::OnMapLoad()
 			{
 				if(!str_comp(ValidQuadNames[Names], aLayerName))
 				{
-					EQType Type = static_cast<EQType>(Names);
-					if(!m_RenderAbove && (Type == EQType::HOOKABLE || Type == EQType::UNHOOKABLE))
+					EQuadType Type = static_cast<EQuadType>(Names);
+					if(!m_RenderAbove && (Type == EQuadType::HOOKABLE || Type == EQuadType::UNHOOKABLE))
 						continue;
-					else if(m_RenderAbove && Type != EQType::HOOKABLE && Type != EQType::UNHOOKABLE)
+					else if(m_RenderAbove && Type != EQuadType::HOOKABLE && Type != EQuadType::UNHOOKABLE)
 						continue;
 
 					// NumQuadLayers++;
@@ -208,7 +209,7 @@ void CMovingTiles::OnRender()
 				continue;
 			}
 
-			if(pLayer->m_Image >= 0 && pLayer->m_Image < GameClient()->m_MapImages.Num())
+			if(g_Config.m_ClShowMovingTilesEntities != 2 && pLayer->m_Image >= 0 && pLayer->m_Image < GameClient()->m_MapImages.Num())
 				Graphics()->TextureSet(GameClient()->m_MapImages.Get(pLayer->m_Image));
 			else
 				Graphics()->TextureClear();
@@ -222,10 +223,23 @@ void CMovingTiles::OnRender()
 				if(!pQuad)
 					continue;
 
-				ColorRGBA Color(1.0f, 1.0f, 1.0f, 1.0f);
-				m_EnvEvaluator.EnvelopeEval(pQuad->m_ColorEnvOffset, pQuad->m_ColorEnv, Color, 4);
-				if(Color.a <= 0.0f)
-					continue;
+				bool Invisible = pQuad->m_aColors[0].a <= 0.0f && pQuad->m_aColors[1].a <= 0.0f && pQuad->m_aColors[2].a <= 0.0f && pQuad->m_aColors[3].a <= 0.0f;
+
+				ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+				ColorRGBA EntityColor = GameClient()->m_MapImages.m_aTilesDominantColor[(int)QuadData.m_Type];
+				if(g_Config.m_ClShowMovingTilesEntities > 1 || Invisible)
+					Color = EntityColor;
+
+				ColorRGBA EnvColor(1.0f, 1.0f, 1.0f, 1.0f);
+				m_EnvEvaluator.EnvelopeEval(pQuad->m_ColorEnvOffset, pQuad->m_ColorEnv, EnvColor, 4);
+
+				if(g_Config.m_ClShowMovingTilesEntities != 2)
+				{
+					Color.r *= EnvColor.r;
+					Color.g *= EnvColor.g;
+					Color.b *= EnvColor.b;
+					Color.a *= EnvColor.a;
+				}
 
 				bool Opaque = false;
 				if(Opaque && !(RenderFlags & LAYERRENDERFLAG_OPAQUE))
@@ -245,12 +259,24 @@ void CMovingTiles::OnRender()
 				const vec2 Offset(Position.r, Position.g);
 				const float Rotation = Position.b / 180.0f * pi + QuadData.m_Angle;
 
-				IGraphics::CColorVertex aColors[4] = {
-					IGraphics::CColorVertex(0, pQuad->m_aColors[0].r * ColorConv * Color.r, pQuad->m_aColors[0].g * ColorConv * Color.g, pQuad->m_aColors[0].b * ColorConv * Color.b, pQuad->m_aColors[0].a * ColorConv * Color.a),
-					IGraphics::CColorVertex(1, pQuad->m_aColors[1].r * ColorConv * Color.r, pQuad->m_aColors[1].g * ColorConv * Color.g, pQuad->m_aColors[1].b * ColorConv * Color.b, pQuad->m_aColors[1].a * ColorConv * Color.a),
-					IGraphics::CColorVertex(2, pQuad->m_aColors[2].r * ColorConv * Color.r, pQuad->m_aColors[2].g * ColorConv * Color.g, pQuad->m_aColors[2].b * ColorConv * Color.b, pQuad->m_aColors[2].a * ColorConv * Color.a),
-					IGraphics::CColorVertex(3, pQuad->m_aColors[3].r * ColorConv * Color.r, pQuad->m_aColors[3].g * ColorConv * Color.g, pQuad->m_aColors[3].b * ColorConv * Color.b, pQuad->m_aColors[3].a * ColorConv * Color.a)};
-				Graphics()->SetColorVertex(aColors, std::size(aColors));
+				if(g_Config.m_ClShowMovingTilesEntities > 1 || Invisible)
+				{
+					IGraphics::CColorVertex aColors[4] = {
+						IGraphics::CColorVertex(0, Color.r, Color.g, Color.b, Color.a),
+						IGraphics::CColorVertex(1, Color.r, Color.g, Color.b, Color.a),
+						IGraphics::CColorVertex(2, Color.r, Color.g, Color.b, Color.a),
+						IGraphics::CColorVertex(3, Color.r, Color.g, Color.b, Color.a)};
+					Graphics()->SetColorVertex(aColors, std::size(aColors));
+				}
+				else
+				{
+					IGraphics::CColorVertex aColors[4] = {
+						IGraphics::CColorVertex(0, pQuad->m_aColors[0].r * ColorConv * Color.r, pQuad->m_aColors[0].g * ColorConv * Color.g, pQuad->m_aColors[0].b * ColorConv * Color.b, pQuad->m_aColors[0].a * ColorConv * Color.a),
+						IGraphics::CColorVertex(1, pQuad->m_aColors[1].r * ColorConv * Color.r, pQuad->m_aColors[1].g * ColorConv * Color.g, pQuad->m_aColors[1].b * ColorConv * Color.b, pQuad->m_aColors[1].a * ColorConv * Color.a),
+						IGraphics::CColorVertex(2, pQuad->m_aColors[2].r * ColorConv * Color.r, pQuad->m_aColors[2].g * ColorConv * Color.g, pQuad->m_aColors[2].b * ColorConv * Color.b, pQuad->m_aColors[2].a * ColorConv * Color.a),
+						IGraphics::CColorVertex(3, pQuad->m_aColors[3].r * ColorConv * Color.r, pQuad->m_aColors[3].g * ColorConv * Color.g, pQuad->m_aColors[3].b * ColorConv * Color.b, pQuad->m_aColors[3].a * ColorConv * Color.a)};
+					Graphics()->SetColorVertex(aColors, std::size(aColors));
+				}
 
 				vec2 aPoints[4] = {
 					QuadData.m_Pos[0],

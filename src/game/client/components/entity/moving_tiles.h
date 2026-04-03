@@ -19,7 +19,7 @@ enum class EMovingTileRenderType
 	ABOVE
 };
 
-enum class EQType
+enum class EQuadType
 {
 	NONE = -1,
 	FREEZE,
@@ -47,7 +47,7 @@ public:
 	CQuad *m_pQuad = nullptr;
 	CMapItemGroup *m_pGroup = nullptr;
 	CMapItemLayerQuads *m_pLayer = nullptr;
-	EQType m_Type = EQType::NONE;
+	EQuadType m_Type = EQuadType::NONE;
 	vec2 m_Pos[5] = {vec2(0, 0)}; // 4 corners + center
 	float m_Angle = 0.0f;
 };

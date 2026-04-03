@@ -3534,7 +3534,27 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRevertTeamColors, Localize("Use Old Team Colors"), &g_Config.m_ClRevertTeamColors, &Miscellaneous, LineSize);
 
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMovingTilesEntities, Localize("Show Moving Tiles in entities"), &g_Config.m_ClShowMovingTilesEntities, &Miscellaneous, LineSize);
+
+				{
+					static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}, {}, {}};
+					static const std::vector<const char *> s_vTooltips = {
+						Localize("Don't show moving tiles in entities"),
+						Localize("Use map design for moving tilesin entities"),
+						Localize("Use selected asset colors for moving tiles in entities"),
+						Localize("Use asset colors and map design for moving tiles in entities"),
+					};
+					int Value = g_Config.m_ClShowMovingTilesEntities;
+					if(DoLine_RadioMenu_Compact(Miscellaneous, Localize("Moving Tiles:"),
+						   s_vButtonContainers,
+						   {"Off", "Design", "Entity", "Both"},
+						   {0, 1, 2, 3},
+						   Value,
+						   5.0f,
+						   &s_vTooltips))
+					{
+						g_Config.m_ClShowMovingTilesEntities = Value;
+					}
+				}
 
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 				Miscellaneous.HSplitTop(LineSize, &Button, &Miscellaneous);
