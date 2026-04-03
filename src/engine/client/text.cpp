@@ -2572,7 +2572,7 @@ public:
 				TextEx(pCursor, SegStart, p - SegStart);
 		}
 	}
-	
+
 	std::string RemoveColorCodes(const char *pText) override
 	{
 		std::string Result = "";

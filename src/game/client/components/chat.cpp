@@ -1386,7 +1386,7 @@ void CChat::OnPrepareLines(float y)
 		LineCursor.m_FontSize = FontSize;
 		LineCursor.m_LineWidth = LineWidth;
 
-		std::string RawMessage = "";
+		std::string RawMessage;
 
 		// Message is from valid player
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
@@ -1443,7 +1443,7 @@ void CChat::OnPrepareLines(float y)
 		else
 			NameColor = ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f);
 
-		std::string NameCid = "";
+		std::string NameCid;
 		NameCid += aClientId + std::string(Line.m_aName);
 		TextRender()->TextColor(NameColor);
 		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, NameCid.c_str());
@@ -1962,19 +1962,19 @@ void CChat::OnRender()
 		}
 
 		// Build selection text (lines are in reverse order, so reverse to get correct order)
-		for(auto it = vSelectedLines.rbegin(); it != vSelectedLines.rend(); ++it)
+		for(auto It = vSelectedLines.rbegin(); It != vSelectedLines.rend(); ++It)
 		{
-			if(it->m_SelectionStart >= 0 && it->m_SelectionEnd >= 0 && it->m_SelectionStart != it->m_SelectionEnd)
+			if(It->m_SelectionStart >= 0 && It->m_SelectionEnd >= 0 && It->m_SelectionStart != It->m_SelectionEnd)
 			{
 				AnySelection = true;
 				if(!m_SelectionText.empty())
 					m_SelectionText += "\n";
 
 				// Extract selected portion of text (Info.m_Text contains name: message)
-				const size_t OffStart = str_utf8_offset_chars_to_bytes(it->m_Text.c_str(), it->m_SelectionStart);
-				const size_t OffEnd = str_utf8_offset_chars_to_bytes(it->m_Text.c_str(), it->m_SelectionEnd);
-				if(OffEnd > OffStart && OffEnd <= it->m_Text.length())
-					m_SelectionText += it->m_Text.substr(OffStart, OffEnd - OffStart);
+				const size_t OffStart = str_utf8_offset_chars_to_bytes(It->m_Text.c_str(), It->m_SelectionStart);
+				const size_t OffEnd = str_utf8_offset_chars_to_bytes(It->m_Text.c_str(), It->m_SelectionEnd);
+				if(OffEnd > OffStart && OffEnd <= It->m_Text.length())
+					m_SelectionText += It->m_Text.substr(OffStart, OffEnd - OffStart);
 			}
 		}
 
