@@ -98,7 +98,7 @@ CChat::CChat()
 	m_Input.SetClipboardLineCallback([this](const char *pStr) {
 		if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
 		{
-			if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
+			if(Client()->m_FoxNetVersion != 0 && pStr[0] && Client()->RconAuthed())
 			{
 				SendChat(m_Mode == MODE_ALL ? 0 : 1, pStr);
 				AddHistoryEntry(pStr);
@@ -427,7 +427,9 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(m_Mode == MODE_SILENT)
 			SilentMessage = true;
 
-		if(GameClient()->m_Bindchat.ChatDoBinds(m_Input.GetString()))
+		const char *pInput = m_Input.GetString();
+
+		if(GameClient()->m_Bindchat.ChatDoBinds(pInput))
 			SendMessage = false;
 
 		if(SendMessage)
@@ -435,15 +437,15 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			if(SilentMessage)
 			{
 				if(g_Config.m_ClSilentMessages)
-					AddLine(SILENT_MSG, TEAM_ALL, m_Input.GetString());
+					AddLine(SILENT_MSG, TEAM_ALL, pInput);
 			}
-			else if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
+			else if(Client()->m_FoxNetVersion != 0 && pInput[0] && Client()->RconAuthed())
 			{
-				SendChat(m_Mode == MODE_ALL ? 0 : 1, m_Input.GetString());
-				AddHistoryEntry(m_Input.GetString());
+				SendChat(m_Mode == MODE_ALL ? 0 : 1, pInput);
+				AddHistoryEntry(pInput);
 			}
 			else
-				SendChatQueued(m_Input.GetString());
+				SendChatQueued(pInput);
 		}
 
 		m_pHistoryEntry = nullptr;
