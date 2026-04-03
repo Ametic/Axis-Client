@@ -3,34 +3,50 @@
 
 #include "chat.h"
 
-#include "entity/entity.h"
 #include "tclient/bindchat.h"
 #include "tclient/warlist.h"
 
+#include <base/color.h>
 #include <base/io.h>
 #include <base/math.h>
+#include <base/str.h>
+#include <base/system.h>
 #include <base/time.h>
+#include <base/types.h>
+#include <base/vmath.h>
 
+#include <engine/client.h>
 #include <engine/client/client.h>
+#include <engine/console.h>
 #include <engine/editor.h>
 #include <engine/graphics.h>
+#include <engine/input.h>
 #include <engine/keys.h>
 #include <engine/shared/config.h>
 #include <engine/shared/csv.h>
+#include <engine/shared/protocol.h>
+#include <engine/shared/video.h>
+#include <engine/storage.h>
 #include <engine/textrender.h>
 
 #include <generated/protocol.h>
 #include <generated/protocol7.h>
 
 #include <game/client/animstate.h>
-#include <game/client/components/censor.h>
 #include <game/client/components/scoreboard.h>
-#include <game/client/components/skins.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
+#include <game/client/lineinput.h>
+#include <game/client/render.h>
+#include <game/client/ui_rect.h>
 #include <game/localization.h>
+#include <game/teamscore.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <optional>
+#include <ranges>
+#include <string>
 #include <vector>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = "";
@@ -39,6 +55,7 @@ CChat::CLine::CLine()
 {
 	m_TextContainerIndex.Reset();
 	m_QuadContainerIndex = -1;
+	m_RenderedOffsetType = -1;
 }
 
 void CChat::CLine::Reset(CChat &This)
@@ -56,10 +73,11 @@ void CChat::CLine::Reset(CChat &This)
 	// EClient
 	m_pTranslateResponse = nullptr;
 	m_Paused = false; // EClient
+	m_RenderedOffsetType = -1;
 
 	// Selection text
+	m_RenderedName.clear();
 	m_RenderedText.clear();
-	m_NamePartChars = 0;
 }
 
 CChat::CChat()
@@ -148,6 +166,7 @@ void CChat::RebuildChat()
 			continue;
 		TextRender()->DeleteTextContainer(Line.m_TextContainerIndex);
 		Graphics()->DeleteQuadContainer(Line.m_QuadContainerIndex);
+		Line.m_RenderedOffsetType = -1;
 		// recalculate sizes
 		Line.m_aYOffset[0] = -1.0f;
 		Line.m_aYOffset[1] = -1.0f;
@@ -1003,6 +1022,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		PreviousLine.m_TimesRepeated++;
 		TextRender()->DeleteTextContainer(PreviousLine.m_TextContainerIndex);
 		Graphics()->DeleteQuadContainer(PreviousLine.m_QuadContainerIndex);
+		PreviousLine.m_RenderedOffsetType = -1;
 		PreviousLine.m_Time = time();
 		PreviousLine.m_aYOffset[0] = -1.0f;
 		PreviousLine.m_aYOffset[1] = -1.0f;
@@ -1223,11 +1243,25 @@ void CChat::OnPrepareLines(float y)
 			continue;
 		}
 
-		if(Line.m_TextContainerIndex.Valid() && !ForceRecreate)
+		const bool NeedsYOffsetRecalc = Line.m_aYOffset[OffsetType] < 0.0f;
+		const bool NeedsContainerRecreate = ForceRecreate || !Line.m_TextContainerIndex.Valid() || Line.m_RenderedOffsetType != OffsetType;
+
+		if(!NeedsContainerRecreate && !NeedsYOffsetRecalc)
+		{
+			// Even if we skip recreating the container, we still need to update y position
+			y -= Line.m_aYOffset[OffsetType];
+
+			// cut off if msgs waste too much space
+			if(y < HeightLimit)
+				break;
+
+			m_LinesRendered++;
 			continue;
+		}
 
 		TextRender()->DeleteTextContainer(Line.m_TextContainerIndex);
 		Graphics()->DeleteQuadContainer(Line.m_QuadContainerIndex);
+		Line.m_RenderedOffsetType = -1;
 
 		char aClientId[16] = "";
 		if(g_Config.m_ClShowIdsChat && Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
@@ -1386,7 +1420,7 @@ void CChat::OnPrepareLines(float y)
 		LineCursor.m_FontSize = FontSize;
 		LineCursor.m_LineWidth = LineWidth;
 
-		std::string RawMessage;
+		std::string RawName;
 
 		// Message is from valid player
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
@@ -1397,20 +1431,20 @@ void CChat::OnPrepareLines(float y)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClSpecPrefix);
-				RawMessage += g_Config.m_ClSpecPrefix;
+				RawName += g_Config.m_ClSpecPrefix;
 			}
 
 			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
 			{
 				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClWarlistPrefix);
-				RawMessage += g_Config.m_ClWarlistPrefix;
+				RawName += g_Config.m_ClWarlistPrefix;
 			}
 			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(1.0f));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClFriendPrefix);
-				RawMessage += g_Config.m_ClFriendPrefix;
+				RawName += g_Config.m_ClFriendPrefix;
 			}
 		}
 
@@ -1447,20 +1481,20 @@ void CChat::OnPrepareLines(float y)
 		NameCid += aClientId + std::string(Line.m_aName);
 		TextRender()->TextColor(NameColor);
 		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, NameCid.c_str());
-		RawMessage += NameCid;
+		RawName += NameCid;
 
 		if(Line.m_TimesRepeated > 0)
 		{
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.3f);
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, aCount);
-			RawMessage += aCount;
+			RawName += aCount;
 		}
 
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
 		{
 			TextRender()->TextColor(NameColor);
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, ": ");
-			RawMessage += ": ";
+			RawName += ": ";
 		}
 
 		ColorRGBA Color;
@@ -1489,6 +1523,8 @@ void CChat::OnPrepareLines(float y)
 			AppendCursor.m_StartX = LineCursor.m_X;
 			AppendCursor.m_LineWidth -= LineCursor.m_LongestLineWidth;
 		}
+
+		std::string RawMessage;
 
 		if(pTranslatedText)
 		{
@@ -1563,7 +1599,10 @@ void CChat::OnPrepareLines(float y)
 			Line.m_QuadContainerIndex = Graphics()->CreateRectQuadContainer(Begin, y, FullWidth, Line.m_aYOffset[OffsetType], MessageRounding(), IGraphics::CORNER_ALL);
 		}
 
+		// EClient
+		Line.m_RenderedName = RawName;
 		Line.m_RenderedText = RawMessage;
+		Line.m_RenderedOffsetType = OffsetType;
 
 		TextRender()->SetRenderFlags(CurRenderFlags);
 		if(Line.m_TextContainerIndex.Valid())
@@ -1895,7 +1934,6 @@ void CChat::OnRender()
 		}
 	}
 
-	// Render selection highlights and build selection text
 	if(IsSelecting && !vSelectedLines.empty())
 	{
 		const float LineWidth = (IsScoreBoardOpen ? maximum(85.0f, (FontSize() * 85.0f / 6.0f)) : g_Config.m_ClChatWidth) - (RealMsgPaddingX * 1.5f);
@@ -1903,7 +1941,6 @@ void CChat::OnRender()
 		const float RealMsgPaddingTee = g_Config.m_ClChatOld ? 0.0f : (TeeSize + MESSAGE_TEE_PADDING_RIGHT);
 		const float TextBegin = 5.0f + RealMsgPaddingX / 2.0f;
 
-		// First pass: render text with selection mode to calculate character-level selection
 		m_SelectionText.clear();
 		bool AnySelection = false;
 
@@ -1913,7 +1950,6 @@ void CChat::OnRender()
 		{
 			CLine &Line = m_aLines[((m_CurrentLine - Info.m_LineIndex) + MAX_LINES) % MAX_LINES];
 
-			// Set up cursor exactly like OnPrepareLines does - use LineCursor for name part
 			CTextCursor LineCursor;
 			LineCursor.SetPosition(vec2(TextBegin, Info.m_Y + RealMsgPaddingY / 2.0f));
 			LineCursor.m_FontSize = FontSize();
@@ -1927,18 +1963,26 @@ void CChat::OnRender()
 			if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
 				LineCursor.m_X += RealMsgPaddingTee;
 
-			// Render name part with invisible text
+			if(!IsScoreBoardOpen && !g_Config.m_ClChatOld)
+			{
+				float W = TextRender()->TextWidth(FontSize(), (Line.m_RenderedName + " ").c_str());
+
+				LineCursor.m_StartX = LineCursor.m_X + W;
+				LineCursor.m_LineWidth -= LineCursor.m_LongestLineWidth + W;
+			}
+			std::string FullText = Line.m_RenderedName + Line.m_RenderedText;
+
+			LineCursor.m_LongestLineWidth = 0.0f;
+
 			TextRender()->TextColor(ColorRGBA(0, 0, 0, 0));
-			TextRender()->TextEx(&LineCursor, Line.m_RenderedText.c_str(), -1);
+			TextRender()->TextEx(&LineCursor, FullText.c_str(), -1);
 			TextRender()->TextColor(TextRender()->DefaultTextColor());
 
-			// Store the full text for copying
-			Info.m_Text = Line.m_RenderedText;
+			Info.m_Text = FullText;
 
 			int SelStart = -1;
 			int SelEnd = -1;
 
-			// Check LineCursor selection (name part)
 			int LineSelStart = minimum(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
 			int LineSelEnd = maximum(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
 
@@ -1962,19 +2006,19 @@ void CChat::OnRender()
 		}
 
 		// Build selection text (lines are in reverse order, so reverse to get correct order)
-		for(auto It = vSelectedLines.rbegin(); It != vSelectedLines.rend(); ++It)
+		for(auto &vSelectedLine : std::ranges::reverse_view(vSelectedLines))
 		{
-			if(It->m_SelectionStart >= 0 && It->m_SelectionEnd >= 0 && It->m_SelectionStart != It->m_SelectionEnd)
+			if(vSelectedLine.m_SelectionStart >= 0 && vSelectedLine.m_SelectionEnd >= 0 && vSelectedLine.m_SelectionStart != vSelectedLine.m_SelectionEnd)
 			{
 				AnySelection = true;
 				if(!m_SelectionText.empty())
 					m_SelectionText += "\n";
 
 				// Extract selected portion of text (Info.m_Text contains name: message)
-				const size_t OffStart = str_utf8_offset_chars_to_bytes(It->m_Text.c_str(), It->m_SelectionStart);
-				const size_t OffEnd = str_utf8_offset_chars_to_bytes(It->m_Text.c_str(), It->m_SelectionEnd);
-				if(OffEnd > OffStart && OffEnd <= It->m_Text.length())
-					m_SelectionText += It->m_Text.substr(OffStart, OffEnd - OffStart);
+				const size_t OffStart = str_utf8_offset_chars_to_bytes(vSelectedLine.m_Text.c_str(), vSelectedLine.m_SelectionStart);
+				const size_t OffEnd = str_utf8_offset_chars_to_bytes(vSelectedLine.m_Text.c_str(), vSelectedLine.m_SelectionEnd);
+				if(OffEnd > OffStart && OffEnd <= vSelectedLine.m_Text.length())
+					m_SelectionText += vSelectedLine.m_Text.substr(OffStart, OffEnd - OffStart);
 			}
 		}
 

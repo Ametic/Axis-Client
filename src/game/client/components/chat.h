@@ -68,6 +68,7 @@ class CChat : public CComponent
 
 		STextContainerIndex m_TextContainerIndex;
 		int m_QuadContainerIndex;
+		int m_RenderedOffsetType;
 
 		std::shared_ptr<CManagedTeeRenderInfo> m_pManagedTeeRenderInfo;
 
@@ -77,9 +78,9 @@ class CChat : public CComponent
 
 		std::shared_ptr<CTranslateResponse> m_pTranslateResponse;
 
-		// Full rendered text for selection/copying (built in OnPrepareLines)
+		// EClient
+		std::string m_RenderedName;
 		std::string m_RenderedText;
-		int m_NamePartChars; // Number of characters in the name part (for cursor splitting)
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
