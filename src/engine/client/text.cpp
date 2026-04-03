@@ -2575,7 +2575,7 @@ public:
 
 	std::string RemoveColorCodes(const char *pText) override
 	{
-		std::string Result = "";
+		std::string Result;
 		if(!pText)
 			return Result;
 

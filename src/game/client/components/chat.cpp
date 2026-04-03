@@ -85,15 +85,15 @@ CChat::CChat()
 	m_Mode = MODE_NONE;
 	m_BacklogCurLine = 0;
 	m_LinesRendered = 0;
-	m_LastMousePos = std::nullopt;
-	m_MouseUnlocked = false;
 
 	// Selection state initialization
 	m_Selecting = false;
 	m_SelectionMousePress = vec2(0.0f, 0.0f);
 	m_SelectionMouseRelease = vec2(0.0f, 0.0f);
 	m_HasSelection = false;
+	m_SelectionText.clear();
 	m_NewLineCounter = 0;
+	m_SelectorMouse = vec2(-1.0f, -1.0f);
 
 	m_Input.SetClipboardLineCallback([this](const char *pStr) {
 		if(Client()->m_FoxNetVersion != 0 && Client()->RconAuthed())
@@ -209,9 +209,10 @@ void CChat::Reset()
 	m_aCurrentInputText[0] = '\0';
 	m_BacklogCurLine = 0;
 	m_LinesRendered = 0;
-	m_MouseUnlocked = false;
 	DisableMode();
 	m_vServerCommands.clear();
+	GameClient()->m_Bindchat.CacheChatCommands();
+	GameClient()->m_Bindchat.SortChatBinds();
 
 	// Reset selection state
 	m_Selecting = false;
@@ -228,8 +229,6 @@ void CChat::Reset()
 void CChat::OnRelease()
 {
 	m_Show = false;
-	if(m_MouseUnlocked)
-		LockMouse();
 }
 
 void CChat::OnStateChange(int NewState, int OldState)
@@ -333,46 +332,17 @@ void CChat::OnInit()
 	Console()->Chain("cl_chat_width", ConchainChatWidth, this);
 }
 
-void CChat::SetUiMousePos(vec2 Pos)
-{
-	const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
-	const CUIRect *pScreen = Ui()->Screen();
-
-	const vec2 UpdatedMousePos = Ui()->UpdatedMousePos();
-	Pos = Pos / vec2(pScreen->w, pScreen->h) * WindowSize;
-	Ui()->OnCursorMove(Pos.x - UpdatedMousePos.x, Pos.y - UpdatedMousePos.y);
-}
-
-void CChat::LockMouse()
-{
-	m_MouseUnlocked = false;
-	if(m_LastMousePos != std::nullopt)
-		SetUiMousePos(m_LastMousePos.value());
-	m_LastMousePos = Ui()->MousePos();
-}
-
-void CChat::UnlockMouse()
-{
-	if(m_MouseUnlocked)
-		return;
-
-	m_MouseUnlocked = true;
-
-	vec2 OldMousePos = Ui()->MousePos();
-	if(m_LastMousePos == std::nullopt)
-		SetUiMousePos(Ui()->Screen()->Center());
-	else
-		SetUiMousePos(m_LastMousePos.value());
-	m_LastMousePos = OldMousePos;
-}
-
 bool CChat::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
 {
-	if(m_Mode == MODE_NONE || !m_MouseUnlocked)
+	if(m_Mode == MODE_NONE)
 		return false;
 
 	Ui()->ConvertMouseMove(&x, &y, CursorType);
-	Ui()->OnCursorMove(x, y);
+	m_SelectorMouse += vec2(x, y);
+
+	m_SelectorMouse.x = std::clamp(m_SelectorMouse.x, 0.0f, (float)Graphics()->WindowWidth() - 1.0f);
+	m_SelectorMouse.y = std::clamp(m_SelectorMouse.y, 0.0f, (float)Graphics()->WindowHeight() - 1.0f);
+
 	return true;
 }
 
@@ -429,9 +399,6 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 {
 	if(m_Mode == MODE_NONE)
 		return false;
-
-	if(!m_MouseUnlocked)
-		UnlockMouse();
 
 	const int BacklogPrevLine = m_BacklogCurLine;
 
@@ -728,7 +695,8 @@ void CChat::EnableMode(int Team)
 		m_CompletionUsed = false;
 		m_BacklogCurLine = 0;
 		m_Input.Activate(EInputPriority::CHAT);
-		UnlockMouse();
+		if(m_SelectorMouse == vec2(-1.0f, -1.0f))
+			m_SelectorMouse = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight()) * 0.5f;
 	}
 }
 
@@ -739,8 +707,6 @@ void CChat::DisableMode()
 		m_Mode = MODE_NONE;
 		m_Input.Deactivate();
 		m_BacklogCurLine = 0;
-		if(m_MouseUnlocked)
-			LockMouse();
 	}
 }
 
@@ -1620,7 +1586,6 @@ void CChat::OnRender()
 	if(m_Mode != MODE_NONE)
 	{
 		Ui()->StartCheck();
-		Ui()->Update();
 	}
 
 	// send pending chat messages
@@ -1651,13 +1616,9 @@ void CChat::OnRender()
 	{
 		const vec2 ScreenSize = vec2(Width, Height);
 
-		// Get mouse position in chat screen coordinates
-		// UI uses height=600, chat uses height=300, so we need to convert
-		const CUIRect *pUiScreen = Ui()->Screen();
 		const auto &&GetMousePosition = [&]() -> vec2 {
-			const vec2 UiMousePos = Ui()->MousePos();
-			// Convert from UI coordinates to chat coordinates
-			return UiMousePos / vec2(pUiScreen->w, pUiScreen->h) * ScreenSize;
+			const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
+			return m_SelectorMouse / WindowSize * ScreenSize;
 		};
 
 		const vec2 MousePos = GetMousePosition();
@@ -1711,9 +1672,6 @@ void CChat::OnRender()
 
 	if(m_Mode != MODE_NONE)
 	{
-		if(!m_MouseUnlocked)
-			UnlockMouse();
-
 		// render chat input
 		CTextCursor InputCursor;
 		InputCursor.SetPosition(vec2(x, y));
@@ -1773,7 +1731,7 @@ void CChat::OnRender()
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
 
-		std::vector<CCommand> vChatCommands = GameClient()->m_Bindchat.m_vChatCommands;
+		const std::vector<CCommand> &vChatCommands = GameClient()->m_Bindchat.m_vChatCommands;
 
 		// Autocompletion hint
 		if(GameClient()->m_Bindchat.ValidPrefix(m_Input.GetString()[0]) && m_Input.GetString()[1] != '\0' && !vChatCommands.empty())
@@ -2038,10 +1996,10 @@ void CChat::OnRender()
 	if(m_Mode != MODE_NONE)
 	{
 		Ui()->MapScreen();
-		if(m_MouseUnlocked)
-		{
-			RenderTools()->RenderCursor(Ui()->MousePos(), 24.0f);
-		}
+		const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
+		const CUIRect *pUiScreen = Ui()->Screen();
+		const vec2 CursorPos = m_SelectorMouse / WindowSize * vec2(pUiScreen->w, pUiScreen->h);
+		RenderTools()->RenderCursor(CursorPos, 24.0f);
 		Ui()->FinishCheck();
 	}
 }

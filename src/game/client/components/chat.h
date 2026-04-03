@@ -89,8 +89,7 @@ class CChat : public CComponent
 	bool m_PrevShowChat;
 	int m_BacklogCurLine;
 	int m_LinesRendered;
-	std::optional<vec2> m_LastMousePos;
-	bool m_MouseUnlocked;
+	vec2 m_SelectorMouse;
 
 	// Selection state for copying from chat
 	bool m_Selecting;
@@ -232,13 +231,12 @@ public:
 	void ClearLines();
 	int GetLinesToScroll(int Direction, int LinesToScroll) const;
 	int NumInitializedLines() const;
+
+	// EClient
 	void ScrollToTop();
 	void ScrollToBottom();
 	void ScrollPageUp();
 	void ScrollPageDown();
-	void UnlockMouse();
-	void LockMouse();
-	void SetUiMousePos(vec2 Pos);
 
 	void EnsureCoherentFontSize() const;
 	void EnsureCoherentWidth() const;
