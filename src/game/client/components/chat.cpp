@@ -1389,32 +1389,8 @@ void CChat::OnPrepareLines(float y)
 		LineCursor.m_LineWidth = LineWidth;
 
 		std::string RawName;
-
-		// Message is from valid player
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
-		{
 			LineCursor.m_X += RealMsgPaddingTee;
-
-			if(g_Config.m_ClSpectatePrefix && Line.m_Paused && !Line.m_Whisper)
-			{
-				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClSpecPrefix);
-				RawName += g_Config.m_ClSpecPrefix;
-			}
-
-			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
-			{
-				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClWarlistPrefix);
-				RawName += g_Config.m_ClWarlistPrefix;
-			}
-			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
-			{
-				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(1.0f));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClFriendPrefix);
-				RawName += g_Config.m_ClFriendPrefix;
-			}
-		}
 
 		// render name
 		ColorRGBA NameColor;
@@ -1445,11 +1421,36 @@ void CChat::OnPrepareLines(float y)
 		else
 			NameColor = ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f);
 
-		std::string NameCid;
-		NameCid += aClientId + std::string(Line.m_aName);
 		TextRender()->TextColor(NameColor);
-		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, NameCid.c_str());
-		RawName += NameCid;
+		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, aClientId);
+		RawName += aClientId;
+		// Message is from valid player
+		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
+		{
+			if(g_Config.m_ClSpectatePrefix && Line.m_Paused && !Line.m_Whisper)
+			{
+				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClSpecPrefix);
+				RawName += g_Config.m_ClSpecPrefix;
+			}
+
+			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
+			{
+				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId));
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClWarlistPrefix);
+				RawName += g_Config.m_ClWarlistPrefix;
+			}
+			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
+			{
+				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(1.0f));
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClFriendPrefix);
+				RawName += g_Config.m_ClFriendPrefix;
+			}
+		}
+
+		TextRender()->TextColor(NameColor);
+		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, Line.m_aName);
+		RawName += std::string(Line.m_aName);
 
 		if(Line.m_TimesRepeated > 0)
 		{
@@ -1490,6 +1491,8 @@ void CChat::OnPrepareLines(float y)
 		{
 			AppendCursor.m_StartX = LineCursor.m_X;
 			AppendCursor.m_LineWidth -= LineCursor.m_LongestLineWidth;
+			Line.m_StartX = LineCursor.m_X;
+			Line.m_LineWidth = AppendCursor.m_LineWidth;
 		}
 
 		std::string RawMessage;
@@ -1504,7 +1507,7 @@ void CChat::OnPrepareLines(float y)
 
 			if(pTranslatedLanguage)
 			{
-				std::string Lang = "[" + std::string(pTranslatedLanguage) + "]";
+				std::string Lang = " [" + std::string(pTranslatedLanguage) + "]";
 				ColorRGBA ColorLang = Color;
 				ColorLang.r *= 0.8f;
 				ColorLang.g *= 0.8f;
@@ -1896,10 +1899,13 @@ void CChat::OnRender()
 
 	if(IsSelecting && !vSelectedLines.empty())
 	{
-		const float LineWidth = (IsScoreBoardOpen ? maximum(85.0f, (FontSize() * 85.0f / 6.0f)) : g_Config.m_ClChatWidth) - (RealMsgPaddingX * 1.5f);
 		const int TeeSize = MessageTeeSize();
-		const float RealMsgPaddingTee = g_Config.m_ClChatOld ? 0.0f : (TeeSize + MESSAGE_TEE_PADDING_RIGHT);
-		const float TextBegin = 5.0f + RealMsgPaddingX / 2.0f;
+		float RealMsgPaddingTee = TeeSize + MESSAGE_TEE_PADDING_RIGHT;
+
+		float Begin = x;
+		float TextBegin = Begin + RealMsgPaddingX / 2.0f;
+
+		float LineWidth = (IsScoreBoardOpen ? maximum(85.0f, (FontSize() * 85.0f / 6.0f)) : g_Config.m_ClChatWidth) - (RealMsgPaddingX * 1.5f) - RealMsgPaddingTee;
 
 		m_SelectionText.clear();
 		bool AnySelection = false;
@@ -1913,7 +1919,7 @@ void CChat::OnRender()
 			CTextCursor LineCursor;
 			LineCursor.SetPosition(vec2(TextBegin, Info.m_Y + RealMsgPaddingY / 2.0f));
 			LineCursor.m_FontSize = FontSize();
-			LineCursor.m_LineWidth = LineWidth - RealMsgPaddingTee;
+			LineCursor.m_LineWidth = LineWidth;
 			LineCursor.m_Flags = TEXTFLAG_RENDER;
 			LineCursor.m_CalculateSelectionMode = TEXT_CURSOR_SELECTION_MODE_CALCULATE;
 			LineCursor.m_PressMouse = m_SelectionMousePress;
@@ -1925,16 +1931,13 @@ void CChat::OnRender()
 
 			if(!IsScoreBoardOpen && !g_Config.m_ClChatOld)
 			{
-				float W = TextRender()->TextWidth(FontSize(), (Line.m_RenderedName + " ").c_str());
-
-				LineCursor.m_StartX = LineCursor.m_X + W;
-				LineCursor.m_LineWidth -= LineCursor.m_LongestLineWidth + W;
+				LineCursor.m_StartX = Line.m_StartX;
+				LineCursor.m_LineWidth = Line.m_LineWidth;
 			}
+
 			std::string FullText = Line.m_RenderedName + Line.m_RenderedText;
 
-			LineCursor.m_LongestLineWidth = 0.0f;
-
-			TextRender()->TextColor(ColorRGBA(0, 0, 0, 0));
+			TextRender()->TextColor(ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f));
 			TextRender()->TextEx(&LineCursor, FullText.c_str(), -1);
 			TextRender()->TextColor(TextRender()->DefaultTextColor());
 

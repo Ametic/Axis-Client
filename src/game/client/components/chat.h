@@ -81,6 +81,8 @@ class CChat : public CComponent
 		// EClient
 		std::string m_RenderedName;
 		std::string m_RenderedText;
+		float m_StartX;
+		float m_LineWidth;
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
