@@ -1,12 +1,16 @@
 
 ![gui_logo](https://github.com/user-attachments/assets/76f93b08-3efa-40a8-96b9-b64b17c14b3f)
 
-Fox's client which mostly consists of stolen code
-If you find any bugs or have an idea for a feature then create a new issue
+### Newest Features:
+- Scrollable Chat
+- Select and copy text directly from chat
+- Change ddnets process priority to high and lower discords process priority (fixed lag caused by discord when in a call/streaming)
+- Moving tiles in entities
 
 ### To other Devs
 Any of my sloppy code can be stolen, I don't mind, It's open source for a reason.\
 If you do steal my code, you don't have to but I would appreciate if I get mentioned somewhere c: (Changelog, header files, etc.)
+
 
 ### Scripting
 
