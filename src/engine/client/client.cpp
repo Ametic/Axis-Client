@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
 #include "client.h"
@@ -219,6 +219,12 @@ void CClient::SendqxdInfo(int Conn)
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
+void CClient::SendSupportsCosmeticSnapInfo(int Conn)
+{
+	CMsgPacker Msg(NETMSG_FOXNET_COSMETIC_SNAPS, true);
+	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
+}
+
 void CClient::SendFastInputsInfo(int Conn)
 {
 	CMsgPacker Msg(NETMSG_FOXNET_FASTINPUTS, true);
@@ -257,6 +263,10 @@ void CClient::SendEnterGame(int Conn)
 {
 	CMsgPacker Msg(NETMSG_ENTERGAME, true);
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH);
+
+	// <FoxNet
+	SendSupportsCosmeticSnapInfo(Conn);
+	// FoxNet>
 }
 
 void CClient::SendReady(int Conn)
@@ -2382,15 +2392,16 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 			m_ExpectedMaplistEntries = -1;
 		}
 		// <FoxNet
-		else if(Conn == CONN_MAIN && (pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && Msg == NETMSG_FOXNET_INFO)
+		else if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && Msg == NETMSG_FOXNET_INFO)
 		{
 			const int Version = Unpacker.GetInt();
 			if(Unpacker.Error() || Version < 0)
 				return;
 			log_info("foxnet", "server is running FoxNet version %d", Version);
 			m_FoxNetVersion = Version;
-			SendFastInputsInfo(CONN_MAIN);
+			SendFastInputsInfo(Conn);
 		}
+		// FoxNet>
 	}
 	// the client handles only vital messages https://github.com/ddnet/ddnet/issues/11178
 	else if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 || Msg == NETMSGTYPE_SV_PREINPUT)
