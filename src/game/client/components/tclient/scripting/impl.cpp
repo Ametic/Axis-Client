@@ -61,7 +61,7 @@ static const auto NAMESPACE_MATH = [](chaiscript::Namespace &Math) {
 	Math["max"] = chaiscript::var(chaiscript::fun([](int a, int b) { return std::max(a, b); }));
 	Math["random"] = chaiscript::var(chaiscript::fun([](double Min, double Max) { return (double)random_float((float)Min, (float)Max); }));
 	Math["random"] = chaiscript::var(chaiscript::fun([](int Min, int Max) { return Min + rand() % (Max - Min + 1); }));
-	// E-Client>
+	// EClient>
 };
 
 static const char *ReadScript(IStorage *pStorage, const char *pFilename)

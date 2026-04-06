@@ -1079,7 +1079,7 @@ public:
 	std::optional<CServerInfo> m_ConnectServerInfo = std::nullopt;
 	void SetConnectInfo(const NETADDR *pAddress) override;
 
-	// E-Client
+	// EClient
 	void OnSelfDeath() override;
 
 	void OnServerBrowserRefresh() override;

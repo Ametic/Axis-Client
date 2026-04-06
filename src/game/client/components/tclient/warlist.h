@@ -33,7 +33,7 @@ public:
 	// <E-Client
 	int m_Index = 0;
 	int m_NumEntries = 0;
-	// E-Client>
+	// EClient>
 
 	CWarType(const char *pName, ColorRGBA Color = ColorRGBA(1, 1, 1, 1), bool Removable = true, bool IsImport = false)
 	{
@@ -63,7 +63,7 @@ public:
 	bool m_Imported = false;
 	// <E-Client
 	bool m_TempEntry = false;
-	// E-Client>
+	// EClient>
 
 	CWarEntry(CWarType *pWarType)
 	{
@@ -87,7 +87,7 @@ public:
 	}
 };
 
-// E-Client [Mutes]
+// EClient [Mutes]
 class CMuteEntry
 {
 public:
@@ -113,7 +113,7 @@ public:
 	bool m_IsWarName = false;
 	bool m_IsWarClan = false;
 
-	bool m_IsMuted = false; // E-Client [Mutes]
+	bool m_IsMuted = false; // EClient [Mutes]
 
 	std::vector<char> m_WarGroupMatches = {false, false, false, false};
 
@@ -169,7 +169,7 @@ class CWarList : public CComponent
 	static void ConAddWarEntry(IConsole::IResult *pResult, void *pUserData);
 	static void ConUpsertWarType(IConsole::IResult *pResult, void *pUserData);
 
-	// E-Client
+	// EClient
 	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData);
@@ -197,7 +197,7 @@ public:
 		new CWarType("helper", ColorRGBA(0.9f, 0.87f, 0.2f, 1.0f), false), // 3
 	};
 
-	// E-Client [Mutes]
+	// EClient [Mutes]
 	std::vector<CMuteEntry> m_MuteEntries;
 
 	// None type war entries will float to the top of the list, so they can be assigned a type
@@ -230,7 +230,7 @@ public:
 	void AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan, bool Temp = false);
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
-	// E-Client
+	// EClient
 	void AddMuteEntry(const char *pName, bool Temp = false);
 	void AddMute(const char *pName, bool Quiet, bool Temp = false);
 	void RemoveMute(const char *pName, bool Silent = false);

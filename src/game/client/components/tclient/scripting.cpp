@@ -266,7 +266,7 @@ private:
 		{
 			return g_Config.m_ClDummyName;
 		}
-		// E-Client>
+		// EClient>
 
 		throw std::string("No state with name '") + Str + std::string("'");
 	}
@@ -368,7 +368,7 @@ private:
 
 		throw std::string("No state with name '") + Str + std::string("'");
 	}
-	// E-Client>
+	// EClient>
 
 	CScriptingCtx::Any ToLower(const std::string &Str)
 	{
@@ -412,7 +412,7 @@ public:
 			return ClientInfo(Str, Arg);
 		});
 
-		// E-Client>
+		// EClient>
 		m_ScriptingCtx.SaveState();
 	}
 	void Run(const char *pFilename, const char *pArgs)

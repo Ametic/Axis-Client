@@ -425,7 +425,7 @@ private:
 
 	FT_UInt GetCharGlyph(int Chr, FT_Face *pFace, bool AllowReplacementCharacter)
 	{
-		// E-Client: 0xE0073 is '󠁳', which doesn't get rendered if Noto Emoji is used as fallback font
+		// EClient: 0xE0073 is '󠁳', which doesn't get rendered if Noto Emoji is used as fallback font
 		if(Chr == 0xe0073)
 			Chr = REPLACEMENT_CHARACTER;
 

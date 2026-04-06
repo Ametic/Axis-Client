@@ -184,10 +184,9 @@ void CGameClient::OnConsoleInit()
 					      &m_KeyBinder,
 					      &m_GameConsole,
 					      &m_MenuBackground,
-					      // E-Client
-					      &m_EClient,
-					      &m_AntiSpawnBlock,
-					      &m_EntityInfo,
+					      &m_EClient, // EClient
+					      &m_AntiSpawnBlock, // EClient
+					      &m_EntityInfo, // EClient
 				      });
 
 	// build the input stack
@@ -5926,7 +5925,7 @@ void CGameClient::StoreSave(const char *pTeamMembers, const char *pGeneratedCode
 	io_close(File);
 }
 
-// E-Client | TClient
+// EClient | TClient
 void CGameClient::SetConnectInfo(const NETADDR *pAddress)
 {
 	m_ConnectServerInfo = std::nullopt;

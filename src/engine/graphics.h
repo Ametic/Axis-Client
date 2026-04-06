@@ -459,7 +459,7 @@ public:
 
 	enum
 	{
-		// E-Client
+		// EClient
 		SIDE_T = 1 << 0,
 		SIDE_R = 1 << 1,
 		SIDE_B = 1 << 2,

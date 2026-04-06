@@ -235,7 +235,7 @@ void CClient::SendFastInputsInfo(int Conn)
 
 void CClient::SendInfo(int Conn)
 {
-	SendqxdInfo(Conn); // E-Client
+	SendqxdInfo(Conn); // EClient
 
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
@@ -3059,7 +3059,7 @@ void CClient::Update()
 			}
 
 			ResetDDNetInfoTask();
-			GameClient()->OnServerBrowserRefresh(); // E-Client
+			GameClient()->OnServerBrowserRefresh(); // EClient
 		}
 		else if(m_pDDNetInfoTask->State() == EHttpState::ERROR || m_pDDNetInfoTask->State() == EHttpState::ABORTED)
 		{
@@ -4685,7 +4685,7 @@ void CClient::RegisterCommands()
 	m_pConsole->Chain("loglevel", ConchainLoglevel, this);
 	m_pConsole->Chain("stdout_output_level", ConchainStdoutOutputLevel, this);
 
-	// E-Client
+	// EClient
 	m_pConsole->Register("discord_rpc_reload", "", CFGFLAG_CLIENT, ConDiscordRPCchange, this, "Reloads The Discord RPC");
 }
 

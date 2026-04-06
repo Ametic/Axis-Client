@@ -1213,7 +1213,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	int HoveringIndex = -1;
 
 	float MouseDist = distance(Pos, Ui()->MousePos());
-	if(GameClient()->m_Bindwheel.m_vBinds.empty()) // E-Client -> Fixes a Crash
+	if(GameClient()->m_Bindwheel.m_vBinds.empty()) // EClient -> Fixes a Crash
 	{
 		float Size = 20.0f;
 		TextRender()->Text(Pos.x - TextRender()->TextWidth(Size, "Empty") / 2.0f, Pos.y - Size / 2, Size, "Empty");

@@ -758,7 +758,7 @@ public:
 		void Reset();
 	};
 	void ShowPopupSelection(float X, float Y, SSelectionPopupContext *pContext);
-	void UpdatePopupMenuOffset(const SSelectionPopupContext *pContext, float NewX, float NewY); // E-Client
+	void UpdatePopupMenuOffset(const SSelectionPopupContext *pContext, float NewX, float NewY); // EClient
 
 	struct SColorPickerPopupContext : public SPopupMenuId
 	{
@@ -796,7 +796,7 @@ public:
 	};
 	int DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Num, SDropDownState &State);
 
-	// E-Client
+	// EClient
 	float DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner, bool Draggable);
 };
 

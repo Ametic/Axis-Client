@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "menus.h"
 
@@ -22,7 +22,7 @@
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
-static constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // E-Client
+static constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // EClient
 static constexpr ColorRGBA HIGHLIGHTED_TEXT_COLOR = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
 
 static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Inside)

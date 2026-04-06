@@ -107,8 +107,8 @@ class CChat : public CComponent
 	enum
 	{
 		// client IDs for special messages
-		SILENT_MSG = -4, // E-Client
-		ECLIENT_MSG = -3, // E-Client
+		SILENT_MSG = -4, // EClient
+		ECLIENT_MSG = -3, // EClient
 		CLIENT_MSG = -2,
 		SERVER_MSG = -1,
 	};
@@ -118,7 +118,7 @@ class CChat : public CComponent
 		MODE_NONE = 0,
 		MODE_ALL,
 		MODE_TEAM,
-		MODE_SILENT, // E-Client
+		MODE_SILENT, // EClient
 	};
 
 	enum
@@ -151,7 +151,7 @@ class CChat : public CComponent
 		char m_aName[IConsole::TEMPCMD_NAME_LENGTH];
 		char m_aParams[IConsole::TEMPCMD_PARAMS_LENGTH];
 		char m_aHelpText[IConsole::TEMPCMD_HELP_LENGTH];
-		char m_Prefix; // E-Client
+		char m_Prefix; // EClient
 
 		CCommand() = default;
 		CCommand(const char *pName, const char *pParams, const char *pHelpText)
@@ -159,7 +159,7 @@ class CChat : public CComponent
 			str_copy(m_aName, pName);
 			str_copy(m_aParams, pParams);
 			str_copy(m_aHelpText, pHelpText);
-			m_Prefix = m_aName[0]; // E-Client
+			m_Prefix = m_aName[0]; // EClient
 		}
 
 		bool operator<(const CCommand &Other) const { return str_comp(m_aName, Other.m_aName) < 0; }

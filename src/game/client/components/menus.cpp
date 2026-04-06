@@ -650,7 +650,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
 
-		// E-Client
+		// EClient
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitRight(33.0f, &Box, &Button);
 		static CButtonContainer s_EClientButton;
@@ -1058,7 +1058,7 @@ void CMenus::OnInit()
 	Graphics()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.f, 0.f, 22.f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
 
-	// E-Client
+	// EClient
 
 	// Rainbow Color again for the preview..
 	m_MenusRainbowColor = g_Config.m_ClPlayerColorBody;

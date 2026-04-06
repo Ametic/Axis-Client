@@ -558,7 +558,7 @@ private:
 public:
 	void DiscordRPCchange() override;
 	void SendFastInputsInfo(int Conn) override;
-	// E-Client>
+	// EClient>
 };
 
 #endif

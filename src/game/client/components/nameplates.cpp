@@ -49,7 +49,7 @@ public:
 	int m_HookStrongWeakId;
 	float m_FontSizeHookStrongWeak;
 
-	// E-Client
+	// EClient
 	bool m_PingCircle = false;
 	bool m_IsMuted = false;
 	bool m_IsEntity = false;
@@ -314,7 +314,7 @@ protected:
 		if(!m_Visible)
 			return false;
 
-		// E-Client
+		// EClient
 		if(g_Config.m_ClStrongWeakColorId)
 		{
 			switch(Data.m_HookStrongWeakState)
@@ -402,7 +402,7 @@ protected:
 		if(!m_Visible)
 			return false;
 
-		// E-Client
+		// EClient
 		ColorRGBA Color = Data.m_Color;
 
 		if(g_Config.m_ClNameplateFriendColor && This.m_aClients[Data.m_ClientId].m_Friend)
@@ -450,7 +450,7 @@ protected:
 		if(!m_Visible && Data.m_aClan[0] != '\0')
 			return false;
 
-		// E-Client
+		// EClient
 		ColorRGBA Color = Data.m_Color;
 
 		if(g_Config.m_ClWarList && Data.m_ClientId >= 0 && This.m_WarList.GetWarData(Data.m_ClientId).m_IsWarClan)
@@ -473,7 +473,7 @@ public:
 		CNamePlatePartText(This) {}
 };
 
-// E-Client
+// EClient
 class CNamePlatePartReason : public CNamePlatePartText
 {
 private:
@@ -701,14 +701,14 @@ private:
 		AddPart<CNamePlatePartDirection>(This, DIRECTION_RIGHT);
 		AddPart<CNamePlatePartNewLine>(This);
 
-		AddPart<CNamePlatePartPingCircle>(This); // E-Client
+		AddPart<CNamePlatePartPingCircle>(This); // EClient
 		AddPart<CNamePlatePartFriendMark>(This);
 		AddPart<CNamePlatePartClientId>(This, false);
 		AddPart<CNamePlatePartName>(This);
-		AddPart<CNamePlatePartMutedIcon>(This); // E-Client
+		AddPart<CNamePlatePartMutedIcon>(This); // EClient
 		AddPart<CNamePlatePartNewLine>(This);
 
-		AddPart<CNamePlatePartEClientIcon>(This); // E-Client
+		AddPart<CNamePlatePartEClientIcon>(This); // EClient
 
 		AddPart<CNamePlatePartReason>(This); // TClient
 		AddPart<CNamePlatePartNewLine>(This);
@@ -846,7 +846,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_ShowClientId = Data.m_ShowName && (g_Config.m_Debug || g_Config.m_ClNamePlatesIds);
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
 
-	// E-Client
+	// EClient
 	Data.m_IsMuted = Data.m_ShowName && GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].m_IsMuted;
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	if(g_Config.m_ClWarList)
@@ -994,7 +994,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 	CNamePlateData Data;
 
-	// E-Client
+	// EClient
 	str_copy(Data.m_aReason, "Reason");
 	Data.m_ShowReason = g_Config.m_ClWarListReason;
 

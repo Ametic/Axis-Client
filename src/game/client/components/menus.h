@@ -847,7 +847,7 @@ private:
 
 	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
 
-	// E-Client
+	// EClient
 	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsEntity(CUIRect MainView);
 	void RenderSettingsEClient(CUIRect MainView);

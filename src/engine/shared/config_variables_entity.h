@@ -167,7 +167,7 @@ MACRO_CONFIG_INT(ClProfileOverwriteClanWithEmpty, ec_profile_overwrite_clan_with
 // Font
 MACRO_CONFIG_STR(ClCustomFont, ec_custom_font, 255, "DejaVu Sans", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom font face")
 
-// E-Client
+// EClient
 
 // First Client Launch
 MACRO_CONFIG_INT(ClFirstLaunch, ec_first_launch, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show welcome message indicating the first launch of the client")

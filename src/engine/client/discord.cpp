@@ -69,7 +69,7 @@ public:
 		DiscordCreateParams Params;
 		DiscordCreateParamsSetDefault(&Params);
 
-		Params.client_id = 1325507236331524116; // E-Client
+		Params.client_id = 1325507236331524116; // EClient
 		Params.flags = EDiscordCreateFlags::DiscordCreateFlags_NoRequireDiscord;
 		Params.event_data = this;
 		Params.activity_events = &m_ActivityEvents;
@@ -138,7 +138,7 @@ public:
 
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
-		// E-Client
+		// EClient
 		str_copy(m_Activity.assets.large_image, "m_ghost", sizeof(m_Activity.assets.large_image));
 		str_copy(m_Activity.assets.large_text, "entityclient.net", sizeof(m_Activity.assets.large_text));
 		m_ShowMap = ShowMap;

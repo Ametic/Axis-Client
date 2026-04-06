@@ -1200,7 +1200,7 @@ CUi::EPopupMenuFunctionResult CScoreboard::CScoreboardPopupContext::Render(void 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);
 		Container.VSplitLeft(ActionSize, &Action, &Container);
 
-		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].m_IsMuted; // E-Client
+		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].m_IsMuted; // EClient
 
 		if(pUi->DoButton_FontIcon(&pPopupContext->m_MuteAction, FontIcon::BAN, Muted, &Action, BUTTONFLAG_LEFT, ActionCorners))
 		{
@@ -1209,7 +1209,7 @@ CUi::EPopupMenuFunctionResult CScoreboard::CScoreboardPopupContext::Render(void 
 			else
 				pScoreboard->GameClient()->m_WarList.RemoveMute(Client.m_aName);
 		}
-		// E-Client
+		// EClient
 		pScoreboard->GameClient()->m_Tooltips.DoToolTip(&pPopupContext->m_MuteAction, &Action, Muted ? Localize("Unmute") : Localize("Mute"));
 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);

@@ -11,7 +11,7 @@
 #include "time.h"
 #include "types.h"
 
-// E-Client
+// EClient
 const char *str_to_uppercase(const char *src);
 bool str_isalluppercase(const char *str);
 

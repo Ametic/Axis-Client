@@ -52,7 +52,7 @@ public:
 	void SparkleTrail(vec2 Pos, float Alpha);
 	void Confetti(vec2 Pos, float Alpha);
 
-	// E-Client
+	// EClient
 	void FireTrailEffect(vec2 Pos, float Alpha = 1.0f);
 	void SwitchEffect(vec2 Pos, ColorRGBA Color, float Alpha = 1.0f);
 	void SparkleEffect(vec2 Pos, float Alpha = 1.0f);
