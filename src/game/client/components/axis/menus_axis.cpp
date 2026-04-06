@@ -307,6 +307,20 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 			Client()->ViewLink("https://github.com/qxdFox");
 	}
 
+	CUIRect TeeRect2, DevCardRect2;
+	LeftView.HSplitTop(CardSize, &DevCardRect2, &LeftView);
+	DevCardRect2.VSplitLeft(CardSize, &TeeRect2, &Label);
+
+	static CButtonContainer s_LinkButtonAmt;
+	{
+		Label.VSplitLeft(TextRender()->TextWidth(LineSize, "Ametic'"), &Label, &Button);
+		Button.VSplitLeft(MarginSmall, nullptr, &Button);
+		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
+		Ui()->DoLabel(&Label, "Ametic'", LineSize, TEXTALIGN_ML);
+		if(Ui()->DoButton_FontIcon(&s_LinkButtonAmt, FontIcon::ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
+			Client()->ViewLink("https://github.com/Ametic");
+	}
+
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
 	Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
@@ -411,6 +425,14 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		TeeRenderInfo.m_Size = TeeSize;
 
 		RenderDraggableTee(MainView, TeeRect.Center(), TeeEyeDirection(TeeRect.Center()), CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_NORMAL);
+	}
+	{
+		CTeeRenderInfo TeeRenderInfo2;
+		TeeRenderInfo2.Apply(GameClient()->m_Skins.Find("coala_twinbop"));
+		TeeRenderInfo2.ApplyColors(true, 10551176, 11850904);
+		TeeRenderInfo2.m_Size = TeeSize;
+
+		RenderDraggableTee(MainView, TeeRect2.Center(), TeeEyeDirection(TeeRect2.Center()), CAnimState::GetIdle(), &TeeRenderInfo2, EMOTE_NORMAL);
 	}
 }
 
