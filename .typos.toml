@@ -19,6 +19,9 @@ extend-exclude = [
 	"data/entity/builtinscripts",
 	"README.md",
 	# EClient>
+	# <AClient
+	"src/engine/shared/config_variables_axis.h",
+	# AClient>
 ]
 
 [default]

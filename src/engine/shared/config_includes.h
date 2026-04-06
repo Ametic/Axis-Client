@@ -10,3 +10,4 @@ SET_CONFIG_DOMAIN(ConfigDomain::DDNET)
 
 SET_CONFIG_DOMAIN(ConfigDomain::ENTITY)
 #include "config_variables_entity.h"
+#include "config_variables_axis.h"

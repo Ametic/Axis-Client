@@ -2172,6 +2172,7 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   config_domains.h
   config_includes.h
   config_variables.h
+  config_variables_axis.h
   config_variables_entity.h
   console.cpp
   console.h
@@ -2459,6 +2460,7 @@ if(CLIENT)
     animstate.h
     component.cpp
     component.h
+    components/axis/menus_axis.cpp
     components/background.cpp
     components/background.h
     components/binds.cpp
@@ -2500,7 +2502,6 @@ if(CLIENT)
     components/entity/info.h
     components/entity/map_overview.cpp
     components/entity/map_overview.h 
-    components/entity/menus_entity.cpp 
     components/entity/moving_tiles.cpp
     components/entity/moving_tiles.h 
     components/entity/physicball.cpp

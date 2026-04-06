@@ -34,14 +34,14 @@ using namespace std::chrono_literals;
 
 enum
 {
-	ENTITY_TAB_SETTINGS = 0,
-	ENTITY_TAB_VISUAL,
-	ENTITY_TAB_WARLIST,
-	ENTITY_TAB_STATUSBAR,
-	ENTITY_TAB_BINDWHEEL,
-	ENTITY_TAB_QUICKACTION,
-	ENTITY_TAB_INFO,
-	NUMBER_OF_ENTITY_TABS,
+	AXIS_TAB_SETTINGS = 0,
+	AXIS_TAB_VISUAL,
+	AXIS_TAB_WARLIST,
+	AXIS_TAB_STATUSBAR,
+	AXIS_TAB_BINDWHEEL,
+	AXIS_TAB_QUICKACTION,
+	AXIS_TAB_INFO,
+	NUMBER_OF_AXIS_TABS,
 };
 
 typedef struct
@@ -97,10 +97,10 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 	CUIRect TabBar, Button;
 
-	int TabCount = NUMBER_OF_ENTITY_TABS;
-	for(int Tab = 0; Tab < NUMBER_OF_ENTITY_TABS; ++Tab)
+	int TabCount = NUMBER_OF_AXIS_TABS;
+	for(int Tab = 0; Tab < NUMBER_OF_AXIS_TABS; ++Tab)
 	{
-		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, Tab))
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
 		{
 			TabCount--;
 			if(s_CurTab == Tab)
@@ -110,8 +110,8 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 	MainView.HSplitTop(LineSize * 1.1f, &TabBar, &MainView);
 	const float TabWidth = TabBar.w / TabCount;
-	static CButtonContainer s_aPageTabs[NUMBER_OF_ENTITY_TABS] = {};
-	const char *apTabNames[NUMBER_OF_ENTITY_TABS] = {
+	static CButtonContainer s_aPageTabs[NUMBER_OF_AXIS_TABS] = {};
+	const char *apTabNames[NUMBER_OF_AXIS_TABS] = {
 		Localize("Settings"),
 		Localize("Visuals"),
 		Localize("Warlist"),
@@ -121,22 +121,22 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		Localize("Info"),
 	};
 
-	for(int Tab = 0; Tab < NUMBER_OF_ENTITY_TABS; ++Tab)
+	for(int Tab = 0; Tab < NUMBER_OF_AXIS_TABS; ++Tab)
 	{
 		int LeftTab = 0;
-		int RightTab = NUMBER_OF_ENTITY_TABS - 1;
+		int RightTab = NUMBER_OF_AXIS_TABS - 1;
 
-		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, Tab))
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
 			continue;
 
 		for(int i = 0; i < Tab; ++i)
 		{
-			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClEClientSettingsTabs, LeftTab))
+			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClAClientSettingsTabs, LeftTab))
 				LeftTab++;
 		}
-		for(int i = NUMBER_OF_ENTITY_TABS - 1; i > 0; --i)
+		for(int i = NUMBER_OF_AXIS_TABS - 1; i > 0; --i)
 		{
-			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClEClientSettingsTabs, RightTab))
+			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClAClientSettingsTabs, RightTab))
 				RightTab--;
 		}
 
@@ -155,31 +155,31 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
 
-	if(s_CurTab == ENTITY_TAB_SETTINGS)
+	if(s_CurTab == AXIS_TAB_SETTINGS)
 	{
 		RenderSettingsEClient(MainView);
 	}
-	if(s_CurTab == ENTITY_TAB_VISUAL)
+	if(s_CurTab == AXIS_TAB_VISUAL)
 	{
 		RenderSettingsVisual(MainView);
 	}
-	if(s_CurTab == ENTITY_TAB_WARLIST)
+	if(s_CurTab == AXIS_TAB_WARLIST)
 	{
 		RenderSettingsWarList(MainView);
 	}
-	if(s_CurTab == ENTITY_TAB_STATUSBAR)
+	if(s_CurTab == AXIS_TAB_STATUSBAR)
 	{
 		RenderSettingsStatusbar(MainView);
 	}
-	if(s_CurTab == ENTITY_TAB_BINDWHEEL)
+	if(s_CurTab == AXIS_TAB_BINDWHEEL)
 	{
 		RenderSettingsBindwheel(MainView);
 	}
-	if(s_CurTab == ENTITY_TAB_QUICKACTION)
+	if(s_CurTab == AXIS_TAB_QUICKACTION)
 	{
 		RenderSettingsQuickActions(MainView);
 	}
-	if(s_CurTab == ENTITY_TAB_INFO)
+	if(s_CurTab == AXIS_TAB_INFO)
 	{
 		RenderEClientInfoPage(MainView);
 	}
@@ -290,20 +290,20 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	// Left Side
 
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
-	Ui()->DoLabel(&Label, Localize("Code Stealer:"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabel(&Label, Localize("Code Stealers:"), HeadlineFontSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 
 	LeftView.HSplitTop(CardSize, &DevCardRect, &LeftView);
 	DevCardRect.VSplitLeft(CardSize, &TeeRect, &Label);
 
-	static CButtonContainer s_LinkButton;
+	static CButtonContainer s_LinkButtonFox;
 	{
 		Label.VSplitLeft(TextRender()->TextWidth(LineSize, "qxdFox"), &Label, &Button);
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
 		Ui()->DoLabel(&Label, "qxdFox", LineSize, TEXTALIGN_ML);
-		if(Ui()->DoButton_FontIcon(&s_LinkButton, FontIcon::ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
+		if(Ui()->DoButton_FontIcon(&s_LinkButtonFox, FontIcon::ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
 			Client()->ViewLink("https://github.com/qxdFox");
 	}
 
@@ -311,29 +311,29 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
 
-	static int s_ShowSettings = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_SETTINGS);
+	static int s_ShowSettings = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SETTINGS);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, Localize("Settings"), &s_ShowSettings, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_SETTINGS, s_ShowSettings);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SETTINGS, s_ShowSettings);
 
-	static int s_ShowVisal = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL);
+	static int s_ShowVisal = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_VISUAL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowVisal, Localize("Visual"), &s_ShowVisal, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL, s_ShowVisal);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_VISUAL, s_ShowVisal);
 
-	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST);
+	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_WARLIST);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlist, Localize("Warlist"), &s_ShowWarlist, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST, s_ShowWarlist);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_WARLIST, s_ShowWarlist);
 
-	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_STATUSBAR);
+	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_STATUSBAR);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("Status Bar"), &s_ShowStatusBar, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_STATUSBAR, s_ShowStatusBar);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_STATUSBAR, s_ShowStatusBar);
 
-	static int s_ShowBindwheel = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL);
+	static int s_ShowBindwheel = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_BINDWHEEL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindwheel, Localize("Bindwheel"), &s_ShowBindwheel, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL, s_ShowBindwheel);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_BINDWHEEL, s_ShowBindwheel);
 
-	static int s_ShowQuickActions = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION);
+	static int s_ShowQuickActions = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_QUICKACTION);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowQuickActions, Localize("Quick Actions"), &s_ShowQuickActions, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION, s_ShowQuickActions);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_QUICKACTION, s_ShowQuickActions);
 
 	char DeathCounter[32];
 	str_format(DeathCounter, sizeof(DeathCounter), "%d death%s (all time)", GameClient()->m_EClient.m_KillCount, GameClient()->m_EClient.m_KillCount == 1 ? "" : "s");
