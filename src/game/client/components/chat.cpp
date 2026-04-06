@@ -1346,6 +1346,7 @@ void CChat::OnPrepareLines(float y)
 				TextRender()->TextEx(&AppendCursor, " \n");
 				AppendCursor.m_FontSize *= 0.8f;
 				TextRender()->TextEx(&AppendCursor, pText);
+				TextRender()->TextEx(&AppendCursor, " \n");
 				AppendCursor.m_FontSize /= 0.8f;
 			}
 			else if(pTranslatedError)
