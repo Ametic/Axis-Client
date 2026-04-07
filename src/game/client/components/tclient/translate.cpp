@@ -38,6 +38,50 @@ static void UrlEncode(const char *pText, char *pOut, size_t Length)
 	pOut[OutPos] = '\0';
 }
 
+static void NormalizeTranslatedText(char *pText, size_t Size)
+{
+	if(!pText || Size == 0 || pText[0] == '\0')
+		return;
+
+	int EscapedSequenceCount = 0;
+	for(const char *p = pText; p[0] != '\0' && p[1] != '\0' && p[2] != '\0'; ++p)
+	{
+		if(p[0] == '%' && std::isxdigit((unsigned char)p[1]) && std::isxdigit((unsigned char)p[2]))
+			++EscapedSequenceCount;
+	}
+
+	if(EscapedSequenceCount == 0)
+		return;
+
+	const bool Encoded = EscapedSequenceCount >= 2 || str_find(pText, "%20") || str_find(pText, "%3D") || str_find(pText, "%2F") || str_find(pText, "%3A");
+	if(!Encoded)
+		return;
+
+	char aBuf[sizeof(((CTranslateResponse *)0)->m_Text)];
+	size_t OutPos = 0;
+
+	for(size_t i = 0; pText[i] != '\0' && OutPos < std::size(aBuf) - 1; ++i)
+	{
+		if(pText[i] == '%' && pText[i + 1] != '\0' && pText[i + 2] != '\0' &&
+			std::isxdigit((unsigned char)pText[i + 1]) && std::isxdigit((unsigned char)pText[i + 2]))
+		{
+			char aHex[3] = {pText[i + 1], pText[i + 2], '\0'};
+			unsigned char Value = 0;
+			if(str_hex_decode(&Value, 1, aHex) == 0)
+			{
+				aBuf[OutPos++] = (char)Value;
+				i += 2;
+				continue;
+			}
+		}
+
+		aBuf[OutPos++] = pText[i];
+	}
+
+	aBuf[OutPos] = '\0';
+	str_copy(pText, aBuf, Size);
+}
+
 const char *ITranslateBackend::EncodeTarget(const char *pTarget) const
 {
 	if(!pTarget || pTarget[0] == '\0')
@@ -87,7 +131,7 @@ public:
 		}
 		if(m_pHttpRequest->State() != EHttpState::DONE)
 		{
-			str_copy(Out.m_Text, "Curl error, see console");
+			str_copy(Out.m_Text, "Curl error");
 			return false;
 		}
 		if(m_pHttpRequest->StatusCode() != 200 && !ParseHttpError())
@@ -428,6 +472,108 @@ public:
 	}
 };
 
+class CTranslateBackendGoogle : public ITranslateBackendHttp
+{
+private:
+	bool ParseResponseJson(const json_value *pObj, CTranslateResponse &Out)
+	{
+		if(!pObj)
+		{
+			str_copy(Out.m_Text, "Response is not JSON");
+			return false;
+		}
+
+		if(pObj->type == json_object)
+		{
+			const json_value *pError = json_object_get(pObj, "error");
+			if(pError != &json_value_none)
+			{
+				if(pError->type == json_string)
+					str_copy(Out.m_Text, pError->u.string.ptr);
+				else
+					str_copy(Out.m_Text, "Google error");
+				return false;
+			}
+
+			str_copy(Out.m_Text, "Response is not array");
+			return false;
+		}
+
+		if(pObj->type != json_array)
+		{
+			str_copy(Out.m_Text, "Response is not array");
+			return false;
+		}
+
+		const json_value *pSentences = json_array_get(pObj, 0);
+		if(!pSentences || pSentences->type != json_array)
+		{
+			str_copy(Out.m_Text, "Missing translation entries");
+			return false;
+		}
+
+		std::string Result;
+		for(int i = 0; i < json_array_length(pSentences); ++i)
+		{
+			const json_value *pSentence = json_array_get(pSentences, i);
+			if(!pSentence || pSentence->type != json_array)
+				continue;
+
+			const json_value *pTranslated = json_array_get(pSentence, 0);
+			if(!pTranslated || pTranslated->type != json_string)
+				continue;
+
+			Result += pTranslated->u.string.ptr;
+		}
+
+		if(Result.empty())
+		{
+			str_copy(Out.m_Text, "Translation empty");
+			return false;
+		}
+
+		// Decode into temporary buffer first to avoid truncation mid-sequence
+		char aTempBuf[sizeof(Out.m_Text) * 3]; // Large enough for worst-case percent-encoding
+		str_copy(aTempBuf, Result.c_str(), sizeof(aTempBuf));
+		NormalizeTranslatedText(aTempBuf, sizeof(aTempBuf));
+
+		// Now copy the decoded text (may truncate, but at UTF-8 boundary)
+		str_copy(Out.m_Text, aTempBuf, sizeof(Out.m_Text));
+
+		const json_value *pDetectedLanguage = json_array_get(pObj, 2);
+		if(pDetectedLanguage && pDetectedLanguage->type == json_string)
+			str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr, sizeof(Out.m_Language));
+		else
+			Out.m_Language[0] = '\0';
+
+		return true;
+	}
+
+protected:
+	bool ParseResponse(CTranslateResponse &Out) override
+	{
+		json_value *pObj = m_pHttpRequest->ResultJson();
+		bool Res = ParseResponseJson(pObj, Out);
+		json_value_free(pObj);
+		return Res;
+	}
+
+public:
+	const char *Name() const override
+	{
+		return "Google Translate";
+	}
+
+	CTranslateBackendGoogle(IHttp &Http, const char *pText)
+	{
+		char aBuf[4096];
+		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&ie=UTF-8&oe=UTF-8&q=",
+			EncodeTarget(g_Config.m_EcTranslateTarget));
+		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
+		CreateHttpRequest(Http, aBuf);
+	}
+};
+
 void CTranslate::ConTranslate(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *pName;
@@ -534,6 +680,8 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 		Job.m_pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), Job.m_pLine->m_aText);
 	else if(str_comp_nocase(g_Config.m_EcTranslateBackend, "deeplfree") == 0 || str_comp_nocase(g_Config.m_EcTranslateBackend, "deepl") == 0)
 		Job.m_pBackend = std::make_unique<CTranslateBackendDeeplFree>(*Http(), Job.m_pLine->m_aText);
+	else if(str_comp_nocase(g_Config.m_EcTranslateBackend, "google") == 0)
+		Job.m_pBackend = std::make_unique<CTranslateBackendGoogle>(*Http(), Job.m_pLine->m_aText);
 	else
 	{
 		GameClient()->m_Chat.Echo("Invalid translate backend");
@@ -567,8 +715,14 @@ void CTranslate::OnRender()
 			return false; // Keep ongoing tasks
 		if(*Done)
 		{
-			if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
+			if(Job.m_pBackend->CompareTargets(Job.m_pTranslateResponse->m_Language, g_Config.m_EcTranslateTarget))
+			{
 				Job.m_pTranslateResponse->m_Text[0] = '\0';
+			}
+			else if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
+			{
+				Job.m_pTranslateResponse->m_Text[0] = '\0';
+			}
 		}
 		else
 		{
@@ -586,9 +740,18 @@ void CTranslate::OnRender()
 
 void CTranslate::AutoTranslate(CChat::CLine &Line)
 {
+	static CChat::CLine s_LastLines[5] = {CChat::CLine()};
+	static int s_LastLineIndex = 0;
+
+	for(CChat::CLine &LastLine : s_LastLines)
+	{
+		if(LastLine.m_ClientId == Line.m_ClientId && Line.m_Time <= LastLine.m_Time + time_freq() * 0.01f)
+			return;
+	}
+
 	if(!g_Config.m_EcTranslateAuto)
 		return;
-	if(Line.m_ClientId == CChat::CLIENT_MSG)
+	if(Line.m_ClientId <= CChat::SERVER_MSG)
 		return;
 	for(const int Id : GameClient()->m_aLocalIds)
 	{
@@ -603,5 +766,8 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 	}
 	if((str_comp(g_Config.m_EcTranslateBackend, "deeplfree") == 0 || str_comp(g_Config.m_EcTranslateBackend, "deepl") == 0) && g_Config.m_EcTranslateKey[0] == '\0')
 		return;
+
 	Translate(Line, false);
+	s_LastLines[s_LastLineIndex] = Line;
+	s_LastLineIndex = (s_LastLineIndex + 1) % 5;
 }
