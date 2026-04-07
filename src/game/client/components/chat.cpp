@@ -8,6 +8,7 @@
 
 #include <base/color.h>
 #include <base/io.h>
+#include <base/log.h>
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
@@ -1336,26 +1337,18 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->ColorParsing(pTranslatedText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
 				else
 					TextRender()->TextEx(&AppendCursor, pTranslatedText);
+
 				if(pTranslatedLanguage)
 				{
 					TextRender()->TextEx(&AppendCursor, " [");
 					TextRender()->TextEx(&AppendCursor, pTranslatedLanguage);
 					TextRender()->TextEx(&AppendCursor, "]");
 				}
-				// Dont add this to raw message
-				TextRender()->TextEx(&AppendCursor, " \n");
-				AppendCursor.m_FontSize *= 0.8f;
-				TextRender()->TextEx(&AppendCursor, pText);
-				TextRender()->TextEx(&AppendCursor, " \n");
-				AppendCursor.m_FontSize /= 0.8f;
 			}
 			else if(pTranslatedError)
 			{
 				TextRender()->TextEx(&AppendCursor, pText);
-				TextRender()->TextEx(&AppendCursor, "\n");
-				AppendCursor.m_FontSize *= 0.8f;
-				TextRender()->TextEx(&AppendCursor, pTranslatedError);
-				AppendCursor.m_FontSize /= 0.8f;
+				TextRender()->TextEx(&AppendCursor, " [ERR]");
 			}
 			else
 			{
@@ -1517,34 +1510,21 @@ void CChat::OnPrepareLines(float y)
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, Lang.c_str());
 				RawMessage += Lang;
 			}
-			ColorRGBA ColorSub = Color;
-			ColorSub.r *= 0.7f;
-			ColorSub.g *= 0.7f;
-			ColorSub.b *= 0.7f;
-			TextRender()->TextColor(ColorSub);
-			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, "\n");
-			AppendCursor.m_FontSize *= 0.8f;
-			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
-			AppendCursor.m_FontSize /= 0.8f;
-			TextRender()->TextColor(Color);
-			// dont append this to raw message
 		}
 		else if(pTranslatedError)
 		{
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
-			ColorRGBA ColorSub = Color;
-			ColorSub.r = 0.7f;
-			ColorSub.g = 0.6f;
-			ColorSub.b = 0.6f;
-			TextRender()->TextColor(ColorSub);
-			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, "\n");
-			AppendCursor.m_FontSize *= 0.8f;
-			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedError);
-			AppendCursor.m_FontSize /= 0.8f;
-			TextRender()->TextColor(Color);
+
+			std::string Lang = " [ERR]";
+			ColorRGBA ColorLang = Color;
+			ColorLang.r *= 0.8f;
+			ColorLang.g *= 0.8f;
+			ColorLang.b *= 0.8f;
+			TextRender()->TextColor(ColorLang);
+			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, Lang.c_str());
 			RawMessage += pText;
-			RawMessage += "\n";
-			RawMessage += pTranslatedError;
+			RawMessage += Lang;
+			log_error("translate", "%s", pTranslatedError);
 		}
 		else
 		{
