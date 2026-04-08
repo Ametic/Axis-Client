@@ -1,11 +1,14 @@
 #include "menus.h"
 
 #include <base/system.h>
+#include <base/log.h>
 
 #include <engine/font_icons.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 #include <engine/textrender.h>
+
+#include <generated/client_data.h>
 
 #include <game/client/gameclient.h>
 #include <game/client/ui_listbox.h>
@@ -32,8 +35,61 @@ enum
 	ASSETS_TAB_PARTICLES = 3,
 	ASSETS_TAB_HUD = 4,
 	ASSETS_TAB_EXTRAS = 5,
-	NUMBER_OF_ASSETS_TABS = 6,
+	ASSETS_TAB_CURSOR = 6,
+	ASSETS_TAB_ARROW = 7,
+	ASSETS_TAB_AUDIO = 8,
+	NUMBER_OF_ASSETS_TABS = 9,
 };
+
+static int FavoriteAssetTabFromString(const char *pTab)
+{
+	if(str_comp_nocase(pTab, "entities") == 0)
+		return ASSETS_TAB_ENTITIES;
+	if(str_comp_nocase(pTab, "game") == 0)
+		return ASSETS_TAB_GAME;
+	if(str_comp_nocase(pTab, "emoticons") == 0)
+		return ASSETS_TAB_EMOTICONS;
+	if(str_comp_nocase(pTab, "particles") == 0)
+		return ASSETS_TAB_PARTICLES;
+	if(str_comp_nocase(pTab, "hud") == 0)
+		return ASSETS_TAB_HUD;
+	if(str_comp_nocase(pTab, "extras") == 0)
+		return ASSETS_TAB_EXTRAS;
+	if(str_comp_nocase(pTab, "cursor") == 0)
+		return ASSETS_TAB_CURSOR;
+	if(str_comp_nocase(pTab, "arrow") == 0)
+		return ASSETS_TAB_ARROW;
+	if(str_comp_nocase(pTab, "audio") == 0)
+		return ASSETS_TAB_AUDIO;
+	return -1;
+}
+
+static const char *FavoriteAssetTabToString(int Tab)
+{
+	switch(Tab)
+	{
+	case ASSETS_TAB_ENTITIES:
+		return "entities";
+	case ASSETS_TAB_GAME:
+		return "game";
+	case ASSETS_TAB_EMOTICONS:
+		return "emoticons";
+	case ASSETS_TAB_PARTICLES:
+		return "particles";
+	case ASSETS_TAB_HUD:
+		return "hud";
+	case ASSETS_TAB_EXTRAS:
+		return "extras";
+	case ASSETS_TAB_CURSOR:
+		return "cursor";
+	case ASSETS_TAB_ARROW:
+		return "arrow";
+	case ASSETS_TAB_AUDIO:
+		return "audio";
+	default:
+		return "";
+	}
+}
 
 void CMenus::LoadEntities(SCustomEntities *pEntitiesItem, void *pUser)
 {
@@ -209,12 +265,198 @@ int CMenus::ExtrasScan(const char *pName, int IsDir, int DirType, void *pUser)
 	return AssetScan(pName, IsDir, DirType, pThis->m_vExtrasList, "extras", pGraphics, pUser);
 }
 
+static void LoadCursorPreview(CMenus::SCustomCursor *pCursorItem, IGraphics *pGraphics)
+{
+	char aPath[IO_MAX_PATH_LENGTH];
+	if(str_comp(pCursorItem->m_aName, "default") == 0)
+	{
+		pCursorItem->m_RenderTexture = g_pData->m_aImages[IMAGE_CURSOR].m_Id;
+		return;
+	}
+
+	str_format(aPath, sizeof(aPath), "assets/cursor/%s.png", pCursorItem->m_aName);
+	pCursorItem->m_RenderTexture = pGraphics->LoadTexture(aPath, IStorage::TYPE_ALL);
+	if(pCursorItem->m_RenderTexture.IsNullTexture())
+	{
+		str_format(aPath, sizeof(aPath), "assets/cursor/%s/gui_cursor.png", pCursorItem->m_aName);
+		pCursorItem->m_RenderTexture = pGraphics->LoadTexture(aPath, IStorage::TYPE_ALL);
+		if(pCursorItem->m_RenderTexture.IsNullTexture())
+		{
+			str_format(aPath, sizeof(aPath), "assets/cursor/%s/cursor.png", pCursorItem->m_aName);
+			pCursorItem->m_RenderTexture = pGraphics->LoadTexture(aPath, IStorage::TYPE_ALL);
+		}
+	}
+}
+
+int CMenus::CursorScan(const char *pName, int IsDir, int DirType, void *pUser)
+{
+	auto *pRealUser = (SMenuAssetScanUser *)pUser;
+	auto *pThis = (CMenus *)pRealUser->m_pUser;
+	IGraphics *pGraphics = pThis->Graphics();
+
+	auto Exists = [&](const char *pItemName) {
+		for(const auto &Item : pThis->m_vCursorList)
+		{
+			if(str_comp(Item.m_aName, pItemName) == 0)
+				return true;
+		}
+		return false;
+	};
+
+	if(IsDir)
+	{
+		if(pName[0] == '.')
+			return 0;
+		if(str_comp(pName, "default") == 0)
+			return 0;
+		if(Exists(pName))
+			return 0;
+
+		SCustomCursor CursorItem;
+		str_copy(CursorItem.m_aName, pName);
+		LoadCursorPreview(&CursorItem, pGraphics);
+		pThis->m_vCursorList.push_back(CursorItem);
+	}
+	else
+	{
+		if(str_endswith(pName, ".png"))
+		{
+			char aName[IO_MAX_PATH_LENGTH];
+			str_truncate(aName, sizeof(aName), pName, str_length(pName) - 4);
+			if(str_comp(aName, "default") == 0)
+				return 0;
+			if(Exists(aName))
+				return 0;
+
+			SCustomCursor CursorItem;
+			str_copy(CursorItem.m_aName, aName);
+			LoadCursorPreview(&CursorItem, pGraphics);
+			pThis->m_vCursorList.push_back(CursorItem);
+		}
+	}
+
+	pRealUser->m_LoadedFunc();
+	return 0;
+}
+
+static void LoadArrowPreview(CMenus::SCustomArrow *pArrowItem, IGraphics *pGraphics)
+{
+	char aPath[IO_MAX_PATH_LENGTH];
+	if(str_comp(pArrowItem->m_aName, "default") == 0)
+	{
+		pArrowItem->m_RenderTexture = g_pData->m_aImages[IMAGE_ARROW].m_Id;
+		return;
+	}
+
+	str_format(aPath, sizeof(aPath), "assets/arrow/%s.png", pArrowItem->m_aName);
+	pArrowItem->m_RenderTexture = pGraphics->LoadTexture(aPath, IStorage::TYPE_ALL);
+	if(pArrowItem->m_RenderTexture.IsNullTexture())
+	{
+		str_format(aPath, sizeof(aPath), "assets/arrow/%s/arrow.png", pArrowItem->m_aName);
+		pArrowItem->m_RenderTexture = pGraphics->LoadTexture(aPath, IStorage::TYPE_ALL);
+	}
+}
+
+int CMenus::ArrowScan(const char *pName, int IsDir, int DirType, void *pUser)
+{
+	auto *pRealUser = (SMenuAssetScanUser *)pUser;
+	auto *pThis = (CMenus *)pRealUser->m_pUser;
+	IGraphics *pGraphics = pThis->Graphics();
+
+	if(IsDir)
+	{
+		if(pName[0] == '.')
+			return 0;
+		if(str_comp(pName, "default") == 0)
+			return 0;
+
+		SCustomArrow ArrowItem;
+		str_copy(ArrowItem.m_aName, pName);
+		LoadArrowPreview(&ArrowItem, pGraphics);
+		pThis->m_vArrowList.push_back(ArrowItem);
+	}
+	else
+	{
+		if(str_endswith(pName, ".png"))
+		{
+			char aName[IO_MAX_PATH_LENGTH];
+			str_truncate(aName, sizeof(aName), pName, str_length(pName) - 4);
+			if(str_comp(aName, "default") == 0)
+				return 0;
+
+			SCustomArrow ArrowItem;
+			str_copy(ArrowItem.m_aName, aName);
+			LoadArrowPreview(&ArrowItem, pGraphics);
+			pThis->m_vArrowList.push_back(ArrowItem);
+		}
+	}
+
+	pRealUser->m_LoadedFunc();
+	return 0;
+}
+
+static bool AudioPackExists(const std::vector<CMenus::SCustomAudioPack> &vList, const char *pName)
+{
+	for(const auto &Item : vList)
+	{
+		if(str_comp(Item.m_aName, pName) == 0)
+			return true;
+	}
+	return false;
+}
+
+int CMenus::AudioPackScan(const char *pName, int IsDir, int DirType, void *pUser)
+{
+	auto *pRealUser = (SMenuAssetScanUser *)pUser;
+	auto *pThis = (CMenus *)pRealUser->m_pUser;
+
+	if(!IsDir || pName[0] == '.')
+		return 0;
+	if(str_comp(pName, "default") == 0)
+		return 0;
+	if(AudioPackExists(pThis->m_vAudioPackList, pName))
+		return 0;
+
+	SCustomAudioPack PackItem;
+	str_copy(PackItem.m_aName, pName);
+	PackItem.m_RenderTexture = IGraphics::CTextureHandle();
+	pThis->m_vAudioPackList.push_back(PackItem);
+
+	pRealUser->m_LoadedFunc();
+	return 0;
+}
+
+static void ClearCursorAssetList(std::vector<CMenus::SCustomCursor> &vList, IGraphics *pGraphics)
+{
+	for(CMenus::SCustomCursor &Asset : vList)
+	{
+		if(str_comp(Asset.m_aName, "default") == 0)
+			continue;
+		pGraphics->UnloadTexture(&Asset.m_RenderTexture);
+	}
+	vList.clear();
+}
+
+static void ClearArrowAssetList(std::vector<CMenus::SCustomArrow> &vList, IGraphics *pGraphics)
+{
+	for(CMenus::SCustomArrow &Asset : vList)
+	{
+		if(str_comp(Asset.m_aName, "default") == 0)
+			continue;
+		pGraphics->UnloadTexture(&Asset.m_RenderTexture);
+	}
+	vList.clear();
+}
+
 static std::vector<const CMenus::SCustomEntities *> gs_vpSearchEntitiesList;
 static std::vector<const CMenus::SCustomGame *> gs_vpSearchGamesList;
 static std::vector<const CMenus::SCustomEmoticon *> gs_vpSearchEmoticonsList;
 static std::vector<const CMenus::SCustomParticle *> gs_vpSearchParticlesList;
 static std::vector<const CMenus::SCustomHud *> gs_vpSearchHudList;
 static std::vector<const CMenus::SCustomExtras *> gs_vpSearchExtrasList;
+static std::vector<const CMenus::SCustomCursor *> gs_vpSearchCursorList;
+static std::vector<const CMenus::SCustomArrow *> gs_vpSearchArrowList;
+static std::vector<const CMenus::SCustomAudioPack *> gs_vpSearchAudioPackList;
 
 static bool gs_aInitCustomList[NUMBER_OF_ASSETS_TABS] = {
 	true,
@@ -242,7 +484,14 @@ static const CMenus::SCustomItem *GetCustomItem(int CurTab, size_t Index)
 		return gs_vpSearchHudList[Index];
 	else if(CurTab == ASSETS_TAB_EXTRAS)
 		return gs_vpSearchExtrasList[Index];
-	dbg_assert_failed("Invalid CurTab: %d", CurTab);
+	else if(CurTab == ASSETS_TAB_CURSOR)
+		return gs_vpSearchCursorList[Index];
+	else if(CurTab == ASSETS_TAB_ARROW)
+		return gs_vpSearchArrowList[Index];
+	else if(CurTab == ASSETS_TAB_AUDIO)
+		return gs_vpSearchAudioPackList[Index];
+
+	return nullptr;
 }
 
 template<typename TName>
@@ -253,6 +502,97 @@ static void ClearAssetList(std::vector<TName> &vList, IGraphics *pGraphics)
 		pGraphics->UnloadTexture(&Asset.m_RenderTexture);
 	}
 	vList.clear();
+}
+
+void CMenus::ConAddFavoriteAsset(IConsole::IResult *pResult, void *pUserData)
+{
+	auto *pSelf = static_cast<CMenus *>(pUserData);
+	pSelf->AddFavoriteAsset(pResult->GetString(0), pResult->GetString(1));
+}
+
+void CMenus::ConRemoveFavoriteAsset(IConsole::IResult *pResult, void *pUserData)
+{
+	auto *pSelf = static_cast<CMenus *>(pUserData);
+	pSelf->RemoveFavoriteAsset(pResult->GetString(0), pResult->GetString(1));
+}
+
+void CMenus::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
+{
+	auto *pSelf = static_cast<CMenus *>(pUserData);
+	pSelf->OnConfigSave(pConfigManager);
+}
+
+void CMenus::OnConfigSave(IConfigManager *pConfigManager)
+{
+	for(int Tab = 0; Tab < NUMBER_OF_ASSETS_TABS; ++Tab)
+	{
+		const char *pTabName = FavoriteAssetTabToString(Tab);
+		for(const auto &Favorite : m_aAssetFavorites[Tab])
+		{
+			char aBuffer[IO_MAX_PATH_LENGTH + 64];
+			const char *pEnd = aBuffer + sizeof(aBuffer) - 2;
+
+			str_copy(aBuffer, "add_favorite_asset \"");
+			char *pDst = aBuffer + str_length(aBuffer);
+			str_escape(&pDst, pTabName, pEnd);
+			str_append(aBuffer, "\" \"");
+			pDst = aBuffer + str_length(aBuffer);
+			str_escape(&pDst, Favorite.c_str(), pEnd);
+			str_append(aBuffer, "\"");
+
+			pConfigManager->WriteLine(aBuffer, ConfigDomain::ENTITY);
+		}
+	}
+}
+
+void CMenus::AddFavoriteAsset(const char *pTab, const char *pName)
+{
+	AddFavoriteAsset(FavoriteAssetTabFromString(pTab), pName);
+}
+
+void CMenus::RemoveFavoriteAsset(const char *pTab, const char *pName)
+{
+	RemoveFavoriteAsset(FavoriteAssetTabFromString(pTab), pName);
+}
+
+void CMenus::AddFavoriteAsset(int Tab, const char *pName)
+{
+	if(Tab < 0 || Tab >= NUMBER_OF_ASSETS_TABS)
+	{
+		log_error("menus", "Invalid favorite asset tab '%d'", Tab);
+		return;
+	}
+	if(pName[0] == '\0')
+	{
+		return;
+	}
+
+	const auto &[_, Inserted] = m_aAssetFavorites[Tab].emplace(pName);
+	if(Inserted)
+	{
+		gs_aInitCustomList[Tab] = true;
+	}
+}
+
+void CMenus::RemoveFavoriteAsset(int Tab, const char *pName)
+{
+	if(Tab < 0 || Tab >= NUMBER_OF_ASSETS_TABS)
+	{
+		log_error("menus", "Invalid favorite asset tab '%d'", Tab);
+		return;
+	}
+
+	const auto FavoriteIt = m_aAssetFavorites[Tab].find(pName);
+	if(FavoriteIt != m_aAssetFavorites[Tab].end())
+	{
+		m_aAssetFavorites[Tab].erase(FavoriteIt);
+		gs_aInitCustomList[Tab] = true;
+	}
+}
+
+bool CMenus::IsFavoriteAsset(int Tab, const char *pName) const
+{
+	return Tab >= 0 && Tab < NUMBER_OF_ASSETS_TABS && m_aAssetFavorites[Tab].contains(pName);
 }
 
 void CMenus::ClearCustomItems(int CurTab)
@@ -306,9 +646,20 @@ void CMenus::ClearCustomItems(int CurTab)
 		// reload current DDNet particles skin
 		GameClient()->LoadExtrasSkin(g_Config.m_ClAssetExtras);
 	}
-	else
+	else if(CurTab == ASSETS_TAB_CURSOR)
 	{
-		dbg_assert_failed("Invalid CurTab: %d", CurTab);
+		ClearCursorAssetList(m_vCursorList, Graphics());
+		GameClient()->LoadCursorAsset(g_Config.m_ClAssetCursor);
+	}
+	else if(CurTab == ASSETS_TAB_ARROW)
+	{
+		ClearArrowAssetList(m_vArrowList, Graphics());
+		GameClient()->LoadArrowAsset(g_Config.m_ClAssetArrow);
+	}
+	else if(CurTab == ASSETS_TAB_AUDIO)
+	{
+		m_vAudioPackList.clear();
+		GameClient()->m_Sounds.Clear();
 	}
 	gs_aInitCustomList[CurTab] = true;
 }
@@ -352,6 +703,18 @@ static int InitSearchList(std::vector<const TName *> &vpSearchList, std::vector<
 void CMenus::RenderSettingsCustom(CUIRect MainView)
 {
 	CUIRect TabBar, CustomList, QuickSearch, DirectoryButton, ReloadButton;
+	static bool s_EntityGamePreview = true;
+	auto SortSearchList = [this](auto &vpSearchList) {
+		std::sort(vpSearchList.begin(), vpSearchList.end(), [this](const auto *pLeft, const auto *pRight) {
+			const bool LeftFavorite = IsFavoriteAsset(s_CurCustomTab, pLeft->m_aName);
+			const bool RightFavorite = IsFavoriteAsset(s_CurCustomTab, pRight->m_aName);
+			if(LeftFavorite != RightFavorite)
+			{
+				return LeftFavorite;
+			}
+			return str_comp(pLeft->m_aName, pRight->m_aName) < 0;
+		});
+	};
 
 	MainView.HSplitTop(20.0f, &TabBar, &MainView);
 	const float TabWidth = TabBar.w / (float)NUMBER_OF_ASSETS_TABS;
@@ -362,7 +725,10 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 		Localize("Emoticons"),
 		Localize("Particles"),
 		Localize("HUD"),
-		Localize("Extras")};
+		Localize("Extras"),
+		Localize("Cursor"),
+		Localize("Arrow"),
+		Localize("Audio")};
 
 	for(int Tab = ASSETS_TAB_ENTITIES; Tab < NUMBER_OF_ASSETS_TABS; ++Tab)
 	{
@@ -418,11 +784,41 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 	{
 		InitAssetList(m_vExtrasList, "assets/extras", "extras", ExtrasScan, Graphics(), Storage(), &User);
 	}
-	else
+	else if(s_CurCustomTab == ASSETS_TAB_CURSOR)
 	{
-		dbg_assert_failed("Invalid s_CurCustomTab: %d", s_CurCustomTab);
-	}
+		if(m_vCursorList.empty())
+		{
+			SCustomCursor CursorItem;
+			str_copy(CursorItem.m_aName, "default");
+			LoadCursorPreview(&CursorItem, Graphics());
+			m_vCursorList.push_back(CursorItem);
 
+			Storage()->ListDirectory(IStorage::TYPE_ALL, "assets/cursor", CursorScan, &User);
+			std::sort(m_vCursorList.begin(), m_vCursorList.end());
+		}
+		if(m_vCursorList.size() != gs_aCustomListSize[s_CurCustomTab])
+			gs_aInitCustomList[s_CurCustomTab] = true;
+	}
+	else if(s_CurCustomTab == ASSETS_TAB_ARROW)
+	{
+		InitAssetList(m_vArrowList, "assets/arrow", "arrow", ArrowScan, Graphics(), Storage(), &User);
+	}
+	else if(s_CurCustomTab == ASSETS_TAB_AUDIO)
+	{
+		if(m_vAudioPackList.empty())
+		{
+			SCustomAudioPack DefaultItem;
+			str_copy(DefaultItem.m_aName, "default");
+			DefaultItem.m_RenderTexture = IGraphics::CTextureHandle();
+			m_vAudioPackList.push_back(DefaultItem);
+
+			Storage()->ListDirectory(IStorage::TYPE_SAVE, "assets/audio", AudioPackScan, &User);
+			Storage()->ListDirectory(IStorage::TYPE_SAVE, "audio", AudioPackScan, &User);
+			std::sort(m_vAudioPackList.begin(), m_vAudioPackList.end());
+		}
+		if(m_vAudioPackList.size() != gs_aCustomListSize[s_CurCustomTab])
+			gs_aInitCustomList[s_CurCustomTab] = true;
+	}
 	MainView.HSplitTop(10.0f, nullptr, &MainView);
 
 	// skin selector
@@ -444,26 +840,47 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 
 				gs_vpSearchEntitiesList.push_back(pEntity);
 			}
+			SortSearchList(gs_vpSearchEntitiesList);
 		}
 		else if(s_CurCustomTab == ASSETS_TAB_GAME)
 		{
 			ListSize = InitSearchList(gs_vpSearchGamesList, m_vGameList);
+			SortSearchList(gs_vpSearchGamesList);
 		}
 		else if(s_CurCustomTab == ASSETS_TAB_EMOTICONS)
 		{
 			ListSize = InitSearchList(gs_vpSearchEmoticonsList, m_vEmoticonList);
+			SortSearchList(gs_vpSearchEmoticonsList);
 		}
 		else if(s_CurCustomTab == ASSETS_TAB_PARTICLES)
 		{
 			ListSize = InitSearchList(gs_vpSearchParticlesList, m_vParticlesList);
+			SortSearchList(gs_vpSearchParticlesList);
 		}
 		else if(s_CurCustomTab == ASSETS_TAB_HUD)
 		{
 			ListSize = InitSearchList(gs_vpSearchHudList, m_vHudList);
+			SortSearchList(gs_vpSearchHudList);
 		}
 		else if(s_CurCustomTab == ASSETS_TAB_EXTRAS)
 		{
 			ListSize = InitSearchList(gs_vpSearchExtrasList, m_vExtrasList);
+			SortSearchList(gs_vpSearchExtrasList);
+		}
+		else if(s_CurCustomTab == ASSETS_TAB_CURSOR)
+		{
+			ListSize = InitSearchList(gs_vpSearchCursorList, m_vCursorList);
+			SortSearchList(gs_vpSearchCursorList);
+		}
+		else if(s_CurCustomTab == ASSETS_TAB_ARROW)
+		{
+			ListSize = InitSearchList(gs_vpSearchArrowList, m_vArrowList);
+			SortSearchList(gs_vpSearchArrowList);
+		}
+		else if(s_CurCustomTab == ASSETS_TAB_AUDIO)
+		{
+			ListSize = InitSearchList(gs_vpSearchAudioPackList, m_vAudioPackList);
+			SortSearchList(gs_vpSearchAudioPackList);
 		}
 		gs_aInitCustomList[s_CurCustomTab] = false;
 		gs_aCustomListSize[s_CurCustomTab] = ListSize;
@@ -501,14 +918,35 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 	{
 		SearchListSize = gs_vpSearchExtrasList.size();
 	}
+	else if(s_CurCustomTab == ASSETS_TAB_CURSOR)
+	{
+		SearchListSize = gs_vpSearchCursorList.size();
+		TextureHeight = 64;
+		TextureWidth = 64;
+	}
+	else if(s_CurCustomTab == ASSETS_TAB_ARROW)
+	{
+		SearchListSize = gs_vpSearchArrowList.size();
+		TextureHeight = 64;
+		TextureWidth = 64;
+	}
+	else if(s_CurCustomTab == ASSETS_TAB_AUDIO)
+	{
+		SearchListSize = gs_vpSearchAudioPackList.size();
+		TextureHeight = 0;
+		TextureWidth = 0;
+	}
 
 	static CListBox s_ListBox;
-	s_ListBox.DoStart(TextureHeight + 15.0f + 10.0f + Margin, SearchListSize, CustomList.w / (Margin + TextureWidth), 1, OldSelected, &CustomList, false);
+	const float ItemHeight = s_CurCustomTab == ASSETS_TAB_AUDIO ? 28.0f : (TextureHeight + 15.0f + 10.0f + Margin);
+	const int ItemsPerRow = s_CurCustomTab == ASSETS_TAB_AUDIO ? 1 : maximum(1, (int)(CustomList.w / (Margin + TextureWidth)));
+	s_ListBox.DoStart(ItemHeight, SearchListSize, ItemsPerRow, 1, OldSelected, &CustomList, false);
 	for(size_t i = 0; i < SearchListSize; ++i)
 	{
 		const SCustomItem *pItem = GetCustomItem(s_CurCustomTab, i);
 		if(pItem == nullptr)
 			continue;
+		const bool Favorite = IsFavoriteAsset(s_CurCustomTab, pItem->m_aName);
 
 		if(s_CurCustomTab == ASSETS_TAB_ENTITIES)
 		{
@@ -540,6 +978,21 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 			if(str_comp(pItem->m_aName, g_Config.m_ClAssetExtras) == 0)
 				OldSelected = i;
 		}
+		else if(s_CurCustomTab == ASSETS_TAB_CURSOR)
+		{
+			if(str_comp(pItem->m_aName, g_Config.m_ClAssetCursor) == 0)
+				OldSelected = i;
+		}
+		else if(s_CurCustomTab == ASSETS_TAB_ARROW)
+		{
+			if(str_comp(pItem->m_aName, g_Config.m_ClAssetArrow) == 0)
+				OldSelected = i;
+		}
+		else if(s_CurCustomTab == ASSETS_TAB_AUDIO)
+		{
+			if(str_comp(pItem->m_aName, g_Config.m_SndPack) == 0)
+				OldSelected = i;
+		}
 
 		const CListboxItem Item = s_ListBox.DoNextItem(pItem, OldSelected >= 0 && (size_t)OldSelected == i);
 		CUIRect ItemRect = Item.m_Rect;
@@ -547,57 +1000,157 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 		if(!Item.m_Visible)
 			continue;
 
-		CUIRect TextureRect;
-		ItemRect.HSplitTop(15, &ItemRect, &TextureRect);
-		TextureRect.HSplitTop(10, nullptr, &TextureRect);
-		Ui()->DoLabel(&ItemRect, pItem->m_aName, ItemRect.h - 2, TEXTALIGN_MC);
-		if(pItem->m_RenderTexture.IsValid())
+		CUIRect FavoriteButton;
+		ItemRect.HSplitTop(20.0f, &FavoriteButton, nullptr);
+		FavoriteButton.VSplitRight(20.0f, nullptr, &FavoriteButton);
+
+		if(s_CurCustomTab == ASSETS_TAB_AUDIO)
 		{
-			Graphics()->WrapClamp();
-			Graphics()->TextureSet(pItem->m_RenderTexture);
-			Graphics()->QuadsBegin();
-			Graphics()->SetColor(1, 1, 1, 1);
-			IGraphics::CQuadItem QuadItem(TextureRect.x + (TextureRect.w - TextureWidth) / 2, TextureRect.y + (TextureRect.h - TextureHeight) / 2, TextureWidth, TextureHeight);
-			Graphics()->QuadsDrawTL(&QuadItem, 1);
-			Graphics()->QuadsEnd();
-			Graphics()->WrapNormal();
+			CUIRect LabelRect = ItemRect;
+			LabelRect.VSplitRight(24.0f, &LabelRect, nullptr);
+			Ui()->DoLabel(&LabelRect, pItem->m_aName, 14.0f, TEXTALIGN_ML);
 		}
+		else
+		{
+			CUIRect TextureRect;
+			ItemRect.HSplitTop(15, &ItemRect, &TextureRect);
+			TextureRect.HSplitTop(10, nullptr, &TextureRect);
+			Ui()->DoLabel(&ItemRect, pItem->m_aName, ItemRect.h - 2, TEXTALIGN_MC);
+			if(s_CurCustomTab == ASSETS_TAB_ENTITIES && s_EntityGamePreview)
+			{
+				const auto *pEntitiesItem = static_cast<const SCustomEntities *>(pItem);
+				IGraphics::CTextureHandle Tex;
+				for(int m = 0; m < MAP_IMAGE_MOD_TYPE_COUNT && !Tex.IsValid(); m++)
+					Tex = pEntitiesItem->m_aImages[m].m_Texture;
+				if(!Tex.IsValid())
+					Tex = pItem->m_RenderTexture;
+
+				if(Tex.IsValid())
+				{
+					// Game-like preview: hookable/unhookable walls + freeze/death/unfreeze tiles
+					static const int COLS = 7, ROWS = 7;
+					static const unsigned char aLayout[ROWS][COLS] = {
+						{TILE_SOLID,  TILE_SOLID,  TILE_SOLID,  TILE_SOLID,  TILE_SOLID,  TILE_SOLID,  TILE_SOLID},
+						{TILE_SOLID,  0,           0,           0,           0,           0,           TILE_NOHOOK},
+						{TILE_SOLID,  TILE_FREEZE, 0,           0,           0,           0,           TILE_NOHOOK},
+						{TILE_SOLID,  0,           TILE_DEATH,  0,           TILE_UNFREEZE, 0,         TILE_NOHOOK},
+						{TILE_SOLID,  0,           0,           0,           0,           TILE_DFREEZE, TILE_NOHOOK},
+						{TILE_SOLID,  0,           0,           0,           0,           0,           TILE_NOHOOK},
+						{TILE_NOHOOK, TILE_NOHOOK, TILE_NOHOOK, TILE_NOHOOK, TILE_NOHOOK, TILE_NOHOOK, TILE_NOHOOK},
+					};
+
+					float TileSize = TextureWidth / (float)COLS;
+					float OffX = TextureRect.x + (TextureRect.w - TextureWidth) / 2.0f;
+					float OffY = TextureRect.y + (TextureRect.h - ROWS * TileSize) / 2.0f;
+
+					// inset UVs by ~1.5px to avoid bilinear bleeding at tile boundaries
+					const float kInset = 1.5f / 1024.0f;
+					const float kTile = 1.0f / 16.0f;
+
+					Graphics()->WrapClamp();
+					Graphics()->TextureSet(Tex);
+					Graphics()->QuadsBegin();
+					Graphics()->SetColor(1, 1, 1, 1);
+					for(int r = 0; r < ROWS; r++)
+					{
+						for(int c = 0; c < COLS; c++)
+						{
+							unsigned char Tile = aLayout[r][c];
+							if(Tile == 0)
+								continue;
+							int Tx = Tile % 16;
+							int Ty = Tile / 16;
+							float U0 = Tx * kTile + kInset;
+							float V0 = Ty * kTile + kInset;
+							float U1 = U0 + kTile - kInset * 2;
+							float V1 = V0 + kTile - kInset * 2;
+							Graphics()->QuadsSetSubset(U0, V0, U1, V1);
+							IGraphics::CQuadItem Q(OffX + c * TileSize, OffY + r * TileSize, TileSize, TileSize);
+							Graphics()->QuadsDrawTL(&Q, 1);
+						}
+					}
+					Graphics()->QuadsEnd();
+					Graphics()->WrapNormal();
+				}
+			}
+			else if(pItem->m_RenderTexture.IsValid())
+			{
+				Graphics()->WrapClamp();
+				Graphics()->TextureSet(pItem->m_RenderTexture);
+				Graphics()->QuadsBegin();
+				Graphics()->SetColor(1, 1, 1, 1);
+				IGraphics::CQuadItem QuadItem(TextureRect.x + (TextureRect.w - TextureWidth) / 2, TextureRect.y + (TextureRect.h - TextureHeight) / 2, TextureWidth, TextureHeight);
+				Graphics()->QuadsDrawTL(&QuadItem, 1);
+				Graphics()->QuadsEnd();
+				Graphics()->WrapNormal();
+			}
+		}
+
+		if(DoButton_Favorite(&pItem->m_FavoriteButtonId, pItem, Favorite, &FavoriteButton))
+		{
+			if(Favorite)
+			{
+				RemoveFavoriteAsset(s_CurCustomTab, pItem->m_aName);
+			}
+			else
+			{
+				AddFavoriteAsset(s_CurCustomTab, pItem->m_aName);
+			}
+		}
+		GameClient()->m_Tooltips.DoToolTip(&pItem->m_FavoriteButtonId, &FavoriteButton,
+			Favorite ? Localize("Click to remove this item from your favorites.") : Localize("Click to add this item to your favorites."));
 	}
 
 	const int NewSelected = s_ListBox.DoEnd();
 	if(OldSelected != NewSelected)
 	{
-		if(GetCustomItem(s_CurCustomTab, NewSelected)->m_aName[0] != '\0')
+		const SCustomItem *pSelectedItem = GetCustomItem(s_CurCustomTab, NewSelected);
+		if(pSelectedItem != nullptr && pSelectedItem->m_aName[0] != '\0')
 		{
 			if(s_CurCustomTab == ASSETS_TAB_ENTITIES)
 			{
-				str_copy(g_Config.m_ClAssetsEntities, GetCustomItem(s_CurCustomTab, NewSelected)->m_aName);
-				GameClient()->m_MapImages.ChangeEntitiesPath(GetCustomItem(s_CurCustomTab, NewSelected)->m_aName);
+				str_copy(g_Config.m_ClAssetsEntities, pSelectedItem->m_aName);
+				GameClient()->m_MapImages.ChangeEntitiesPath(pSelectedItem->m_aName);
 			}
 			else if(s_CurCustomTab == ASSETS_TAB_GAME)
 			{
-				str_copy(g_Config.m_ClAssetGame, GetCustomItem(s_CurCustomTab, NewSelected)->m_aName);
+				str_copy(g_Config.m_ClAssetGame, pSelectedItem->m_aName);
 				GameClient()->LoadGameSkin(g_Config.m_ClAssetGame);
 			}
 			else if(s_CurCustomTab == ASSETS_TAB_EMOTICONS)
 			{
-				str_copy(g_Config.m_ClAssetEmoticons, GetCustomItem(s_CurCustomTab, NewSelected)->m_aName);
+				str_copy(g_Config.m_ClAssetEmoticons, pSelectedItem->m_aName);
 				GameClient()->LoadEmoticonsSkin(g_Config.m_ClAssetEmoticons);
 			}
 			else if(s_CurCustomTab == ASSETS_TAB_PARTICLES)
 			{
-				str_copy(g_Config.m_ClAssetParticles, GetCustomItem(s_CurCustomTab, NewSelected)->m_aName);
+				str_copy(g_Config.m_ClAssetParticles, pSelectedItem->m_aName);
 				GameClient()->LoadParticlesSkin(g_Config.m_ClAssetParticles);
 			}
 			else if(s_CurCustomTab == ASSETS_TAB_HUD)
 			{
-				str_copy(g_Config.m_ClAssetHud, GetCustomItem(s_CurCustomTab, NewSelected)->m_aName);
+				str_copy(g_Config.m_ClAssetHud, pSelectedItem->m_aName);
 				GameClient()->LoadHudSkin(g_Config.m_ClAssetHud);
 			}
 			else if(s_CurCustomTab == ASSETS_TAB_EXTRAS)
 			{
-				str_copy(g_Config.m_ClAssetExtras, GetCustomItem(s_CurCustomTab, NewSelected)->m_aName);
+				str_copy(g_Config.m_ClAssetExtras, pSelectedItem->m_aName);
 				GameClient()->LoadExtrasSkin(g_Config.m_ClAssetExtras);
+			}
+			else if(s_CurCustomTab == ASSETS_TAB_CURSOR)
+			{
+				str_copy(g_Config.m_ClAssetCursor, pSelectedItem->m_aName);
+				GameClient()->LoadCursorAsset(g_Config.m_ClAssetCursor);
+			}
+			else if(s_CurCustomTab == ASSETS_TAB_ARROW)
+			{
+				str_copy(g_Config.m_ClAssetArrow, pSelectedItem->m_aName);
+				GameClient()->LoadArrowAsset(g_Config.m_ClAssetArrow);
+			}
+			else if(s_CurCustomTab == ASSETS_TAB_AUDIO)
+			{
+				str_copy(g_Config.m_SndPack, pSelectedItem->m_aName);
+				GameClient()->m_Sounds.Clear();
 			}
 		}
 	}
@@ -632,6 +1185,12 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 			str_copy(aBufFull, "assets/hud");
 		else if(s_CurCustomTab == ASSETS_TAB_EXTRAS)
 			str_copy(aBufFull, "assets/extras");
+		else if(s_CurCustomTab == ASSETS_TAB_CURSOR)
+			str_copy(aBufFull, "assets/cursor");
+		else if(s_CurCustomTab == ASSETS_TAB_ARROW)
+			str_copy(aBufFull, "assets/arrow");
+		else if(s_CurCustomTab == ASSETS_TAB_AUDIO)
+			str_copy(aBufFull, "assets/audio");
 		Storage()->GetCompletePath(IStorage::TYPE_SAVE, aBufFull, aBuf, sizeof(aBuf));
 		Storage()->CreateFolder("assets", IStorage::TYPE_SAVE);
 		Storage()->CreateFolder(aBufFull, IStorage::TYPE_SAVE);
@@ -738,4 +1297,47 @@ void CMenus::ConchainAssetExtras(IConsole::IResult *pResult, void *pUserData, IC
 	}
 
 	pfnCallback(pResult, pCallbackUserData);
+}
+
+void CMenus::ConchainAssetCursor(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	CMenus *pThis = (CMenus *)pUserData;
+	if(pResult->NumArguments() == 1)
+	{
+		const char *pArg = pResult->GetString(0);
+		if(str_comp(pArg, g_Config.m_ClAssetCursor) != 0)
+		{
+			pThis->GameClient()->LoadCursorAsset(pArg);
+		}
+	}
+
+	pfnCallback(pResult, pCallbackUserData);
+}
+
+void CMenus::ConchainAssetArrow(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	CMenus *pThis = (CMenus *)pUserData;
+	if(pResult->NumArguments() == 1)
+	{
+		const char *pArg = pResult->GetString(0);
+		if(str_comp(pArg, g_Config.m_ClAssetArrow) != 0)
+		{
+			pThis->GameClient()->LoadArrowAsset(pArg);
+		}
+	}
+
+	pfnCallback(pResult, pCallbackUserData);
+}
+
+void CMenus::ConchainSndPack(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	CMenus *pThis = (CMenus *)pUserData;
+	char aOldSndPack[64];
+	str_copy(aOldSndPack, g_Config.m_SndPack, sizeof(aOldSndPack));
+	pfnCallback(pResult, pCallbackUserData);
+	if(pResult->NumArguments() == 1)
+	{
+		if(str_comp(aOldSndPack, g_Config.m_SndPack) != 0)
+			pThis->GameClient()->m_Sounds.Clear();
+	}
 }

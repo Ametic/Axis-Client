@@ -40,6 +40,7 @@ enum
 	AXIS_TAB_STATUSBAR,
 	AXIS_TAB_BINDWHEEL,
 	AXIS_TAB_QUICKACTION,
+	AXIS_TAB_SHOP,
 	AXIS_TAB_INFO,
 	NUMBER_OF_AXIS_TABS,
 };
@@ -118,6 +119,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		Localize("Status bar"),
 		Localize("Bindwheel"),
 		Localize("Quick actions"),
+		Localize("Shop"),
 		Localize("Info"),
 	};
 
@@ -178,6 +180,10 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	if(s_CurTab == AXIS_TAB_QUICKACTION)
 	{
 		RenderSettingsQuickActions(MainView);
+	}
+	if(s_CurTab == AXIS_TAB_SHOP)
+	{
+		RenderSettingsAxisClientShop(MainView);
 	}
 	if(s_CurTab == AXIS_TAB_INFO)
 	{

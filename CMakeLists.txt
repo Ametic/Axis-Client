@@ -2461,6 +2461,7 @@ if(CLIENT)
     component.cpp
     component.h
     components/axis/menus_axis.cpp
+    components/axis/menus_axis_shop.cpp
     components/background.cpp
     components/background.h
     components/binds.cpp

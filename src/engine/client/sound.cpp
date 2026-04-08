@@ -568,6 +568,33 @@ int CSound::LoadOpus(const char *pFilename, int StorageType)
 
 	void *pData;
 	unsigned DataSize;
+	bool bLoaded = false;
+
+	if(str_comp(g_Config.m_SndPack, "default") != 0)
+	{
+		auto TryLoad = [&](const char *pPath) {
+			if(bLoaded)
+				return;
+			if(m_pStorage->ReadFile(pPath, StorageType, &pData, &DataSize))
+				bLoaded = true;
+		};
+
+		char aCustomPath[512];
+		str_format(aCustomPath, sizeof(aCustomPath), "audio/%s/%s", g_Config.m_SndPack, pFilename);
+		TryLoad(aCustomPath);
+
+		str_format(aCustomPath, sizeof(aCustomPath), "assets/audio/%s/%s", g_Config.m_SndPack, pFilename);
+		TryLoad(aCustomPath);
+
+		if(const char *pSuffix = str_startswith(pFilename, "audio/"))
+		{
+			str_format(aCustomPath, sizeof(aCustomPath), "audio/%s/%s", g_Config.m_SndPack, pSuffix);
+			TryLoad(aCustomPath);
+
+			str_format(aCustomPath, sizeof(aCustomPath), "assets/audio/%s/%s", g_Config.m_SndPack, pSuffix);
+			TryLoad(aCustomPath);
+		}
+	}
 	if(!m_pStorage->ReadFile(pFilename, StorageType, &pData, &DataSize))
 	{
 		UnloadSample(pSample->m_Index);
