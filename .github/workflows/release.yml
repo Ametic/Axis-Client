@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CLIENT_NAME: E-Client
+      CLIENT_NAME: Axis-Client
       TARGET_REPOSITORY: ${{ github.repository }}
 
     steps:
