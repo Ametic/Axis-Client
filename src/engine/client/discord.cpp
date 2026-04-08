@@ -69,7 +69,7 @@ public:
 		DiscordCreateParams Params;
 		DiscordCreateParamsSetDefault(&Params);
 
-		Params.client_id = 1325507236331524116; // EClient
+		Params.client_id = 1491529734922834000; // Axis Client
 		Params.flags = EDiscordCreateFlags::DiscordCreateFlags_NoRequireDiscord;
 		Params.event_data = this;
 		Params.activity_events = &m_ActivityEvents;
@@ -121,8 +121,8 @@ public:
 
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
-		str_copy(m_Activity.assets.large_image, "m_ghost", sizeof(m_Activity.assets.large_image));
-		str_copy(m_Activity.assets.large_text, "entityclient.net", sizeof(m_Activity.assets.large_text));
+		str_copy(m_Activity.assets.large_image, "axis", sizeof(m_Activity.assets.large_image));
+		str_copy(m_Activity.assets.large_text, "Axis Client", sizeof(m_Activity.assets.large_text));
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 
 		m_Activity.timestamps.start = m_TimeStamp;
@@ -139,8 +139,8 @@ public:
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
 		// EClient
-		str_copy(m_Activity.assets.large_image, "m_ghost", sizeof(m_Activity.assets.large_image));
-		str_copy(m_Activity.assets.large_text, "entityclient.net", sizeof(m_Activity.assets.large_text));
+		str_copy(m_Activity.assets.large_image, "axis", sizeof(m_Activity.assets.large_image));
+		str_copy(m_Activity.assets.large_text, "Axis Client", sizeof(m_Activity.assets.large_text));
 		m_ShowMap = ShowMap;
 		m_Activity.instance = true;
 		m_Activity.timestamps.start = m_TimeStamp;
