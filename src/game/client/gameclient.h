@@ -822,6 +822,9 @@ public:
 	void LoadCursorAsset(const char *pPath, bool AsDir = false);
 	void LoadArrowAsset(const char *pPath, bool AsDir = false);
 
+	IGraphics::CTextureHandle CursorTexture() const;
+	IGraphics::CTextureHandle ArrowTexture() const;
+
 	struct SClientGameSkin
 	{
 		// health armor hud

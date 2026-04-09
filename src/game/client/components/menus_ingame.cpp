@@ -1242,7 +1242,7 @@ int CMenus::GhostlistFetchCallback(const CFsFileInfo *pInfo, int IsDir, int Stor
 
 	if(time_get_nanoseconds() - pSelf->m_GhostPopulateStartTime > 500ms)
 	{
-		pSelf->RenderLoading(Localize("Loading E-Client"), "Loading ghost files", 0);
+		pSelf->RenderLoading(Localize("Loading Axis Client"), "Loading ghost files", 0);
 	}
 
 	return 0;

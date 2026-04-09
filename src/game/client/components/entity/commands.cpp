@@ -35,7 +35,7 @@ void CEClient::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData
 		pSelf->m_RainbowSpeed = pResult->GetInteger(0);
 	}
 	else
-		log_info("E-Client", "%d", pSelf->m_RainbowSpeed);
+		log_info("Axis Client", "%d", pSelf->m_RainbowSpeed);
 }
 
 void CEClient::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData)
@@ -56,7 +56,7 @@ void CEClient::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUse
 		pSelf->m_RainbowSat[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("E-Client", "%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
+		log_info("Axis Client", "%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
@@ -77,7 +77,7 @@ void CEClient::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUser
 		pSelf->m_RainbowLht[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("E-Client", "%d", pSelf->m_RainbowLht[g_Config.m_ClDummy]);
+		log_info("Axis Client", "%d", pSelf->m_RainbowLht[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
@@ -101,7 +101,7 @@ void CEClient::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowBody[Dummy] = 1;
 	}
 	else
-		log_info("E-Client", "%d", pSelf->m_RainbowBody[g_Config.m_ClDummy]);
+		log_info("Axis Client", "%d", pSelf->m_RainbowBody[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
@@ -125,7 +125,7 @@ void CEClient::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowFeet[Dummy] = 1;
 	}
 	else
-		log_info("E-Client", "%d", pSelf->m_RainbowFeet[g_Config.m_ClDummy]);
+		log_info("Axis Client", "%d", pSelf->m_RainbowFeet[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData)
@@ -140,7 +140,7 @@ void CEClient::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUs
 			pSelf->m_BothPlayers = 1;
 	}
 	else
-		log_info("E-Client", "%d", pSelf->m_BothPlayers);
+		log_info("Axis Client", "%d", pSelf->m_BothPlayers);
 }
 
 void CEClient::Votekick(const char *pName, const char *pReason)
@@ -410,7 +410,7 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 
 	if(!str_comp(LastPing.m_aName, "") || LastPing.m_aName[0] == '\0')
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "E-Client", "No one pinged you yet");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Axis Client", "No one pinged you yet");
 		return;
 	}
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
@@ -421,7 +421,7 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 		}
 		if(ClientId == MAX_CLIENTS)
 		{
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "E-Client", "Player with that Name doesn't exist");
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Axis Client", "Player with that Name doesn't exist");
 			return;
 		}
 	}

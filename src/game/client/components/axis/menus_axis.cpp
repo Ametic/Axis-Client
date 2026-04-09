@@ -373,7 +373,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	Button.VSplitMid(&FilesLeft, &FilesRight, MarginSmall);
 
 	static CButtonContainer s_EClientConfig, s_Config, s_Warlist, s_Profiles, s_Chatbinds, s_FontFolder;
-	if(DoButtonLineSize_Menu(&s_EClientConfig, Localize("E-Client Setting"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	if(DoButtonLineSize_Menu(&s_EClientConfig, Localize("Axis Client Settings"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
 		Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::ENTITY].m_aConfigPath, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);

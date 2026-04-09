@@ -165,11 +165,6 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
 	if(g_Config.m_EcUnreadNews)
 		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
-	if(GameClient()->m_Menus.DoButton_Menu(&s_EClientVer, Localize(CLIENT_NAME " v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, Color, 11.0f))
-	{
-		NewPage = CMenus::PAGE_ECLIENTNEWS;
-		g_Config.m_EcUnreadNews = false;
-	}
 
 	static CButtonContainer s_ConsoleButton;
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);

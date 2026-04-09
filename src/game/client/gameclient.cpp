@@ -371,11 +371,11 @@ void CGameClient::OnInit()
 
 	if(GIT_SHORTREV_HASH)
 	{
-		str_format(m_aDDNetVersionStr, sizeof(m_aDDNetVersionStr), "%s v%s (%s)", CLIENT_NAME, ECLIENT_VERSION, GIT_SHORTREV_HASH);
+		str_format(m_aDDNetVersionStr, sizeof(m_aDDNetVersionStr), "%s v%s (%s)", CLIENT_NAME, ACLIENT_VERSION, GIT_SHORTREV_HASH);
 	}
 	else
 	{
-		str_format(m_aDDNetVersionStr, sizeof(m_aDDNetVersionStr), "%s v%s", CLIENT_NAME, ECLIENT_VERSION);
+		str_format(m_aDDNetVersionStr, sizeof(m_aDDNetVersionStr), "%s v%s", CLIENT_NAME, ACLIENT_VERSION);
 	}
 
 	// TODO: this should be different
@@ -397,7 +397,7 @@ void CGameClient::OnInit()
 	// update and swap after font loading, they are quite huge
 	Client()->UpdateAndSwap();
 
-	const char *pLoadingDDNetCaption = Localize("Loading E-Client");
+	const char *pLoadingDDNetCaption = Localize("Loading Axis Client");
 	const char *pLoadingMessageComponents = Localize("Initializing components");
 	const char *pLoadingMessageComponentsSpecial = Localize("Why are you slowmo replaying to read this?");
 	char aLoadingMessage[256];
@@ -5209,6 +5209,20 @@ void CGameClient::LoadArrowAsset(const char *pPath, bool AsDir)
 	m_ArrowTextureOverride = Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
 	if(!m_ArrowTextureOverride.IsNullTexture())
 		m_ArrowTextureOverrideLoaded = true;
+}
+
+IGraphics::CTextureHandle CGameClient::CursorTexture() const
+{
+	if(m_CursorTextureOverrideLoaded && m_CursorTextureOverride.IsValid() && !m_CursorTextureOverride.IsNullTexture())
+		return m_CursorTextureOverride;
+	return g_pData->m_aImages[IMAGE_CURSOR].m_Id;
+}
+
+IGraphics::CTextureHandle CGameClient::ArrowTexture() const
+{
+	if(m_ArrowTextureOverrideLoaded && m_ArrowTextureOverride.IsValid() && !m_ArrowTextureOverride.IsNullTexture())
+		return m_ArrowTextureOverride;
+	return g_pData->m_aImages[IMAGE_ARROW].m_Id;
 }
 
 void CGameClient::RefreshSkin(const std::shared_ptr<CManagedTeeRenderInfo> &pManagedTeeRenderInfo)

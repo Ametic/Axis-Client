@@ -110,7 +110,7 @@ void CEntityInfo::FinishEClientInfo()
 		char aNewVersionStr[64];
 		str_copy(aNewVersionStr, CurrentVersion);
 		char aCurVersionStr[64];
-		str_copy(aCurVersionStr, ECLIENT_VERSION);
+		str_copy(aCurVersionStr, ACLIENT_VERSION);
 		if(ToECVersion(aNewVersionStr) > ToECVersion(aCurVersionStr))
 		{
 			str_copy(m_aVersionStr, CurrentVersion);

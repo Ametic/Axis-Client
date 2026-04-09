@@ -1601,7 +1601,7 @@ void CGameConsole::OnRender()
 		TextRender()->Text(Screen.w - TextRender()->TextWidth(FONT_SIZE, aBuf) - 10.0f, FONT_SIZE / 2.f, FONT_SIZE, aBuf);
 
 		//<E-Client
-		const char *pClientVersion = CLIENT_NAME " v" ECLIENT_VERSION;
+		const char *pClientVersion = CLIENT_NAME " v" ACLIENT_VERSION;
 		TextRender()->Text(Screen.w - TextRender()->TextWidth(FONT_SIZE, pClientVersion) - 10.0f, FONT_SIZE * 1.55f, FONT_SIZE, pClientVersion);
 		// EClient>
 	}

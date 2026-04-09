@@ -135,7 +135,7 @@ void CRenderTools::Init(IGraphics *pGraphics, ITextRender *pTextRender, CGameCli
 void CRenderTools::RenderCursor(vec2 Center, float Size, float Alpha) const
 {
 	Graphics()->WrapClamp();
-	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CURSOR].m_Id);
+	Graphics()->TextureSet(m_pGameClient->CursorTexture());
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 	IGraphics::CQuadItem QuadItem(Center.x, Center.y, Size, Size);

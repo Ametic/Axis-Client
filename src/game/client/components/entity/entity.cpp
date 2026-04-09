@@ -247,7 +247,7 @@ void CEClient::OnConnect()
 	static bool s_SentInfoMessage = false;
 	if(m_FirstLaunch && !s_SentInfoMessage)
 	{
-		GameClient()->ClientMessage("╭──                 E-Client Info");
+		GameClient()->ClientMessage("╭──                 Axis Client Info");
 		GameClient()->ClientMessage("│ Seems like it's your first time running the client!");
 		GameClient()->ClientMessage("│");
 		GameClient()->ClientMessage("│ To view a list of Default Chat Commands do \".help\"");
@@ -334,7 +334,7 @@ void CEClient::NotifyOnMove()
 
 		if(Moved)
 		{
-			Client()->Notify("E-Client", "current tile changed");
+			Client()->Notify("Axis Client", "current tile changed");
 			Graphics()->NotifyWindow();
 		}
 	}
