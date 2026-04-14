@@ -3538,7 +3538,9 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 						Client()->ViewFile("data/entity/fonts");
 					}
 				}
-
+				// Axis Client
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_AcNameplateSkins, ("Show skin names in nameplate"), &g_Config.m_AcNameplateSkins, &Miscellaneous, LineSize);
+				
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &Miscellaneous, LineSize);
 
 				Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);

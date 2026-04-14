@@ -473,6 +473,37 @@ public:
 		CNamePlatePartText(This) {}
 };
 
+class CNamePlatePartSkin : public CNamePlatePartText
+{
+private:
+	char m_aText[MAX_SKIN_LENGTH] = "";
+	float m_FontSize = -INFINITY;
+
+protected:
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
+	{
+		m_Visible = Data.m_InGame ? g_Config.m_AcNameplateSkins > (This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Local ? 1 : 0) : g_Config.m_AcNameplateSkins > 0;
+		if(!m_Visible)
+			return false;
+		m_Color = Data.m_Color;
+		const char *pSkin = Data.m_InGame ? This.m_aClients[Data.m_ClientId].m_aSkinName : (Data.m_ClientId == 0 ? g_Config.m_ClPlayerSkin : g_Config.m_ClDummySkin);
+		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, pSkin) != 0;
+	}
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
+	{
+		m_FontSize = Data.m_FontSizeClan;
+		const char *pSkin = Data.m_InGame ? This.m_aClients[Data.m_ClientId].m_aSkinName : (Data.m_ClientId == 0 ? g_Config.m_ClPlayerSkin : g_Config.m_ClDummySkin);
+		str_copy(m_aText, pSkin, sizeof(m_aText));
+		CTextCursor Cursor;
+		Cursor.m_FontSize = m_FontSize;
+		This.TextRender()->CreateOrAppendTextContainer(m_TextContainerIndex, &Cursor, m_aText);
+	}
+
+public:
+	CNamePlatePartSkin(CGameClient &This) :
+		CNamePlatePartText(This) {}
+};
+
 // EClient
 class CNamePlatePartReason : public CNamePlatePartText
 {
@@ -711,6 +742,8 @@ private:
 		AddPart<CNamePlatePartEClientIcon>(This); // EClient
 
 		AddPart<CNamePlatePartReason>(This); // TClient
+		AddPart<CNamePlatePartNewLine>(This);
+		AddPart<CNamePlatePartSkin>(This);
 		AddPart<CNamePlatePartNewLine>(This);
 
 		AddPart<CNamePlatePartClan>(This);
