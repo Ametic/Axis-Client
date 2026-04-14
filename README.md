@@ -47,8 +47,4 @@ server_rainbow_feet <0 | 1> <0 | 1 (Dummy)>
 reply_last <?Message>
 specid <id>
 ```
-<<<<<<< HEAD
 </details>
-=======
-</details>
->>>>>>> 61ab99a6677e43092481c671a7a7ddc0d6248b4a
