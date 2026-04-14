@@ -3629,6 +3629,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordRpc, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordRpc, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_AcDiscordShowServerName, "Show server name instead of status", &g_Config.m_AcDiscordShowServerName, &DiscordRpc, LineSize);
 
 				std::array<float, 2> Sizes = {
 					TextRender()->TextBoundingBox(FontSize, "Online Message:").m_W,
