@@ -4,15 +4,18 @@
 ---
 
 > Client that I'm using to play, based on [Entity Client](https://entityclient.net/).
+> 
 > Updates are not regular, I'm updating it when I need some new features :)
+> 
 > Using some parts from [BestClient](https://bestclient.fun/).
 
 ---
+<details>
+  
 
-### Command List:
+<summary> Command List: </summary>
 
-> [!NOTE]
-> This is out of date
+OUT OF DATE
 
 ```
 votekick "<Name> <Reason>"
@@ -44,3 +47,4 @@ server_rainbow_feet <0 | 1> <0 | 1 (Dummy)>
 reply_last <?Message>
 specid <id>
 ```
+</details>
