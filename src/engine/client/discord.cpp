@@ -3,6 +3,7 @@
 
 #include <engine/client.h>
 #include <engine/discord.h>
+#include <engine/shared/config.h>
 
 #if defined(CONF_DISCORD)
 #include <discord_game_sdk.h>
@@ -146,7 +147,10 @@ public:
 		m_Activity.timestamps.start = m_TimeStamp;
 		if(m_ShowMap)
 			str_copy(m_Activity.state, ServerInfo.m_aMap, sizeof(m_Activity.state));
-		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
+		if(g_Config.m_AcDiscordShowServerName)
+			str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
+		else
+			str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 
 		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
@@ -174,7 +178,10 @@ public:
 
 		UpdateServerIp(ServerInfo);
 
-		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
+		if(g_Config.m_AcDiscordShowServerName)
+			str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
+		else
+			str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 		if(m_ShowMap)
 			str_copy(m_Activity.state, ServerInfo.m_aMap, sizeof(m_Activity.state));
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
