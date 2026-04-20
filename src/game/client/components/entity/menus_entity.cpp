@@ -187,6 +187,23 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 void CMenus::RenderEClientNewsPage(CUIRect MainView)
 {
+	class CNewsLine
+	{
+	public:
+		int m_Index = -1;
+		CUIRect m_Rect;
+		std::string m_Text;
+		float m_FontSize = 15.0f;
+	};
+
+	class CSelectedNewsLine
+	{
+	public:
+		int m_LineIndex = -1;
+		int m_SelectionStart = -1;
+		int m_SelectionEnd = -1;
+	};
+
 	GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_NEWS);
 
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
@@ -194,76 +211,229 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 	MainView.HSplitTop(10.0f, nullptr, &MainView);
 	MainView.VSplitLeft(15.0f, nullptr, &MainView);
 
-	// --- Begin scroll region ---
+	static bool s_Selecting = false;
+	static bool s_HasSelection = false;
+	static vec2 s_SelectionMousePress = vec2(0.0f, 0.0f);
+	static vec2 s_SelectionMouseRelease = vec2(0.0f, 0.0f);
+	static std::string s_SelectionText;
+	static std::string s_LastNews;
+	static std::vector<CSelectedNewsLine> s_vSelectedLines;
+
+	const char *pNews = GameClient()->m_EntityInfo.m_aNews;
+	if(s_LastNews != pNews)
+	{
+		s_LastNews = pNews;
+		s_Selecting = false;
+		s_HasSelection = false;
+		s_SelectionText.clear();
+		s_vSelectedLines.clear();
+	}
+
+	const CUIRect InteractionRect = MainView;
+	const bool HoveredNews = Ui()->MouseHovered(&InteractionRect) && !Ui()->IsPopupOpen();
+
+	if(HoveredNews && Ui()->MouseButtonClicked(0))
+	{
+		s_Selecting = true;
+		s_HasSelection = false;
+		s_SelectionText.clear();
+		s_vSelectedLines.clear();
+		s_SelectionMousePress = Ui()->MousePos();
+		s_SelectionMouseRelease = Ui()->MousePos();
+	}
+	else if(!HoveredNews && Ui()->MouseButtonClicked(0) && !s_Selecting)
+	{
+		s_HasSelection = false;
+		s_SelectionText.clear();
+		s_vSelectedLines.clear();
+	}
+
+	if(s_Selecting)
+	{
+		s_SelectionMouseRelease = Ui()->MousePos();
+		if(!Ui()->MouseButton(0))
+			s_Selecting = false;
+	}
+
 	static CScrollRegion s_ScrollRegion;
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = Ui()->IsPopupOpen() ? 0.0f : ScrollSpeed;
 	s_ScrollRegion.Begin(&MainView, &ScrollParams);
 
 	CUIRect ContentView = MainView;
-
 	CUIRect Label;
-	const char *pStr = GameClient()->m_EntityInfo.m_aNews;
+
+	std::vector<CNewsLine> vVisibleLines;
+
+	auto PrepareSelectionCursor = [&](const CNewsLine &Line) {
+		float TextHeight = 0.0f;
+		float MaxCharacterHeight = 0.0f;
+		int LineCount = 0;
+		STextSizeProperties TextSizeProps;
+		TextSizeProps.m_pHeight = &TextHeight;
+		TextSizeProps.m_pMaxCharacterHeightInLine = &MaxCharacterHeight;
+		TextSizeProps.m_pLineCount = &LineCount;
+
+		const float TextWidth = TextRender()->TextWidth(Line.m_FontSize, Line.m_Text.c_str(), -1, -1.0f, 0, TextSizeProps);
+
+		CTextCursor Cursor;
+		Cursor.SetPosition(CUi::CalcAlignedCursorPos(&Line.m_Rect, vec2(TextWidth, TextHeight), TEXTALIGN_ML, LineCount == 1 ? &MaxCharacterHeight : nullptr));
+		Cursor.m_FontSize = Line.m_FontSize;
+		Cursor.m_Flags = TEXTFLAG_RENDER;
+		Cursor.m_SelectionHeightFactor = 1.0f;
+		return Cursor;
+	};
+
+	auto RenderSelectionForLine = [&](const CNewsLine &Line, int SelectionStart, int SelectionEnd) {
+		if(SelectionStart < 0 || SelectionEnd <= SelectionStart || Line.m_Text.empty())
+			return;
+
+		CTextCursor Cursor = PrepareSelectionCursor(Line);
+		Cursor.m_CalculateSelectionMode = TEXT_CURSOR_SELECTION_MODE_SET;
+		Cursor.m_SelectionStart = SelectionStart;
+		Cursor.m_SelectionEnd = SelectionEnd;
+
+		TextRender()->TextColor(ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f));
+		TextRender()->TextEx(&Cursor, Line.m_Text.c_str(), -1);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+	};
+
 	char aLine[256];
-
-	while((pStr = str_next_token(pStr, "\n", aLine, sizeof(aLine))))
+	int LineIndex = 0;
+	while((pNews = str_next_token(pNews, "\n", aLine, sizeof(aLine))))
 	{
-		const size_t Len = str_length(aLine);
-		float aLineHeight = 20.0f;
-		float aFontSize = 15.0f;
+		float LineHeight = 20.0f;
+		float LineFontSize = 15.0f;
+		ColorRGBA TextColor = TextRender()->DefaultTextColor();
+		std::string LineText = aLine;
 
-		if(Len > 0 && aLine[0] == '#' && aLine[1] == '#' && aLine[2] == '#')
+		if(!LineText.empty())
 		{
-			memmove(aLine, aLine + 3, Len - 1);
-			aLine[Len - 3] = '\0';
-			aLineHeight = 21.0f;
-			aFontSize = 17.5f;
-		}
-		else if(Len > 0 && aLine[0] == '#' && aLine[1] == '#')
-		{
-			memmove(aLine, aLine + 2, Len - 1);
-			aLine[Len - 2] = '\0';
-			aLineHeight = 23.5f;
-			aFontSize = 20.0f;
-		}
-		else if(Len > 0 && aLine[0] == '#' && str_isnum(aLine[1]))
-		{
-			int Code = (aLine[1] - '0') * 2;
-			memmove(aLine, aLine + 2, Len - 1);
-			aLine[Len - 1] = '\0';
-			aLineHeight = 31.5f - Code;
-			aFontSize = 28.5f - Code;
-		}
-		else if(Len > 0 && aLine[0] == '#')
-		{
-			memmove(aLine, aLine + 1, Len - 1);
-			aLine[Len - 1] = '\0';
-			aLineHeight = 26.0f;
-			aFontSize = 22.5f;
-		}
-		else if(Len > 0 && aLine[0] == '-' && aLine[1] == '#')
-		{
-			TextRender()->TextColor(0.8f, 0.8f, 0.8f, 1.0f);
-			memmove(aLine, aLine + 2, Len - 1);
-			aLine[Len - 1] = '\0';
-			aLineHeight = 13.5f;
-			aFontSize = 10.5f;
-		}
-		else if(Len > 0 && aLine[0] == '-' && aLine[1] == ' ')
-		{
-			char Temp[256];
-			str_copy(Temp, aLine);
-			memmove(Temp, Temp + 1, Len - 1);
-			Temp[Len - 1] = '\0';
-			str_format(aLine, sizeof(aLine), "•%s", Temp);
+			if(LineText.size() >= 3 && LineText[0] == '#' && LineText[1] == '#' && LineText[2] == '#')
+			{
+				LineText = LineText.substr(3);
+				LineHeight = 21.0f;
+				LineFontSize = 17.5f;
+			}
+			else if(LineText.size() >= 2 && LineText[0] == '#' && LineText[1] == '#')
+			{
+				LineText = LineText.substr(2);
+				LineHeight = 23.5f;
+				LineFontSize = 20.0f;
+			}
+			else if(LineText.size() >= 2 && LineText[0] == '#' && str_isnum(LineText[1]))
+			{
+				const int Code = (LineText[1] - '0') * 2;
+				LineText = LineText.substr(2);
+				LineHeight = 31.5f - Code;
+				LineFontSize = 28.5f - Code;
+			}
+			else if(LineText[0] == '#')
+			{
+				LineText = LineText.substr(1);
+				LineHeight = 26.0f;
+				LineFontSize = 22.5f;
+			}
+			else if(LineText.size() >= 2 && LineText[0] == '-' && LineText[1] == '#')
+			{
+				TextColor = ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f);
+				LineText = LineText.substr(2);
+				LineHeight = 13.5f;
+				LineFontSize = 10.5f;
+			}
+			else if(LineText.size() >= 2 && LineText[0] == '-' && LineText[1] == ' ')
+			{
+				LineText = std::string("•") + LineText.substr(1);
+			}
 		}
 
-		ContentView.HSplitTop(aLineHeight, &Label, &ContentView);
+		ContentView.HSplitTop(LineHeight, &Label, &ContentView);
 
 		if(s_ScrollRegion.AddRect(Label))
-			Ui()->DoLabel(&Label, aLine, aFontSize, TEXTALIGN_ML);
+		{
+			TextRender()->TextColor(TextColor);
+			Ui()->DoLabel(&Label, LineText.c_str(), LineFontSize, TEXTALIGN_ML);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
 
-		TextRender()->TextColor(TextRender()->DefaultTextColor());
+			CNewsLine &Line = vVisibleLines.emplace_back();
+			Line.m_Index = LineIndex;
+			Line.m_Rect = Label;
+			Line.m_Text = LineText;
+			Line.m_FontSize = LineFontSize;
+		}
+
+		++LineIndex;
+	}
+
+	if(s_Selecting)
+	{
+		const float SelectionMinY = minimum(s_SelectionMousePress.y, s_SelectionMouseRelease.y);
+		const float SelectionMaxY = maximum(s_SelectionMousePress.y, s_SelectionMouseRelease.y);
+
+		std::vector<CSelectedNewsLine> vSelectedLines;
+		std::string SelectionText;
+		bool AnySelection = false;
+
+		for(const CNewsLine &Line : vVisibleLines)
+		{
+			const float LineTop = Line.m_Rect.y;
+			const float LineBottom = Line.m_Rect.y + Line.m_Rect.h;
+			if(LineBottom < SelectionMinY || LineTop > SelectionMaxY || Line.m_Text.empty())
+				continue;
+
+			CTextCursor Cursor = PrepareSelectionCursor(Line);
+			Cursor.m_CalculateSelectionMode = TEXT_CURSOR_SELECTION_MODE_CALCULATE;
+			Cursor.m_PressMouse = s_SelectionMousePress;
+			Cursor.m_ReleaseMouse = s_SelectionMouseRelease;
+
+			TextRender()->TextColor(ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f));
+			TextRender()->TextEx(&Cursor, Line.m_Text.c_str(), -1);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+			const int SelectionStart = minimum(Cursor.m_SelectionStart, Cursor.m_SelectionEnd);
+			const int SelectionEnd = maximum(Cursor.m_SelectionStart, Cursor.m_SelectionEnd);
+
+			if(SelectionStart < 0 || SelectionEnd <= SelectionStart)
+				continue;
+
+			CSelectedNewsLine &SelectedLine = vSelectedLines.emplace_back();
+			SelectedLine.m_LineIndex = Line.m_Index;
+			SelectedLine.m_SelectionStart = SelectionStart;
+			SelectedLine.m_SelectionEnd = SelectionEnd;
+
+			const size_t StartOffset = str_utf8_offset_chars_to_bytes(Line.m_Text.c_str(), SelectionStart);
+			const size_t EndOffset = str_utf8_offset_chars_to_bytes(Line.m_Text.c_str(), SelectionEnd);
+			if(EndOffset > StartOffset && EndOffset <= Line.m_Text.length())
+			{
+				if(AnySelection)
+					SelectionText += "\n";
+				SelectionText += Line.m_Text.substr(StartOffset, EndOffset - StartOffset);
+				AnySelection = true;
+			}
+		}
+
+		s_HasSelection = AnySelection;
+		s_SelectionText = AnySelection ? SelectionText : "";
+		s_vSelectedLines = AnySelection ? vSelectedLines : std::vector<CSelectedNewsLine>();
+	}
+	else if(s_HasSelection)
+	{
+		for(const CNewsLine &Line : vVisibleLines)
+		{
+			for(const CSelectedNewsLine &SelectedLine : s_vSelectedLines)
+			{
+				if(SelectedLine.m_LineIndex == Line.m_Index)
+				{
+					RenderSelectionForLine(Line, SelectedLine.m_SelectionStart, SelectedLine.m_SelectionEnd);
+					break;
+				}
+			}
+		}
+	}
+
+	if(s_HasSelection && GameClient()->Input()->ModifierIsPressed() && GameClient()->Input()->KeyPress(KEY_C))
+	{
+		GameClient()->Input()->SetClipboardText(s_SelectionText.c_str());
 	}
 
 	CUIRect Space;
