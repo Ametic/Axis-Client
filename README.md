@@ -163,8 +163,9 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 ```
 
 </details>
+<details open>
 
-# Setting Pages:
+<summary>Setting Pages</summary>
 
 ### Main Settings
 <img width="1668" height="1719" alt="Settings" src="https://github.com/user-attachments/assets/56762cfe-c360-4fd0-853a-919c9cf19214" />
@@ -193,7 +194,11 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 ### Info
 <img width="1667" height="987" alt="Info" src="https://github.com/user-attachments/assets/279e9cf8-4574-4ca5-974b-733ed8466e4d" />
 
-# Command List:
+</details>
+
+<details>
+
+<summary>Command List</summary>
 
 > [!NOTE]
 > This is out of date
@@ -228,8 +233,12 @@ server_rainbow_feet <0 | 1> <0 | 1 (Dummy)>
 reply_last <?Message>
 specid <id>
 ```
+</details>
 
-# Setting List:
+<details>
+
+<summary>Config List</summary>
+
 ```
 ec_auto_reply_msg
 ec_tabbed_out_msg
@@ -479,3 +488,5 @@ ec_statusbar_text_alpha
 ec_statusbar_labels
 ec_statusbar_scheme
 ```
+</details>
+
