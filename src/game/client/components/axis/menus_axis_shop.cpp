@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -68,8 +69,8 @@ enum
 	AXIS_ASSETS_TAB_EMOTICONS = 2,
 	AXIS_ASSETS_TAB_PARTICLES = 3,
 	AXIS_ASSETS_TAB_HUD = 4,
-	AXIS_ASSETS_TAB_ARROW = 7,
 	AXIS_ASSETS_TAB_CURSOR = 6,
+	AXIS_ASSETS_TAB_ARROW = 7,
 	AXIS_ASSETS_TAB_AUDIO = 8,
 };
 
@@ -250,12 +251,13 @@ static void AxisClientShopTrimQuery(const char *pInput, char *pOutput, size_t Ou
 	}
 
 	int End = str_length(pOutput);
+	const int OriginalEnd = End;
 	while(End > Start && (unsigned char)pOutput[End - 1] <= 32)
 	{
 		--End;
 	}
 
-	if(Start > 0 || End < str_length(pOutput))
+	if(Start > 0 || End < OriginalEnd)
 	{
 		int WritePos = 0;
 		for(int ReadPos = Start; ReadPos < End && WritePos < (int)OutputSize - 1; ++ReadPos)
@@ -534,7 +536,7 @@ static bool AxisClientShopExtractZipToDirectory(CMenus *pMenus, const unsigned c
 		uint16_t m_CompressionMethod = 0;
 	};
 
-	size_t EocdOffset = (size_t)-1;
+	size_t EocdOffset = SIZE_MAX;
 	const size_t SearchStart = DataSize > 65557 ? DataSize - 65557 : 0;
 	for(size_t Pos = DataSize - 22 + 1; Pos-- > SearchStart;)
 	{
@@ -545,7 +547,7 @@ static bool AxisClientShopExtractZipToDirectory(CMenus *pMenus, const unsigned c
 		}
 	}
 
-	if(EocdOffset == (size_t)-1 || EocdOffset + 22 > DataSize)
+	if(EocdOffset == SIZE_MAX || EocdOffset + 22 > DataSize)
 	{
 		return false;
 	}
@@ -862,60 +864,48 @@ static bool AxisClientShopDeleteAsset(CMenus *pMenus, int Tab, const char *pAsse
 	bool AnyDeleted = false;
 	bool DeleteSuccess = true;
 
+	auto DeleteDirIfExists = [&](const char *pRelativePath) {
+		char aAbsolutePath[IO_MAX_PATH_LENGTH];
+		pMenus->MenuStorage()->GetCompletePath(IStorage::TYPE_SAVE, pRelativePath, aAbsolutePath, sizeof(aAbsolutePath));
+		if(fs_is_dir(aAbsolutePath) == 1)
+		{
+			AnyDeleted = true;
+			DeleteSuccess &= AxisClientShopRemoveAbsoluteDirectoryRecursive(aAbsolutePath);
+		}
+	};
+
+	auto DeleteFileIfExists = [&](const char *pRelativePath) {
+		if(pMenus->MenuStorage()->FileExists(pRelativePath, IStorage::TYPE_SAVE))
+		{
+			AnyDeleted = true;
+			DeleteSuccess &= pMenus->MenuStorage()->RemoveFile(pRelativePath, IStorage::TYPE_SAVE);
+		}
+	};
+
 	if(Tab == AXIS_SHOP_AUDIO)
 	{
-		const char *apAudioDirectories[] = {
-			"assets/audio/%s",
-			"audio/%s",
-		};
-		for(const char *pAudioDirectory : apAudioDirectories)
-		{
-			char aDirectoryPath[IO_MAX_PATH_LENGTH];
-			snprintf(aDirectoryPath, sizeof(aDirectoryPath), pAudioDirectory, pAssetName);
-			char aAbsolutePath[IO_MAX_PATH_LENGTH];
-			pMenus->MenuStorage()->GetCompletePath(IStorage::TYPE_SAVE, aDirectoryPath, aAbsolutePath, sizeof(aAbsolutePath));
-			if(fs_is_dir(aAbsolutePath) == 1)
-			{
-				AnyDeleted = true;
-				DeleteSuccess &= AxisClientShopRemoveAbsoluteDirectoryRecursive(aAbsolutePath);
-			}
-		}
+		char aPath[IO_MAX_PATH_LENGTH];
+		str_format(aPath, sizeof(aPath), "assets/audio/%s", pAssetName);
+		DeleteDirIfExists(aPath);
+		str_format(aPath, sizeof(aPath), "audio/%s", pAssetName);
+		DeleteDirIfExists(aPath);
 	}
 	else if(Tab == AXIS_SHOP_ARROWS)
 	{
 		char aPath[IO_MAX_PATH_LENGTH];
-		const char *apArrowPaths[] = {
-			"assets/arrow/%s.png",
-			"assets/arrow/%s/arrow.png",
-			"assets/arrows/%s.png",
-			"assets/arrows/%s/arrow.png",
-		};
-		for(const char *pArrowPath : apArrowPaths)
-		{
-			str_format(aPath, sizeof(aPath), pArrowPath, pAssetName);
-			if(pMenus->MenuStorage()->FileExists(aPath, IStorage::TYPE_SAVE))
-			{
-				AnyDeleted = true;
-				DeleteSuccess &= pMenus->MenuStorage()->RemoveFile(aPath, IStorage::TYPE_SAVE);
-			}
-		}
+		str_format(aPath, sizeof(aPath), "assets/arrow/%s.png", pAssetName);
+		DeleteFileIfExists(aPath);
+		str_format(aPath, sizeof(aPath), "assets/arrow/%s/arrow.png", pAssetName);
+		DeleteFileIfExists(aPath);
+		str_format(aPath, sizeof(aPath), "assets/arrows/%s.png", pAssetName);
+		DeleteFileIfExists(aPath);
+		str_format(aPath, sizeof(aPath), "assets/arrows/%s/arrow.png", pAssetName);
+		DeleteFileIfExists(aPath);
 
-		const char *apArrowDirectories[] = {
-			"assets/arrow/%s",
-			"assets/arrows/%s",
-		};
-		for(const char *pArrowDirectory : apArrowDirectories)
-		{
-			char aDirectoryPath[IO_MAX_PATH_LENGTH];
-			str_format(aDirectoryPath, sizeof(aDirectoryPath), pArrowDirectory, pAssetName);
-			char aAbsolutePath[IO_MAX_PATH_LENGTH];
-			pMenus->MenuStorage()->GetCompletePath(IStorage::TYPE_SAVE, aDirectoryPath, aAbsolutePath, sizeof(aAbsolutePath));
-			if(fs_is_dir(aAbsolutePath) == 1)
-			{
-				AnyDeleted = true;
-				DeleteSuccess &= AxisClientShopRemoveAbsoluteDirectoryRecursive(aAbsolutePath);
-			}
-		}
+		str_format(aPath, sizeof(aPath), "assets/arrow/%s", pAssetName);
+		DeleteDirIfExists(aPath);
+		str_format(aPath, sizeof(aPath), "assets/arrows/%s", pAssetName);
+		DeleteDirIfExists(aPath);
 	}
 	else
 	{
@@ -1755,7 +1745,7 @@ void CMenus::RenderSettingsAxisClientShop(CUIRect MainView)
 	}
 
 	static CListBox s_ListBox;
-	const int NumItems = gs_AxisClientShopState.m_vItems.size();
+	const int NumItems = (int)gs_AxisClientShopState.m_vItems.size();
 	s_ListBox.DoStart(AXIS_SHOP_ITEM_HEIGHT, NumItems, 1, 1, gs_AxisClientShopState.m_SelectedIndex, &ListView, true);
 
 	for(int Index = 0; Index < NumItems; ++Index)
