@@ -200,9 +200,6 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 
 <summary>Command List</summary>
 
-> [!NOTE]
-> This is out of date
-
 ```
 votekick "<Name> <Reason>"
 
