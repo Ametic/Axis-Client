@@ -1264,23 +1264,28 @@ void CChat::OnPrepareLines(float y)
 		const char *pTranslatedError = nullptr;
 		const char *pTranslatedText = nullptr;
 		const char *pTranslatedLanguage = nullptr;
-		if(Line.m_pTranslateResponse != nullptr && Line.m_pTranslateResponse->m_Text[0])
+		if(Line.m_pTranslateResponse != nullptr)
 		{
-			// If hidden and there is translated text
-			if(pText != Line.m_aText)
+			if(Line.m_pTranslateResponse->m_Text[0])
 			{
-				pTranslatedError = Localize("Translated text hidden due to streamer mode");
+				// If hidden and there is translated text
+				if(pText != Line.m_aText)
+				{
+					pTranslatedError = Localize("Translated text hidden due to streamer mode");
+				}
+				else if(Line.m_pTranslateResponse->m_Error)
+				{
+					pTranslatedError = Line.m_pTranslateResponse->m_Text;
+				}
+				else
+				{
+					pTranslatedText = Line.m_pTranslateResponse->m_Text;
+					if(Line.m_pTranslateResponse->m_Language[0] != '\0')
+						pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
+				}
 			}
-			else if(Line.m_pTranslateResponse->m_Error)
-			{
-				pTranslatedError = Line.m_pTranslateResponse->m_Text;
-			}
-			else
-			{
-				pTranslatedText = Line.m_pTranslateResponse->m_Text;
-				if(Line.m_pTranslateResponse->m_Language[0] != '\0')
-					pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
-			}
+			else if(Line.m_pTranslateResponse->m_Language[0] != '\0' && g_Config.m_EcTranslateAutoShowLanguage)
+				pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
 		}
 
 		// get the y offset (calculate it if we haven't done that yet)
@@ -1357,6 +1362,13 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->ColorParsing(pText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
 				else
 					TextRender()->TextEx(&AppendCursor, pText);
+
+				if(pTranslatedLanguage && !Line.m_pTranslateResponse->m_Blacklisted)
+				{
+					TextRender()->TextEx(&AppendCursor, " [");
+					TextRender()->TextEx(&AppendCursor, pTranslatedLanguage);
+					TextRender()->TextEx(&AppendCursor, "]");
+				}
 			}
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
@@ -1533,8 +1545,21 @@ void CChat::OnPrepareLines(float y)
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
 			RawMessage += TextRender()->RemoveColorCodes(pText);
-			AppendCursor.m_vColorSplits.clear();
+
+			if(pTranslatedLanguage && !Line.m_pTranslateResponse->m_Blacklisted)
+			{
+				std::string Lang = " [" + std::string(pTranslatedLanguage) + "]";
+				ColorRGBA ColorLang = Color;
+				ColorLang.r *= 0.8f;
+				ColorLang.g *= 0.8f;
+				ColorLang.b *= 0.8f;
+				TextRender()->TextColor(ColorLang);
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, Lang.c_str());
+				RawMessage += Lang;
+			}
 		}
+
+		AppendCursor.m_vColorSplits.clear();
 
 		if(!g_Config.m_ClChatOld && (Line.m_aText[0] != '\0' || Line.m_aName[0] != '\0'))
 		{

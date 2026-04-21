@@ -103,9 +103,9 @@ static void NormalizeLanguageCode(const char *pLanguage, char *pOut, size_t Size
 	}
 }
 
-static bool IgnoreDetectedLanguage(const char *pLanguage)
+static bool HandleLanguageBlacklist(const char *pLanguage)
 {
-	if(!pLanguage || pLanguage[0] == '\0' || g_Config.m_EcTranslateIgnoreLanguages[0] == '\0')
+	if(!pLanguage || pLanguage[0] == '\0' || g_Config.m_EcTranslateLanguageBlacklist[0] == '\0')
 		return false;
 
 	char aLanguage[16];
@@ -115,7 +115,7 @@ static bool IgnoreDetectedLanguage(const char *pLanguage)
 
 	char aToken[16];
 	char aTokenNormalized[16];
-	const char *pList = g_Config.m_EcTranslateIgnoreLanguages;
+	const char *pList = g_Config.m_EcTranslateLanguageBlacklist;
 	while((pList = str_next_token(pList, ", ", aToken, sizeof(aToken))) != nullptr)
 	{
 		NormalizeLanguageCode(aToken, aTokenNormalized, sizeof(aTokenNormalized));
@@ -123,6 +123,29 @@ static bool IgnoreDetectedLanguage(const char *pLanguage)
 			return true;
 	}
 
+	return false;
+}
+
+static bool HandleLanguageWhitelist(const char *pLanguage)
+{
+	if(!pLanguage || pLanguage[0] == '\0' || g_Config.m_EcTranslateLanguageWhitelist[0] == '\0')
+		return true;
+
+	char aLanguage[16];
+	NormalizeLanguageCode(pLanguage, aLanguage, sizeof(aLanguage));
+	if(aLanguage[0] == '\0')
+		return true;
+
+	char aToken[16];
+	char aTokenNormalized[16];
+	const char *pList = g_Config.m_EcTranslateLanguageWhitelist;
+
+	while((pList = str_next_token(pList, ", ", aToken, sizeof(aToken))) != nullptr)
+	{
+		NormalizeLanguageCode(aToken, aTokenNormalized, sizeof(aTokenNormalized));
+		if(aTokenNormalized[0] != '\0' && str_comp_nocase(aLanguage, aTokenNormalized) == 0)
+			return true;
+	}
 	return false;
 }
 
@@ -742,6 +765,8 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 		Job.m_pTranslateResponse->m_Text[0] = '\0';
 	}
 
+	Job.m_pTranslateResponse->m_Auto = ShowProgress;
+
 	m_vJobs.emplace_back(std::move(Job));
 
 	if(ShowProgress)
@@ -759,10 +784,20 @@ void CTranslate::OnRender()
 			return false; // Keep ongoing tasks
 		if(*Done)
 		{
-			if(IgnoreDetectedLanguage(Job.m_pTranslateResponse->m_Language))
+			if(!Job.m_pTranslateResponse->m_Auto)
 			{
-				Job.m_pTranslateResponse->m_Text[0] = '\0';
+				if(!HandleLanguageWhitelist(Job.m_pTranslateResponse->m_Language))
+				{
+					Job.m_pTranslateResponse->m_Text[0] = '\0';
+				}
+
+				if(HandleLanguageBlacklist(Job.m_pTranslateResponse->m_Language))
+				{
+					Job.m_pTranslateResponse->m_Text[0] = '\0';
+					Job.m_pTranslateResponse->m_Blacklisted = true;
+				}
 			}
+
 			else if(Job.m_pBackend->CompareTargets(Job.m_pTranslateResponse->m_Language, g_Config.m_EcTranslateTarget))
 			{
 				Job.m_pTranslateResponse->m_Text[0] = '\0';

@@ -148,7 +148,9 @@ MACRO_CONFIG_STR(EcTranslateTarget, ec_translate_target, 16, "en", CFGFLAG_CLIEN
 MACRO_CONFIG_STR(EcTranslateEndpoint, ec_translate_endpoint, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "For backends which need it, endpoint to use (must be https)")
 MACRO_CONFIG_STR(EcTranslateKey, ec_translate_key, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "For backends which need it, api key to use")
 MACRO_CONFIG_INT(EcTranslateAuto, ec_translate_auto, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically translate messages, only some backends support this (FTApi does not, DeepL Free requires api key)")
-MACRO_CONFIG_STR(EcTranslateIgnoreLanguages, ec_translate_ignore_languages, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated (e.g. 'en,de'")
+MACRO_CONFIG_STR(EcTranslateLanguageBlacklist, ec_translate_language_blacklist, 256, "en", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get ignored while translating (e.g. 'en,de,ru'")
+MACRO_CONFIG_STR(EcTranslateLanguageWhitelist, ec_translate_language_whitelist, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get translated, if not in this list, ignored (e.g. 'en,de,ru')")
+MACRO_CONFIG_INT(EcTranslateAutoShowLanguage, ec_translate_auto_show_language, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get translated automatically, if not in this list, ignored (e.g. 'en,de,ru')")
 
 // Animations
 MACRO_CONFIG_INT(ClAnimateWheelTime, ec_animate_wheel_time, 0, 0, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Duration of wheel animations, in milliseconds (0 == no animation, 1000 = 1 second)")
