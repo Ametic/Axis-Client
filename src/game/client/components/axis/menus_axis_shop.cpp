@@ -30,9 +30,9 @@ using namespace FontIcon;
 
 namespace
 {
-static constexpr const char *AXIS_SHOP_HOST = "https://data.teeworlds.xyz";
-static constexpr const char *AXIS_SHOP_BROWSE_API_URL = "https://data.teeworlds.xyz/api/skins?page=%d&limit=10&type=%s";
-static constexpr const char *AXIS_SHOP_SEARCH_API_URL = "https://data.teeworlds.xyz/api/skins?page=%d&limit=10&type=%s&search=%s";
+static constexpr const char *AXIS_SHOP_HOST = "https://teeworlds.xyz";
+static constexpr const char *AXIS_SHOP_BROWSE_API_URL = "https://teeworlds.xyz/api/skins?page=%d&limit=10&type=%s";
+static constexpr const char *AXIS_SHOP_SEARCH_API_URL = "https://teeworlds.xyz/api/skins?page=%d&limit=10&type=%s&search=%s";
 static constexpr CTimeout AXIS_SHOP_TIMEOUT{8000, 0, 1024, 8};
 static constexpr int64_t AXIS_SHOP_PAGE_MAX_RESPONSE_SIZE = 2 * 1024 * 1024;
 static constexpr int64_t AXIS_SHOP_IMAGE_MAX_RESPONSE_SIZE = 32 * 1024 * 1024;
