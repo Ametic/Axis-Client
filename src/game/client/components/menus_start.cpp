@@ -156,15 +156,20 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	ConsoleButton.VSplitRight(40.0f, nullptr, &ConsoleButton);
 	Ui()->DoLabel(&CurVersion, GAME_RELEASE_VERSION, 14.0f, TEXTALIGN_MR);
 
-	CUIRect EClientVersion;
-	MainView.HSplitTop(15.0f, &EClientVersion, nullptr);
-	MainView.HSplitTop(25.0f, &EClientVersion, nullptr);
-	EClientVersion.VSplitRight(5.0f, &EClientVersion, nullptr);
-	EClientVersion.VSplitRight(100.0f, &EClientVersion, &EClientVersion);
-	static CButtonContainer s_EClientVer;
+	CUIRect AClientVersion;
+	MainView.HSplitTop(15.0f, &AClientVersion, nullptr);
+	MainView.HSplitTop(25.0f, &AClientVersion, nullptr);
+	AClientVersion.VSplitRight(5.0f, &AClientVersion, nullptr);
+	AClientVersion.VSplitRight(100.0f, &AClientVersion, &AClientVersion);
+	static CButtonContainer s_AClientVer;
 	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
 	if(g_Config.m_EcUnreadNews)
 		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
+	if(GameClient()->m_Menus.DoButton_Menu(&s_AClientVer, Localize(CLIENT_NAME " v" ACLIENT_VERSION), 0, &AClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, Color, 11.0f))
+	{
+		NewPage = CMenus::PAGE_ECLIENTNEWS;
+		g_Config.m_EcUnreadNews = false;
+	}
 
 	static CButtonContainer s_ConsoleButton;
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
