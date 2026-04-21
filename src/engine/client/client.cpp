@@ -212,6 +212,13 @@ int CClient::SendMsgActive(CMsgPacker *pMsg, int Flags)
 	return SendMsg(g_Config.m_ClDummy, pMsg, Flags);
 }
 
+void CClient::SendqxdInfo(int Conn)
+{
+	CMsgPacker Msg(NETMSG_IAMAXIS, true);
+	Msg.AddString("Axis Client v" ACLIENT_VERSION " built on " __DATE__ ", " __TIME__);
+	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
+}
+
 void CClient::SendSupportsCosmeticSnapInfo(int Conn)
 {
 	CMsgPacker Msg(NETMSG_FOXNET_COSMETIC_SNAPS, true);
@@ -228,6 +235,8 @@ void CClient::SendFastInputsInfo(int Conn)
 
 void CClient::SendInfo(int Conn)
 {
+	SendqxdInfo(Conn); // E-Client
+	
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
 	MsgVer.AddInt(GameClient()->DDNetVersion());

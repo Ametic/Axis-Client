@@ -552,6 +552,7 @@ private:
 	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
 	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
 
+	void SendqxdInfo(int Conn);
 	void SendSupportsCosmeticSnapInfo(int Conn);
 
 public:
