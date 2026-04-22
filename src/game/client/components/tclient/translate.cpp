@@ -11,6 +11,7 @@
 #include <game/localization.h>
 
 #include <algorithm>
+#include <cctype>
 #include <memory>
 
 static void UrlEncode(const char *pText, char *pOut, size_t Length)
@@ -80,6 +81,108 @@ static void NormalizeTranslatedText(char *pText, size_t Size)
 
 	aBuf[OutPos] = '\0';
 	str_copy(pText, aBuf, Size);
+}
+
+static bool HasInvalidUtf8OrReplacementCharacter(const char *pText)
+{
+	if(!pText)
+		return true;
+
+	const char *pCursor = pText;
+	while(*pCursor != '\0')
+	{
+		const int Codepoint = str_utf8_decode(&pCursor);
+		if(Codepoint < 0 || Codepoint == 0xFFFD)
+			return true;
+	}
+
+	return false;
+}
+
+static int CountUtf8Codepoints(const char *pText)
+{
+	if(!pText)
+		return 0;
+
+	int Count = 0;
+	const char *pCursor = pText;
+	while(*pCursor != '\0')
+	{
+		const int Codepoint = str_utf8_decode(&pCursor);
+		if(Codepoint <= 0)
+			break;
+		++Count;
+	}
+
+	return Count;
+}
+
+static bool HasSuspiciousTrailingLanguageMarker(const char *pText)
+{
+	if(!pText || pText[0] == '\0')
+		return false;
+
+	const char *pEnd = pText + str_length(pText);
+	while(pEnd > pText && std::isspace((unsigned char)pEnd[-1]))
+		--pEnd;
+
+	if(pEnd - pText < 5 || pEnd[-1] != ']')
+		return false;
+
+	const char *pOpen = pEnd - 1;
+	while(pOpen > pText && *pOpen != '[')
+		--pOpen;
+
+	if(*pOpen != '[')
+		return false;
+	if(pOpen > pText && !std::isspace((unsigned char)pOpen[-1]))
+		return false;
+
+	int LetterCount = 0;
+	for(const char *p = pOpen + 1; p < pEnd - 1; ++p)
+	{
+		if(*p == '-')
+			continue;
+		if(!std::isalpha((unsigned char)*p))
+			return false;
+		++LetterCount;
+	}
+
+	return LetterCount >= 2 && LetterCount <= 8;
+}
+
+static bool IsAbnormallyShortTranslation(const char *pSourceText, const char *pTranslatedText)
+{
+	const int SourceChars = CountUtf8Codepoints(pSourceText);
+	const int TranslatedChars = CountUtf8Codepoints(pTranslatedText);
+
+	if(SourceChars < 48)
+		return false;
+
+	return TranslatedChars <= 24 && TranslatedChars * 4 < SourceChars;
+}
+
+static bool ValidateTranslatedText(const char *pSourceText, const char *pTranslatedText, char *pError, size_t ErrorSize)
+{
+	if(HasInvalidUtf8OrReplacementCharacter(pTranslatedText))
+	{
+		str_copy(pError, "Invalid translated UTF-8", ErrorSize);
+		return false;
+	}
+
+	if(HasSuspiciousTrailingLanguageMarker(pTranslatedText))
+	{
+		str_copy(pError, "Suspicious trailing language marker", ErrorSize);
+		return false;
+	}
+
+	if(IsAbnormallyShortTranslation(pSourceText, pTranslatedText))
+	{
+		str_copy(pError, "Translation is suspiciously short", ErrorSize);
+		return false;
+	}
+
+	return true;
 }
 
 static void NormalizeLanguageCode(const char *pLanguage, char *pOut, size_t Size)
@@ -542,6 +645,8 @@ public:
 class CTranslateBackendGoogle : public ITranslateBackendHttp
 {
 private:
+	char m_aSourceText[MAX_LINE_LENGTH] = "";
+
 	bool ParseResponseJson(const json_value *pObj, CTranslateResponse &Out)
 	{
 		if(!pObj)
@@ -604,6 +709,13 @@ private:
 		str_copy(aTempBuf, Result.c_str(), sizeof(aTempBuf));
 		NormalizeTranslatedText(aTempBuf, sizeof(aTempBuf));
 
+		char aValidationError[128];
+		if(!ValidateTranslatedText(m_aSourceText, aTempBuf, aValidationError, sizeof(aValidationError)))
+		{
+			str_copy(Out.m_Text, aValidationError);
+			return false;
+		}
+
 		// Now copy the decoded text (may truncate, but at UTF-8 boundary)
 		str_copy(Out.m_Text, aTempBuf, sizeof(Out.m_Text));
 
@@ -633,6 +745,8 @@ public:
 
 	CTranslateBackendGoogle(IHttp &Http, const char *pText)
 	{
+		str_copy(m_aSourceText, pText, sizeof(m_aSourceText));
+
 		char aBuf[4096];
 		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&ie=UTF-8&oe=UTF-8&q=",
 			EncodeTarget(g_Config.m_EcTranslateTarget));
