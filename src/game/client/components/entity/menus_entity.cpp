@@ -108,6 +108,12 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		}
 	}
 
+	if(TabCount <= 0)
+	{
+		RenderEClientInfoPage(MainView);
+		return;
+	}
+
 	MainView.HSplitTop(LineSize * 1.1f, &TabBar, &MainView);
 	const float TabWidth = TabBar.w / TabCount;
 	static CButtonContainer s_aPageTabs[NUMBER_OF_ENTITY_TABS] = {};
@@ -1075,6 +1081,12 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	// AvailableWidth -= (ItemCount - 1) * MarginSmall;
 	AvailableWidth -= MarginSmall;
 	StatusBar.VSplitLeft(MarginExtraSmall, nullptr, &StatusBar);
+	if(ItemCount <= 0)
+	{
+		Ui()->DoLabel(&StatusBar, Localize("No status bar items configured"), FontSize, TEXTALIGN_MC);
+		return;
+	}
+
 	float ItemWidth = AvailableWidth / (float)ItemCount;
 	CUIRect StatusItemButton;
 	static std::vector<CButtonContainer *> s_pItemButtons;
@@ -1229,28 +1241,31 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 		str_copy(s_aBindCommand, "");
 	}
 
-	const float Theta = pi * 2.0f / GameClient()->m_QuickActions.m_vBinds.size();
-	for(int i = 0; i < static_cast<int>(GameClient()->m_QuickActions.m_vBinds.size()); i++)
+	if(!GameClient()->m_QuickActions.m_vBinds.empty())
 	{
-		float FontSizes = 12.0f;
-		if(i == s_SelectedBindIndex)
+		const float Theta = pi * 2.0f / GameClient()->m_QuickActions.m_vBinds.size();
+		for(int i = 0; i < static_cast<int>(GameClient()->m_QuickActions.m_vBinds.size()); i++)
 		{
-			FontSizes = 20.0f;
-			TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
+			float FontSizes = 12.0f;
+			if(i == s_SelectedBindIndex)
+			{
+				FontSizes = 20.0f;
+				TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
+			}
+			else if(i == HoveringIndex)
+				FontSizes = 14.0f;
+
+			const CQuickActions::CBind Bind = GameClient()->m_QuickActions.m_vBinds[i];
+			const float Angle = Theta * i;
+			vec2 TextPos = direction(Angle);
+			TextPos *= Radius * 0.75f;
+
+			float Width = TextRender()->TextWidth(FontSizes, Bind.m_aName);
+			TextPos += Pos;
+			TextPos.x -= Width / 2.0f;
+			TextRender()->Text(TextPos.x, TextPos.y, FontSizes, Bind.m_aName);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
 		}
-		else if(i == HoveringIndex)
-			FontSizes = 14.0f;
-
-		const CQuickActions::CBind Bind = GameClient()->m_QuickActions.m_vBinds[i];
-		const float Angle = Theta * i;
-		vec2 TextPos = direction(Angle);
-		TextPos *= Radius * 0.75f;
-
-		float Width = TextRender()->TextWidth(FontSizes, Bind.m_aName);
-		TextPos += Pos;
-		TextPos.x -= Width / 2.0f;
-		TextRender()->Text(TextPos.x, TextPos.y, FontSizes, Bind.m_aName);
-		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
@@ -1425,28 +1440,31 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 		str_copy(s_aBindCommand, "");
 	}
 
-	const float Theta = pi * 2.0f / GameClient()->m_Bindwheel.m_vBinds.size();
-	for(int i = 0; i < static_cast<int>(GameClient()->m_Bindwheel.m_vBinds.size()); i++)
+	if(!GameClient()->m_Bindwheel.m_vBinds.empty())
 	{
-		float FontSizes = 12.0f;
-		if(i == s_SelectedBindIndex)
+		const float Theta = pi * 2.0f / GameClient()->m_Bindwheel.m_vBinds.size();
+		for(int i = 0; i < static_cast<int>(GameClient()->m_Bindwheel.m_vBinds.size()); i++)
 		{
-			FontSizes = 20.0f;
-			TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
+			float FontSizes = 12.0f;
+			if(i == s_SelectedBindIndex)
+			{
+				FontSizes = 20.0f;
+				TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
+			}
+			else if(i == HoveringIndex)
+				FontSizes = 14.0f;
+
+			const CBindWheel::CBind Bind = GameClient()->m_Bindwheel.m_vBinds[i];
+			const float Angle = Theta * i;
+			vec2 TextPos = direction(Angle);
+			TextPos *= Radius * 0.75f;
+
+			float Width = TextRender()->TextWidth(FontSizes, Bind.m_aName);
+			TextPos += Pos;
+			TextPos.x -= Width / 2.0f;
+			TextRender()->Text(TextPos.x, TextPos.y, FontSizes, Bind.m_aName);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
 		}
-		else if(i == HoveringIndex)
-			FontSizes = 14.0f;
-
-		const CBindWheel::CBind Bind = GameClient()->m_Bindwheel.m_vBinds[i];
-		const float Angle = Theta * i;
-		vec2 TextPos = direction(Angle);
-		TextPos *= Radius * 0.75f;
-
-		float Width = TextRender()->TextWidth(FontSizes, Bind.m_aName);
-		TextPos += Pos;
-		TextPos.x -= Width / 2.0f;
-		TextRender()->Text(TextPos.x, TextPos.y, FontSizes, Bind.m_aName);
-		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
