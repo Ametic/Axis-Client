@@ -790,7 +790,7 @@ void CItems::RenderCosmeticLaser(const CNetObj_CosmeticLaser *pPrev, const CNetO
 	const bool Anchored = Flags & COSMETIC_FLAG_ANCHORED;
 	const int Owner = pCurrent->m_Owner;
 
-	const float IntraTick = (Owner >= 0 && GameClient()->m_aClients[Owner].m_IsPredicted) ? Client()->PredIntraGameTick(g_Config.m_ClDummy) : Client()->IntraGameTick(g_Config.m_ClDummy);
+	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
 
 	vec2 PrevFrom = vec2(pPrev->m_FromX, pPrev->m_FromY);
 	vec2 PrevTo = vec2(pPrev->m_ToX, pPrev->m_ToY);
@@ -965,7 +965,7 @@ void CItems::RenderCosmeticPickup(const CNetObj_CosmeticPickup *pPrev, const CNe
 
 	int CurWeapon = std::clamp(pCurrent->m_Subtype, 0, NUM_WEAPONS - 1);
 	int QuadOffset = 2;
-	float IntraTick = (Owner >= 0 && GameClient()->m_aClients[Owner].m_IsPredicted) ? Client()->PredIntraGameTick(g_Config.m_ClDummy) : Client()->IntraGameTick(g_Config.m_ClDummy);
+	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
 
 	vec2 PrevPos = vec2(pPrev->m_X, pPrev->m_Y);
 	vec2 CurPos = vec2(pCurrent->m_X, pCurrent->m_Y);
@@ -1051,7 +1051,7 @@ void CItems::RenderCosmeticProjectile(const CNetObj_CosmeticProjectile *pPrev, c
 	const int Owner = pCurrent->m_Owner;
 
 	int CurWeapon = std::clamp(pCurrent->m_Type, 0, NUM_WEAPONS - 1);
-	float IntraTick = (Owner >= 0 && GameClient()->m_aClients[Owner].m_IsPredicted) ? Client()->PredIntraGameTick(g_Config.m_ClDummy) : Client()->IntraGameTick(g_Config.m_ClDummy);
+	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
 
 	vec2 PrevPos = vec2(pPrev->m_X, pPrev->m_Y);
 	vec2 CurPos = vec2(pCurrent->m_X, pCurrent->m_Y);
