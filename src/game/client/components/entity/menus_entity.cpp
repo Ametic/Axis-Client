@@ -1696,7 +1696,8 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	}
 
 	const int NewSelectedEntry = s_EntriesListBox.DoEnd();
-	if(SelectedOldEntry != NewSelectedEntry || (SelectedOldEntry >= 0 && Ui()->HotItem() == &s_vItemIds[NewSelectedEntry] && Ui()->MouseButtonClicked(0)))
+	const bool HasValidNewSelectedEntry = NewSelectedEntry >= 0 && NewSelectedEntry < (int)vpFilteredEntries.size();
+	if(HasValidNewSelectedEntry && (SelectedOldEntry != NewSelectedEntry || (SelectedOldEntry >= 0 && Ui()->HotItem() == &s_vItemIds[NewSelectedEntry] && Ui()->MouseButtonClicked(0))))
 	{
 		s_pSelectedEntry = vpFilteredEntries[NewSelectedEntry];
 		if(!Ui()->LastMouseButton(1) && !Ui()->LastMouseButton(2))
@@ -1716,6 +1717,10 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 			}
 			s_pSelectedType = s_pSelectedEntry->m_pWarType;
 		}
+	}
+	else if(vpFilteredEntries.empty())
+	{
+		s_pSelectedEntry = nullptr;
 	}
 
 	Ui()->DoEditBox_Search(&s_EntriesFilterInput, &EntriesSearch, 14.0f, !Ui()->IsPopupOpen() && !GameClient()->m_GameConsole.IsActive());
