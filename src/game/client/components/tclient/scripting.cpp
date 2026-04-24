@@ -163,7 +163,7 @@ private:
 		}
 		else if(Str == "state")
 		{
-			const char *pState = "";
+			const char *pState = nullptr;
 			switch(Client()->State())
 			{
 			case IClient::EClientState::STATE_CONNECTING:
