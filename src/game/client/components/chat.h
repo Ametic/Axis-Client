@@ -28,7 +28,6 @@ public:
 	char m_Language[16] = "";
 
 	bool m_Auto = false;
-	bool m_Blacklisted = false;
 };
 
 constexpr auto SAVES_FILE = "ddnet-saves.txt";

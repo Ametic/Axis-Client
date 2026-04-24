@@ -1284,8 +1284,6 @@ void CChat::OnPrepareLines(float y)
 						pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
 				}
 			}
-			else if(Line.m_pTranslateResponse->m_Language[0] != '\0' && g_Config.m_EcTranslateAutoShowLanguage)
-				pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
 		}
 
 		// get the y offset (calculate it if we haven't done that yet)
@@ -1362,13 +1360,6 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->ColorParsing(pText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
 				else
 					TextRender()->TextEx(&AppendCursor, pText);
-
-				if(pTranslatedLanguage && !Line.m_pTranslateResponse->m_Blacklisted)
-				{
-					TextRender()->TextEx(&AppendCursor, " [");
-					TextRender()->TextEx(&AppendCursor, pTranslatedLanguage);
-					TextRender()->TextEx(&AppendCursor, "]");
-				}
 			}
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
@@ -1546,18 +1537,6 @@ void CChat::OnPrepareLines(float y)
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
 			RawMessage += TextRender()->RemoveColorCodes(pText);
-
-			if(pTranslatedLanguage && !Line.m_pTranslateResponse->m_Blacklisted)
-			{
-				std::string Lang = " [" + std::string(pTranslatedLanguage) + "]";
-				ColorRGBA ColorLang = Color;
-				ColorLang.r *= 0.8f;
-				ColorLang.g *= 0.8f;
-				ColorLang.b *= 0.8f;
-				TextRender()->TextColor(ColorLang);
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, Lang.c_str());
-				RawMessage += Lang;
-			}
 		}
 
 		AppendCursor.m_vColorSplits.clear();
