@@ -717,7 +717,7 @@ endif()
 
 if(TARGET_OS STREQUAL "windows")
   set(PLATFORM_CLIENT)
-  set(PLATFORM_CLIENT_LIBS opengl32.lib winmm.lib imm32.lib)
+  set(PLATFORM_CLIENT_LIBS opengl32.lib winmm.lib imm32.lib WindowsApp.lib)
   set(PLATFORM_LIBS)
   list(APPEND PLATFORM_LIBS shlwapi.lib) # PathIsRelativeW
   list(APPEND PLATFORM_LIBS version.lib) # GetFileVersionInfoSizeW
@@ -2500,6 +2500,8 @@ if(CLIENT)
     components/entity/info.h
     components/entity/map_overview.cpp
     components/entity/map_overview.h 
+    components/entity/media_player.cpp
+    components/entity/media_player.h
     components/entity/menus_entity.cpp 
     components/entity/moving_tiles.cpp
     components/entity/moving_tiles.h 

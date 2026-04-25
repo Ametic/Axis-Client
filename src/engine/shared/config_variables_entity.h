@@ -428,6 +428,11 @@ MACRO_CONFIG_INT(ClShowMovingTilesEntities, ec_show_moving_tiles_entities, 1, 0,
 MACRO_CONFIG_INT(ClHighProcessPriority, ec_high_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set DDNets process priority to High")
 MACRO_CONFIG_INT(ClDiscordNormalProcessPriority, ec_discord_normal_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set Discord process priority to normal")
 
+// Media Player
+MACRO_CONFIG_INT(ClShowMediaPlayer, ec_show_media_player, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media player")
+MACRO_CONFIG_INT(ClShowMediaPlayerVisualizer, ec_show_media_player_visualizer, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media player visualizer")
+MACRO_CONFIG_INT(ClShowMediaPlayerVisualizerAlignment, ec_show_media_player_visualizer_alignment, 2, 1, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "1 = Align Bottom | 2 = Align Center")
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 
