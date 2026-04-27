@@ -22,6 +22,7 @@ public:
 		static constexpr int NUM_FREQUENCY_BANDS = 64; // Number of frequency bars
 		std::array<float, NUM_FREQUENCY_BANDS> m_aFrequencyBands; // 0.0 to 1.0
 		bool m_Active = false;
+		int64_t m_LastFrequencyChange = 0;
 
 		void GetBands(float *pOutBands, int NumBands) const;
 		float GetAverageBand() const;
@@ -49,8 +50,8 @@ public:
 
 #if defined(CONF_FAMILY_WINDOWS) && __has_include(<winrt/Windows.Foundation.h>)
 	struct SWinrt;
-	struct SShared;
-	struct SAudioCapture;
+	struct CShared;
+	struct CAudioCapture;
 #endif
 
 	CMediaViewer();
@@ -68,8 +69,8 @@ public:
 private:
 #if defined(CONF_FAMILY_WINDOWS) && __has_include(<winrt/Windows.Foundation.h>)
 	std::unique_ptr<SWinrt> m_pWinrt;
-	std::unique_ptr<SShared> m_pShared;
-	std::unique_ptr<SAudioCapture> m_pAudioCapture;
+	std::unique_ptr<CShared> m_pShared;
+	std::unique_ptr<CAudioCapture> m_pAudioCapture;
 	std::thread m_Thread;
 	std::thread m_AudioThread;
 	std::atomic_bool m_StopThread = false;

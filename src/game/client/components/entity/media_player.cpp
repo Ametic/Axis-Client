@@ -79,8 +79,9 @@ enum class ECommand
 	Next,
 };
 
-struct CMediaViewer::SShared
+class CMediaViewer::CShared
 {
+public:
 	std::mutex m_Mutex;
 	SPlainState m_State{};
 	bool m_HasMedia = false;
@@ -91,38 +92,42 @@ struct CMediaViewer::SShared
 	bool m_AlbumArtDirty = false;
 };
 
-struct CMediaViewer::SAudioCapture
+class CMediaViewer::CAudioCapture
 {
+public:
 	std::mutex m_Mutex;
 	std::array<float, CMediaViewer::CVisualizer::NUM_FREQUENCY_BANDS> m_aFrequencyBands{};
 	bool m_Active = false;
+
+	int64_t m_LastFrequencyChange = 0;
 };
 
 namespace FFT
 {
 	constexpr int FFT_SIZE = 768;
 
-	struct Complex
+	class CComplex
 	{
+	public:
 		float Real;
 		float Imag;
 
-		Complex(float r = 0.0f, float i = 0.0f) :
+		CComplex(float r = 0.0f, float i = 0.0f) :
 			Real(r), Imag(i) {}
 
-		Complex operator+(const Complex &other) const
+		CComplex operator+(const CComplex &other) const
 		{
-			return Complex(Real + other.Real, Imag + other.Imag);
+			return CComplex(Real + other.Real, Imag + other.Imag);
 		}
 
-		Complex operator-(const Complex &other) const
+		CComplex operator-(const CComplex &other) const
 		{
-			return Complex(Real - other.Real, Imag - other.Imag);
+			return CComplex(Real - other.Real, Imag - other.Imag);
 		}
 
-		Complex operator*(const Complex &other) const
+		CComplex operator*(const CComplex &other) const
 		{
-			return Complex(
+			return CComplex(
 				Real * other.Real - Imag * other.Imag,
 				Real * other.Imag + Imag * other.Real);
 		}
@@ -133,15 +138,15 @@ namespace FFT
 		}
 	};
 
-	void FFTRecursive(std::vector<Complex> &x)
+	void FFTRecursive(std::vector<CComplex> &x)
 	{
 		const int N = x.size();
 		if(N <= 1)
 			return;
 
 		// Divide
-		std::vector<Complex> even(N / 2);
-		std::vector<Complex> odd(N / 2);
+		std::vector<CComplex> even(N / 2);
+		std::vector<CComplex> odd(N / 2);
 		for(int i = 0; i < N / 2; ++i)
 		{
 			even[i] = x[i * 2];
@@ -156,13 +161,13 @@ namespace FFT
 		for(int k = 0; k < N / 2; ++k)
 		{
 			const float angle = -2.0f * std::numbers::pi_v<float> * k / N;
-			const Complex t = Complex(std::cos(angle), std::sin(angle)) * odd[k];
+			const CComplex t = CComplex(std::cos(angle), std::sin(angle)) * odd[k];
 			x[k] = even[k] + t;
 			x[k + N / 2] = even[k] - t;
 		}
 	}
 
-	void ComputeFFT(const float *pSamples, int NumSamples, std::vector<Complex> &Output)
+	void ComputeFFT(const float *pSamples, int NumSamples, std::vector<CComplex> &Output)
 	{
 		const int N = std::min(NumSamples, FFT_SIZE);
 		Output.resize(FFT_SIZE);
@@ -171,13 +176,13 @@ namespace FFT
 		for(int i = 0; i < N; ++i)
 		{
 			const float window = 0.54f - 0.46f * std::cos(2.0f * std::numbers::pi_v<float> * i / (N - 1));
-			Output[i] = Complex(pSamples[i] * window, 0.0f);
+			Output[i] = CComplex(pSamples[i] * window, 0.0f);
 		}
 
 		// Zero padding
 		for(int i = N; i < FFT_SIZE; ++i)
 		{
-			Output[i] = Complex(0.0f, 0.0f);
+			Output[i] = CComplex(0.0f, 0.0f);
 		}
 
 		FFTRecursive(Output);
@@ -219,7 +224,7 @@ static void ClearState(CMediaViewer::SWinrt *pWinrt, IGraphics *pGraphics)
 	pWinrt->m_HasMedia = false;
 }
 
-static void ClearSharedAlbumArt(CMediaViewer::SShared *pShared)
+static void ClearSharedAlbumArt(CMediaViewer::CShared *pShared)
 {
 	std::scoped_lock Lock(pShared->m_Mutex);
 	pShared->m_AlbumArtRgba.clear();
@@ -228,7 +233,7 @@ static void ClearSharedAlbumArt(CMediaViewer::SShared *pShared)
 	pShared->m_AlbumArtDirty = true;
 }
 
-static void SetSharedAlbumArt(CMediaViewer::SShared *pShared, std::vector<uint8_t> &&Pixels, int Width, int Height)
+static void SetSharedAlbumArt(CMediaViewer::CShared *pShared, std::vector<uint8_t> &&Pixels, int Width, int Height)
 {
 	std::scoped_lock Lock(pShared->m_Mutex);
 	pShared->m_AlbumArtRgba = std::move(Pixels);
@@ -245,14 +250,14 @@ static void ClearMediaText(SPlainState &State)
 	State.m_Album.clear();
 }
 
-static void ClearMediaDetails(SPlainState &State, std::string &AlbumArtKey, CMediaViewer::SShared *pShared)
+static void ClearMediaDetails(SPlainState &State, std::string &AlbumArtKey, CMediaViewer::CShared *pShared)
 {
 	ClearMediaText(State);
 	AlbumArtKey.clear();
 	ClearSharedAlbumArt(pShared);
 }
 
-static void ResetSharedState(CMediaViewer::SShared *pShared, SPlainState &State, bool &HasMedia, std::string &AlbumArtKey)
+static void ResetSharedState(CMediaViewer::CShared *pShared, SPlainState &State, bool &HasMedia, std::string &AlbumArtKey)
 {
 	HasMedia = false;
 	State = SPlainState{};
@@ -263,7 +268,7 @@ static void ResetSharedState(CMediaViewer::SShared *pShared, SPlainState &State,
 	pShared->m_HasMedia = false;
 }
 
-static void UpdateAlbumArtData(CMediaViewer::SShared *pShared, const winrt::Windows::Storage::Streams::IRandomAccessStreamReference &Thumbnail, const std::atomic_bool &StopFlag)
+static void UpdateAlbumArtData(CMediaViewer::CShared *pShared, const winrt::Windows::Storage::Streams::IRandomAccessStreamReference &Thumbnail, const std::atomic_bool &StopFlag)
 {
 	if(!Thumbnail)
 	{
@@ -428,7 +433,7 @@ static void ApplyRoundedMask(std::vector<uint8_t> &Pixels, int Width, int Height
 	}
 }
 
-static void ApplySharedAlbumArt(CMediaViewer::SShared *pShared, CMediaViewer::SWinrt *pWinrt, IGraphics *pGraphics)
+static void ApplySharedAlbumArt(CMediaViewer::CShared *pShared, CMediaViewer::SWinrt *pWinrt, IGraphics *pGraphics)
 {
 	if(!pShared || !pWinrt || !pGraphics)
 		return;
@@ -873,7 +878,7 @@ void CMediaViewer::AudioThreadMain()
 
 void CMediaViewer::ProcessAudioFrame(const float *pSamples, int NumSamples, int SampleRate)
 {
-	std::vector<FFT::Complex> fftResult;
+	std::vector<FFT::CComplex> fftResult;
 	FFT::ComputeFFT(pSamples, NumSamples, fftResult);
 
 	// Convert FFT bins to frequency bands (logarithmic scale sounds better)
@@ -889,6 +894,7 @@ void CMediaViewer::ProcessAudioFrame(const float *pSamples, int NumSamples, int 
 	const float LogMin = std::log10(MinFreq);
 	const float LogMax = std::log10(MaxFreq);
 
+	bool AllZero = true;
 	for(int band = 0; band < NumBands; ++band)
 	{
 		const float t0 = (float)band / NumBands;
@@ -914,6 +920,8 @@ void CMediaViewer::ProcessAudioFrame(const float *pSamples, int NumSamples, int 
 			// Apply logarithmic scaling and normalize
 			magnitude = std::log10(1.0f + magnitude * 100.0f) / 2.0f;
 			bands[band] = std::clamp(magnitude, 0.0f, 1.0f);
+			if(magnitude > 0.001f)
+				AllZero = false;
 		}
 	}
 
@@ -928,6 +936,19 @@ void CMediaViewer::ProcessAudioFrame(const float *pSamples, int NumSamples, int 
 				bands[i] * (1.0f - smoothing);
 		}
 		m_pAudioCapture->m_Active = true;
+
+		if(!AllZero)
+			m_pAudioCapture->m_LastFrequencyChange = time_get();
+
+		const int TimeoutSec = 10;
+		const int64_t Now = time_get();
+		const int64_t Elapsed = (m_pAudioCapture->m_LastFrequencyChange == 0) ? INT64_MAX : (Now - m_pAudioCapture->m_LastFrequencyChange);
+
+		// If we've never seen audio (last == 0) or elapsed time exceeds timeout, deactivate
+		if(m_pAudioCapture->m_LastFrequencyChange == 0 || Elapsed > time_freq() * TimeoutSec)
+		{
+			m_pAudioCapture->m_Active = false;
+		}
 	}
 }
 #endif
@@ -936,8 +957,8 @@ void CMediaViewer::OnInit()
 {
 #if MEDIA_PLAYER_WINRT
 	m_pWinrt = std::make_unique<SWinrt>();
-	m_pShared = std::make_unique<SShared>();
-	m_pAudioCapture = std::make_unique<SAudioCapture>();
+	m_pShared = std::make_unique<CShared>();
+	m_pAudioCapture = std::make_unique<CAudioCapture>();
 
 	m_StopThread.store(false, std::memory_order_relaxed);
 	m_StopAudioThread.store(false, std::memory_order_relaxed);
@@ -1032,6 +1053,7 @@ bool CMediaViewer::GetStateSnapshot(CMediaViewer::CState &State) const
 			std::scoped_lock lock(m_pAudioCapture->m_Mutex);
 			State.m_Visualizer.m_aFrequencyBands = m_pAudioCapture->m_aFrequencyBands;
 			State.m_Visualizer.m_Active = m_pAudioCapture->m_Active;
+			State.m_Visualizer.m_LastFrequencyChange = m_pAudioCapture->m_LastFrequencyChange;
 		}
 		return true;
 	}
