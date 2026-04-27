@@ -11,6 +11,7 @@
 #include <game/localization.h>
 
 #include <algorithm>
+#include <cctype>
 #include <memory>
 
 static void UrlEncode(const char *pText, char *pOut, size_t Length)
@@ -698,6 +699,8 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 		Job.m_pTranslateResponse->m_Text[0] = '\0';
 	}
 
+	Job.m_pTranslateResponse->m_Auto = ShowProgress;
+
 	m_vJobs.emplace_back(std::move(Job));
 
 	if(ShowProgress)
@@ -706,6 +709,9 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 
 void CTranslate::OnRender()
 {
+	if(m_vJobs.empty())
+		return;
+
 	const auto Time = time();
 	auto ForEach = [&](CTranslateJob &Job) {
 		if(Job.m_pLine->m_pTranslateResponse != Job.m_pTranslateResponse)

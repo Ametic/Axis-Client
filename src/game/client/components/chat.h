@@ -26,9 +26,13 @@ public:
 	bool m_Error = false;
 	char m_Text[1024] = "";
 	char m_Language[16] = "";
+
+	bool m_Auto = false;
 };
 
 constexpr auto SAVES_FILE = "ddnet-saves.txt";
+
+class CHud;
 
 enum
 {
@@ -202,6 +206,7 @@ class CChat : public CComponent
 	friend class CBindChat;
 	friend class CTranslate;
 	friend class CChatBubbles;
+	friend class CHud;
 
 public:
 	CChat();

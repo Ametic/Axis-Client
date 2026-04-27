@@ -2,13 +2,20 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENTS_HUD_H
 #define GAME_CLIENT_COMPONENTS_HUD_H
-#include <engine/client.h>
+#include "entity/media_player.h"
+
+#include <base/color.h>
+#include <base/vmath.h>
+
+#include <engine/client/enums.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
 
 #include <generated/protocol.h>
 
 #include <game/client/component.h>
+
+#include <cstdint>
 
 struct SScoreInfo
 {
@@ -94,7 +101,10 @@ class CHud : public CComponent
 	};
 	class CMovementInformation GetMovementInformation(int ClientId, int Conn) const;
 
-	void RenderGameTimer();
+	float GameTimerWidth(float Size, int Time);
+	int GameTimerTime();
+
+	void RenderGameTimer(vec2 Pos, float Size);
 	void RenderPauseNotification();
 	void RenderSuddenDeath();
 
@@ -171,7 +181,75 @@ private:
 	int m_LockModeOffset;
 
 	// EClient
+	bool RenderLocalTime() const;
+
 	void FreezeHelpers();
+
+	bool m_PrevHovered = false;
+	void RenderIsland();
+
+	void RenderVisualizer(const CMediaViewer::CState &State, vec2 Pos, vec2 Size, int NumBands);
+
+	class CHudMediaIslandAnimState
+	{
+	public:
+		class CTextScrollState
+		{
+		public:
+			float m_Offset = 0.0f;
+			float m_Overflow = 0.0f;
+			float m_Progress = 0.0f;
+			float m_HoldTime = 0.0f;
+			bool m_Forward = true;
+
+			void Reset()
+			{
+				m_Offset = 0.0f;
+				m_Overflow = 0.0f;
+				m_Progress = 0.0f;
+				m_HoldTime = 0.0f;
+				m_Forward = true;
+			}
+		};
+
+		enum class EVisualState
+		{
+			MINIMIZED,
+			EXPANDED,
+		};
+
+		EVisualState m_VisualState = EVisualState::MINIMIZED;
+
+		CMediaViewer::CState m_PrevState;
+		CMediaViewer::CState m_CurState;
+
+		CTextScrollState m_TitleScroll;
+		CTextScrollState m_ArtistScroll;
+		float m_TitleTextWidth = 0.0f;
+		float m_ArtistTextWidth = 0.0f;
+
+		// Position and size of the island rect
+		vec2 m_Pos;
+		vec2 m_Size;
+
+		void Reset()
+		{
+			m_VisualState = EVisualState::MINIMIZED;
+			m_TitleScroll.Reset();
+			m_ArtistScroll.Reset();
+			m_Pos = vec2();
+			m_Size = vec2();
+		}
+
+	} m_Island;
+	vec2 m_FPSPos;
+
+public:
+	vec2 IslandPos() const { return m_Island.m_Pos; }
+	vec2 IslandSize() const { return m_Island.m_Size; }
+	vec2 FpsPos() const { return m_FPSPos; }
+
+	vec2 m_CursorPos = vec2(0, 0);
 };
 
 #endif

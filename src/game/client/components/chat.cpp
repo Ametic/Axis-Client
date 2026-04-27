@@ -1264,22 +1264,25 @@ void CChat::OnPrepareLines(float y)
 		const char *pTranslatedError = nullptr;
 		const char *pTranslatedText = nullptr;
 		const char *pTranslatedLanguage = nullptr;
-		if(Line.m_pTranslateResponse != nullptr && Line.m_pTranslateResponse->m_Text[0])
+		if(Line.m_pTranslateResponse != nullptr)
 		{
-			// If hidden and there is translated text
-			if(pText != Line.m_aText)
+			if(Line.m_pTranslateResponse->m_Text[0])
 			{
-				pTranslatedError = Localize("Translated text hidden due to streamer mode");
-			}
-			else if(Line.m_pTranslateResponse->m_Error)
-			{
-				pTranslatedError = Line.m_pTranslateResponse->m_Text;
-			}
-			else
-			{
-				pTranslatedText = Line.m_pTranslateResponse->m_Text;
-				if(Line.m_pTranslateResponse->m_Language[0] != '\0')
-					pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
+				// If hidden and there is translated text
+				if(pText != Line.m_aText)
+				{
+					pTranslatedError = Localize("Translated text hidden due to streamer mode");
+				}
+				else if(Line.m_pTranslateResponse->m_Error)
+				{
+					pTranslatedError = Line.m_pTranslateResponse->m_Text;
+				}
+				else
+				{
+					pTranslatedText = Line.m_pTranslateResponse->m_Text;
+					if(Line.m_pTranslateResponse->m_Language[0] != '\0')
+						pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
+				}
 			}
 		}
 
@@ -1533,8 +1536,9 @@ void CChat::OnPrepareLines(float y)
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
 			RawMessage += TextRender()->RemoveColorCodes(pText);
-			AppendCursor.m_vColorSplits.clear();
 		}
+
+		AppendCursor.m_vColorSplits.clear();
 
 		if(!g_Config.m_ClChatOld && (Line.m_aText[0] != '\0' || Line.m_aName[0] != '\0'))
 		{
@@ -1572,6 +1576,7 @@ void CChat::OnRender()
 	if(m_Mode != MODE_NONE)
 	{
 		Ui()->StartCheck();
+		Ui()->Update();
 	}
 
 	// send pending chat messages
@@ -1987,6 +1992,7 @@ void CChat::OnRender()
 		const vec2 CursorPos = m_SelectorMouse / WindowSize * vec2(pUiScreen->w, pUiScreen->h);
 		RenderTools()->RenderCursor(CursorPos, 24.0f);
 		Ui()->FinishCheck();
+		GameClient()->m_Hud.m_CursorPos = CursorPos;
 	}
 }
 
