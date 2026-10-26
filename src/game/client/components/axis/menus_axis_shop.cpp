@@ -638,6 +638,7 @@ namespace
 			}
 		}
 
+		size_t TotalUncompressedBytes = 0;
 		for(const SZipEntry &Entry : vEntries)
 		{
 			std::string RelativePath = Entry.m_Path;
@@ -649,6 +650,13 @@ namespace
 			{
 				continue;
 			}
+
+			if(Entry.m_UncompressedSize > (uint32_t)AXIS_SHOP_AUDIO_MAX_RESPONSE_SIZE ||
+				TotalUncompressedBytes + Entry.m_UncompressedSize > (size_t)AXIS_SHOP_AUDIO_MAX_RESPONSE_SIZE)
+			{
+				return false;
+			}
+			TotalUncompressedBytes += Entry.m_UncompressedSize;
 
 			const size_t LocalPos = Entry.m_LocalHeaderOffset;
 			if(LocalPos + 30 > DataSize || AxisClientShopReadLe32(pData + LocalPos) != 0x04034b50U)
@@ -983,7 +991,7 @@ namespace
 
 		if(Item.m_PreviewTexture.IsValid() || Item.m_aId[0] == '\0')
 		{
-			return Item.m_PreviewTexture.IsValid();
+			return Item.m_PreviewTexture.IsValid() && !Item.m_PreviewTexture.IsNullTexture();
 		}
 
 		char aPreviewPath[IO_MAX_PATH_LENGTH];
@@ -993,14 +1001,14 @@ namespace
 			return false;
 		}
 
-		Item.m_PreviewTexture = pMenus->MenuGraphics()->LoadTexture(aPreviewPath, IStorage::TYPE_SAVE);
 		CImageInfo PreviewInfo;
-		if(pMenus->MenuGraphics()->LoadPng(PreviewInfo, aPreviewPath, IStorage::TYPE_SAVE))
+		if(!pMenus->MenuGraphics()->LoadPng(PreviewInfo, aPreviewPath, IStorage::TYPE_SAVE))
 		{
-			Item.m_PreviewWidth = PreviewInfo.m_Width;
-			Item.m_PreviewHeight = PreviewInfo.m_Height;
-			PreviewInfo.Free();
+			return false;
 		}
+		Item.m_PreviewWidth = PreviewInfo.m_Width;
+		Item.m_PreviewHeight = PreviewInfo.m_Height;
+		Item.m_PreviewTexture = pMenus->MenuGraphics()->LoadTextureRawMove(PreviewInfo, 0, aPreviewPath);
 		return Item.m_PreviewTexture.IsValid() && !Item.m_PreviewTexture.IsNullTexture();
 	}
 
@@ -1316,6 +1324,7 @@ namespace
 				if(const char *pId = json_string_get(json_object_get(pSkin, "id")); pId != nullptr)
 				{
 					str_copy(Item.m_aId, pId, sizeof(Item.m_aId));
+					str_sanitize_filename(Item.m_aId);
 				}
 				if(const char *pName = json_string_get(json_object_get(pSkin, "name")); pName != nullptr)
 				{
@@ -1552,7 +1561,8 @@ namespace
 		CUIRect Title, CloseButton;
 		Header.VSplitRight(100.0f, &Title, &CloseButton);
 		pMenus->MenuUi()->DoLabel(&Title, pItem->m_aName, AXIS_SHOP_HEADLINE_FONT_SIZE, TEXTALIGN_ML);
-		if(pMenus->DoButton_Menu(&gs_AxisClientShopState.m_PreviewCloseButton, Localize("Close"), 0, &CloseButton, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.30f)))
+		if(pMenus->DoButton_Menu(&gs_AxisClientShopState.m_PreviewCloseButton, Localize("Close"), 0, &CloseButton, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.30f)) ||
+			pMenus->MenuUi()->ConsumeHotkey(CUi::HOTKEY_ESCAPE))
 		{
 			AxisClientShopClosePreview();
 			return;

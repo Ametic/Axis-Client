@@ -18,6 +18,10 @@ void CEntityInfo::OnInit()
 		return;
 
 	json_value *pJson = json_parse((const char *)pBuf, Length);
+	free(pBuf);
+	if(!pJson)
+		return;
+
 	const json_value &Json = *pJson;
 	const json_value &CurrentNews = Json["news"];
 
@@ -28,6 +32,8 @@ void CEntityInfo::OnInit()
 
 		str_copy(m_aNews, CurrentNews);
 	}
+
+	json_value_free(pJson);
 }
 
 void CEntityInfo::OnRender()
@@ -99,7 +105,10 @@ void CEntityInfo::FinishEClientInfo()
 	unsigned Length;
 	json_value *pJson = nullptr;
 	if(Storage()->ReadFile(ECLIENT_INFO_FILE, IStorage::TYPE_SAVE, &pBuf, &Length))
+	{
 		pJson = json_parse((const char *)pBuf, Length);
+		free(pBuf);
+	}
 	if(!pJson)
 		return;
 	const json_value &Json = *pJson;
@@ -110,8 +119,10 @@ void CEntityInfo::FinishEClientInfo()
 		char aNewVersionStr[64];
 		str_copy(aNewVersionStr, CurrentVersion);
 		char aCurVersionStr[64];
-		str_copy(aCurVersionStr, ACLIENT_VERSION);
-		if(ToECVersion(aNewVersionStr) > ToECVersion(aCurVersionStr))
+		str_copy(aCurVersionStr, ECLIENT_VERSION);
+		const EcVersion NewVersion = ToECVersion(aNewVersionStr);
+		const EcVersion CurVersion = ToECVersion(aCurVersionStr);
+		if(NewVersion > CurVersion)
 		{
 			str_copy(m_aVersionStr, CurrentVersion);
 		}

@@ -146,7 +146,7 @@ public:
 		m_Activity.timestamps.start = m_TimeStamp;
 		if(m_ShowMap)
 			str_copy(m_Activity.state, ServerInfo.m_aMap, sizeof(m_Activity.state));
-		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
+		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 
 		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
@@ -169,14 +169,14 @@ public:
 	{
 		if(!m_Activity.instance)
 			return;
-		m_UpdateActivity = true;
-		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
 
 		UpdateServerIp(ServerInfo);
 
-		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
+		m_ShowMap = ShowMap;
 		if(m_ShowMap)
 			str_copy(m_Activity.state, ServerInfo.m_aMap, sizeof(m_Activity.state));
+		else
+			m_Activity.state[0] = '\0';
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
 		m_UpdateActivity = true;

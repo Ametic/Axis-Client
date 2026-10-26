@@ -39,6 +39,43 @@ static void UrlEncode(const char *pText, char *pOut, size_t Length)
 	pOut[OutPos] = '\0';
 }
 
+static std::string UrlDecode(std::string_view Encoded)
+{
+	std::string Decoded;
+	Decoded.reserve(Encoded.size());
+	for(size_t i = 0; i < Encoded.size(); ++i)
+	{
+		const char c = Encoded[i];
+		if(c == '%' && i + 2 < Encoded.size())
+		{
+			auto HexToInt = [](char Hex) -> int {
+				if(Hex >= '0' && Hex <= '9')
+					return Hex - '0';
+				if(Hex >= 'a' && Hex <= 'f')
+					return 10 + (Hex - 'a');
+				if(Hex >= 'A' && Hex <= 'F')
+					return 10 + (Hex - 'A');
+				return -1;
+			};
+			const int High = HexToInt(Encoded[i + 1]);
+			const int Low = HexToInt(Encoded[i + 2]);
+			if(High >= 0 && Low >= 0)
+			{
+				Decoded.push_back((char)((High << 4) | Low));
+				i += 2;
+				continue;
+			}
+		}
+		else if(c == '+')
+		{
+			Decoded.push_back(' ');
+			continue;
+		}
+		Decoded.push_back(c);
+	}
+	return Decoded;
+}
+
 static void NormalizeTranslatedText(char *pText, size_t Size)
 {
 	if(!pText || Size == 0 || pText[0] == '\0')
@@ -54,33 +91,82 @@ static void NormalizeTranslatedText(char *pText, size_t Size)
 	if(EscapedSequenceCount == 0)
 		return;
 
-	const bool Encoded = EscapedSequenceCount >= 2 || str_find(pText, "%20") || str_find(pText, "%3D") || str_find(pText, "%2F") || str_find(pText, "%3A");
-	if(!Encoded)
+	const bool LooksEncoded = EscapedSequenceCount >= 2 || str_find(pText, "%20") || str_find(pText, "%3D") || str_find(pText, "%2F") || str_find(pText, "%3A");
+	if(!LooksEncoded)
 		return;
 
-	char aBuf[sizeof(((CTranslateResponse *)0)->m_Text)];
-	size_t OutPos = 0;
+	const std::string Decoded = UrlDecode(pText);
+	if(Decoded.empty() || str_comp(Decoded.c_str(), pText) == 0)
+		return;
 
-	for(size_t i = 0; pText[i] != '\0' && OutPos < std::size(aBuf) - 1; ++i)
+	str_copy(pText, Decoded.c_str(), Size);
+}
+
+static void NormalizeLanguageCode(const char *pLanguage, char *pOut, size_t Size)
+{
+	if(Size == 0)
+		return;
+
+	pOut[0] = '\0';
+	if(!pLanguage || pLanguage[0] == '\0')
+		return;
+
+	str_utf8_tolower(pLanguage, pOut, Size);
+
+	for(char *p = pOut; *p; ++p)
 	{
-		if(pText[i] == '%' && pText[i + 1] != '\0' && pText[i + 2] != '\0' &&
-			std::isxdigit((unsigned char)pText[i + 1]) && std::isxdigit((unsigned char)pText[i + 2]))
+		if(*p == '-' || *p == '_' || *p == ' ')
 		{
-			char aHex[3] = {pText[i + 1], pText[i + 2], '\0'};
-			unsigned char Value = 0;
-			if(str_hex_decode(&Value, 1, aHex) == 0)
-			{
-				aBuf[OutPos++] = (char)Value;
-				i += 2;
-				continue;
-			}
+			*p = '\0';
+			break;
 		}
+	}
+}
 
-		aBuf[OutPos++] = pText[i];
+static bool HandleLanguageBlacklist(const char *pLanguage)
+{
+	if(!pLanguage || pLanguage[0] == '\0' || g_Config.m_EcTranslateLanguageBlacklist[0] == '\0')
+		return false;
+
+	char aLanguage[16];
+	NormalizeLanguageCode(pLanguage, aLanguage, sizeof(aLanguage));
+	if(aLanguage[0] == '\0')
+		return false;
+
+	char aToken[16];
+	char aTokenNormalized[16];
+	const char *pList = g_Config.m_EcTranslateLanguageBlacklist;
+	while((pList = str_next_token(pList, ", ", aToken, sizeof(aToken))) != nullptr)
+	{
+		NormalizeLanguageCode(aToken, aTokenNormalized, sizeof(aTokenNormalized));
+		if(aTokenNormalized[0] != '\0' && str_comp_nocase(aLanguage, aTokenNormalized) == 0)
+			return true;
 	}
 
-	aBuf[OutPos] = '\0';
-	str_copy(pText, aBuf, Size);
+	return false;
+}
+
+static bool HandleLanguageWhitelist(const char *pLanguage)
+{
+	if(!pLanguage || pLanguage[0] == '\0' || g_Config.m_EcTranslateLanguageWhitelist[0] == '\0')
+		return true;
+
+	char aLanguage[16];
+	NormalizeLanguageCode(pLanguage, aLanguage, sizeof(aLanguage));
+	if(aLanguage[0] == '\0')
+		return true;
+
+	char aToken[16];
+	char aTokenNormalized[16];
+	const char *pList = g_Config.m_EcTranslateLanguageWhitelist;
+
+	while((pList = str_next_token(pList, ", ", aToken, sizeof(aToken))) != nullptr)
+	{
+		NormalizeLanguageCode(aToken, aTokenNormalized, sizeof(aTokenNormalized));
+		if(aTokenNormalized[0] != '\0' && str_comp_nocase(aLanguage, aTokenNormalized) == 0)
+			return true;
+	}
+	return false;
 }
 
 const char *ITranslateBackend::EncodeTarget(const char *pTarget) const
@@ -484,22 +570,6 @@ private:
 			return false;
 		}
 
-		if(pObj->type == json_object)
-		{
-			const json_value *pError = json_object_get(pObj, "error");
-			if(pError != &json_value_none)
-			{
-				if(pError->type == json_string)
-					str_copy(Out.m_Text, pError->u.string.ptr);
-				else
-					str_copy(Out.m_Text, "Google error");
-				return false;
-			}
-
-			str_copy(Out.m_Text, "Response is not array");
-			return false;
-		}
-
 		if(pObj->type != json_array)
 		{
 			str_copy(Out.m_Text, "Response is not array");
@@ -533,13 +603,8 @@ private:
 			return false;
 		}
 
-		// Decode into temporary buffer first to avoid truncation mid-sequence
-		char aTempBuf[sizeof(Out.m_Text) * 3]; // Large enough for worst-case percent-encoding
-		str_copy(aTempBuf, Result.c_str(), sizeof(aTempBuf));
-		NormalizeTranslatedText(aTempBuf, sizeof(aTempBuf));
-
-		// Now copy the decoded text (may truncate, but at UTF-8 boundary)
-		str_copy(Out.m_Text, aTempBuf, sizeof(Out.m_Text));
+		str_copy(Out.m_Text, Result.c_str(), sizeof(Out.m_Text));
+		NormalizeTranslatedText(Out.m_Text, sizeof(Out.m_Text));
 
 		const json_value *pDetectedLanguage = json_array_get(pObj, 2);
 		if(pDetectedLanguage && pDetectedLanguage->type == json_string)
@@ -568,7 +633,7 @@ public:
 	CTranslateBackendGoogle(IHttp &Http, const char *pText)
 	{
 		char aBuf[4096];
-		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&ie=UTF-8&oe=UTF-8&q=",
+		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
 			EncodeTarget(g_Config.m_EcTranslateTarget));
 		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
 		CreateHttpRequest(Http, aBuf);
@@ -721,7 +786,20 @@ void CTranslate::OnRender()
 			return false; // Keep ongoing tasks
 		if(*Done)
 		{
-			if(Job.m_pBackend->CompareTargets(Job.m_pTranslateResponse->m_Language, g_Config.m_EcTranslateTarget))
+			if(!Job.m_pTranslateResponse->m_Auto)
+			{
+				if(!HandleLanguageWhitelist(Job.m_pTranslateResponse->m_Language))
+				{
+					Job.m_pTranslateResponse->m_Text[0] = '\0';
+				}
+
+				if(HandleLanguageBlacklist(Job.m_pTranslateResponse->m_Language))
+				{
+					Job.m_pTranslateResponse->m_Text[0] = '\0';
+				}
+			}
+
+			else if(Job.m_pBackend->CompareTargets(Job.m_pTranslateResponse->m_Language, g_Config.m_EcTranslateTarget))
 			{
 				Job.m_pTranslateResponse->m_Text[0] = '\0';
 			}

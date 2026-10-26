@@ -3,6 +3,7 @@
 
 #include "sounds.h"
 
+#include <base/thread.h>
 #include <base/time.h>
 
 #include <engine/engine.h>
@@ -173,6 +174,16 @@ void CSounds::ClearQueue()
 
 void CSounds::Clear()
 {
+	if(m_WaitForSoundJob && m_pSoundJob)
+	{
+		m_pSoundJob->Abort();
+		while(!m_pSoundJob->Done())
+		{
+			thread_yield();
+		}
+		m_WaitForSoundJob = false;
+	}
+
 	Sound()->StopAll();
 	ClearQueue();
 

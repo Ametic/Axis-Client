@@ -303,16 +303,6 @@ struct SPopupMenuProperties
 class CUi
 {
 public:
-	enum class EButtonSoundEvent
-	{
-		HOVER_ENTER = 0,
-		LEFT_CLICK,
-		RIGHT_CLICK,
-		MIDDLE_CLICK,
-	};
-
-	using FButtonSoundEventCallback = std::function<void(EButtonSoundEvent)>;
-
 	/**
 	 * These enum values are returned by popup menu functions to specify the behavior.
 	 */
@@ -451,7 +441,6 @@ private:
 	IGraphics *m_pGraphics;
 	IInput *m_pInput;
 	ITextRender *m_pTextRender;
-	FButtonSoundEventCallback m_pfnButtonSoundEvent;
 
 	std::vector<CUIElement *> m_vpOwnUIElements; // ui elements maintained by CUi class
 	std::vector<CUIElement *> m_vpUIElements;
@@ -577,8 +566,6 @@ public:
 	bool ConsumeHotkey(EHotkey Hotkey);
 	void ClearHotkeys() { m_HotkeysPressed = 0; }
 	bool OnInput(const IInput::CEvent &Event);
-	void SetButtonSoundEventCallback(FButtonSoundEventCallback pfnCallback) { m_pfnButtonSoundEvent = pfnCallback; }
-	void ClearButtonSoundEventCallback() { m_pfnButtonSoundEvent = nullptr; }
 
 	constexpr float ButtonColorMulActive() const { return 0.5f; }
 	constexpr float ButtonColorMulHot() const { return 1.5f; }

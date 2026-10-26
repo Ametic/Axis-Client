@@ -462,7 +462,8 @@ void CClient::SetState(EClientState State)
 	if(State == IClient::STATE_ONLINE)
 	{
 		const bool Registered = m_ServerBrowser.IsRegistered(ServerAddress());
-		Discord()->SetGameInfo(m_CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
+		const char *pDiscordDetail = g_Config.m_AcDiscordShowServerName ? m_CurrentServerInfo.m_aName : g_Config.m_ClDiscordOnlineStatus;
+		Discord()->SetGameInfo(m_CurrentServerInfo, pDiscordDetail, g_Config.m_ClDiscordMapStatus, Registered);
 		Steam()->SetGameInfo(ServerAddress(), GameClient()->Map()->BaseName(), Registered);
 	}
 	else if(OldState == IClient::STATE_ONLINE)
@@ -486,7 +487,8 @@ void CClient::DiscordRPCchange()
 		CServerInfo CurrentServerInfo;
 		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
+		const char *pDiscordDetail = g_Config.m_AcDiscordShowServerName ? CurrentServerInfo.m_aName : g_Config.m_ClDiscordOnlineStatus;
+		Discord()->SetGameInfo(CurrentServerInfo, pDiscordDetail, g_Config.m_ClDiscordMapStatus, Registered);
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{
@@ -1546,7 +1548,8 @@ void CClient::ProcessServerInfo(int RawType, NETADDR *pFrom, const void *pData, 
 			if(SavedType >= m_CurrentServerInfo.m_Type)
 			{
 				SetCurrentServerInfo(Info);
-				Discord()->UpdateServerInfo(m_CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus);
+				const char *pDiscordDetail = g_Config.m_AcDiscordShowServerName ? m_CurrentServerInfo.m_aName : g_Config.m_ClDiscordOnlineStatus;
+				Discord()->UpdateServerInfo(m_CurrentServerInfo, pDiscordDetail, g_Config.m_ClDiscordMapStatus);
 			}
 
 			bool ValidPong = false;

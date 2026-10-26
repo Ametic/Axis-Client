@@ -985,6 +985,13 @@ void CMenus::OnInterfacesInit(CGameClient *pClient)
 	m_CommunityIcons.OnInterfacesInit(pClient);
 }
 
+void CMenus::OnConsoleInit()
+{
+	ConfigManager()->RegisterCallback(CMenus::ConfigSaveCallback, this, ConfigDomain::ENTITY);
+	Console()->Register("add_favorite_asset", "s[tab] s[name]", CFGFLAG_CLIENT, ConAddFavoriteAsset, this, "Add a favorite asset");
+	Console()->Register("remove_favorite_asset", "s[tab] s[name]", CFGFLAG_CLIENT, ConRemoveFavoriteAsset, this, "Remove a favorite asset");
+}
+
 void CMenus::OnInit()
 {
 	if(g_Config.m_ClShowWelcome)
@@ -1033,6 +1040,9 @@ void CMenus::OnInit()
 	Console()->Chain("cl_asset_particles", ConchainAssetParticles, this);
 	Console()->Chain("cl_asset_hud", ConchainAssetHud, this);
 	Console()->Chain("cl_asset_extras", ConchainAssetExtras, this);
+	Console()->Chain("cl_asset_cursor", ConchainAssetCursor, this);
+	Console()->Chain("cl_asset_arrow", ConchainAssetArrow, this);
+	Console()->Chain("snd_pack", ConchainSndPack, this);
 
 	Console()->Chain("demo_play", ConchainDemoPlay, this);
 	Console()->Chain("demo_speed", ConchainDemoSpeed, this);

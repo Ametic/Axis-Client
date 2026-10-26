@@ -507,29 +507,40 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
 
-	static int s_ShowSettings = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SETTINGS);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, Localize("Settings"), &s_ShowSettings, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SETTINGS, s_ShowSettings);
+	int ShowSettings = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SETTINGS);
+	static CButtonContainer s_ShowSettingsId;
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettingsId, Localize("Settings"), &ShowSettings, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SETTINGS, ShowSettings);
 
-	static int s_ShowVisal = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_VISUAL);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowVisal, Localize("Visual"), &s_ShowVisal, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_VISUAL, s_ShowVisal);
+	int ShowVisual = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_VISUAL);
+	static CButtonContainer s_ShowVisualId;
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowVisualId, Localize("Visual"), &ShowVisual, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_VISUAL, ShowVisual);
 
-	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_WARLIST);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlist, Localize("Warlist"), &s_ShowWarlist, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_WARLIST, s_ShowWarlist);
+	int ShowWarlist = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_WARLIST);
+	static CButtonContainer s_ShowWarlistId;
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlistId, Localize("Warlist"), &ShowWarlist, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_WARLIST, ShowWarlist);
 
-	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_STATUSBAR);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("Status Bar"), &s_ShowStatusBar, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_STATUSBAR, s_ShowStatusBar);
+	int ShowStatusBar = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_STATUSBAR);
+	static CButtonContainer s_ShowStatusBarId;
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBarId, Localize("Status Bar"), &ShowStatusBar, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_STATUSBAR, ShowStatusBar);
 
-	static int s_ShowBindwheel = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_BINDWHEEL);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindwheel, Localize("Bindwheel"), &s_ShowBindwheel, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_BINDWHEEL, s_ShowBindwheel);
+	int ShowBindwheel = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_BINDWHEEL);
+	static CButtonContainer s_ShowBindwheelId;
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindwheelId, Localize("Bindwheel"), &ShowBindwheel, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_BINDWHEEL, ShowBindwheel);
 
-	static int s_ShowQuickActions = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_QUICKACTION);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowQuickActions, Localize("Quick Actions"), &s_ShowQuickActions, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_QUICKACTION, s_ShowQuickActions);
+	int ShowQuickActions = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_QUICKACTION);
+	static CButtonContainer s_ShowQuickActionsId;
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowQuickActionsId, Localize("Quick Actions"), &ShowQuickActions, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_QUICKACTION, ShowQuickActions);
+
+	int ShowShop = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SHOP);
+	static CButtonContainer s_ShowShopId;
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowShopId, Localize("Shop"), &ShowShop, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, AXIS_TAB_SHOP, ShowShop);
 
 	char DeathCounter[32];
 	str_format(DeathCounter, sizeof(DeathCounter), "%d death%s (all time)", GameClient()->m_EClient.m_KillCount, GameClient()->m_EClient.m_KillCount == 1 ? "" : "s");
@@ -606,7 +617,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		TeeRenderInfo.ApplyColors(true, 10784768, 15269690);
 		TeeRenderInfo.m_Size = TeeSize;
 
-		RenderDraggableTee(MainView, TeeRect.Center(), TeeEyeDirection(TeeRect.Center()), CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_NORMAL);
+		RenderDraggableTee(MainView, TeeRect.Center(), TeeEyeDirection(TeeRect.Center()), CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_NORMAL, true, 0);
 	}
 	{
 		CTeeRenderInfo TeeRenderInfo2;
@@ -614,7 +625,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		TeeRenderInfo2.ApplyColors(true, 10551176, 11850904);
 		TeeRenderInfo2.m_Size = TeeSize;
 
-		RenderDraggableTee(MainView, TeeRect2.Center(), TeeEyeDirection(TeeRect2.Center()), CAnimState::GetIdle(), &TeeRenderInfo2, EMOTE_NORMAL);
+		RenderDraggableTee(MainView, TeeRect2.Center(), TeeEyeDirection(TeeRect2.Center()), CAnimState::GetIdle(), &TeeRenderInfo2, EMOTE_NORMAL, true, 1);
 	}
 }
 
@@ -3659,7 +3670,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 	/* Miscellaneous */
 	{
-		int Size = 260;
+		int Size = 280;
 		if(g_Config.m_ClWhiteFeet)
 			Size += LineSize;
 
@@ -3811,7 +3822,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	/* Discord RPC */
 	{
 		DiscordRpc.HSplitTop(Margin, nullptr, &DiscordRpc);
-		DiscordRpc.HSplitTop(125.0f, &DiscordRpc, &ChatBubbles);
+		DiscordRpc.HSplitTop(145.0f, &DiscordRpc, &ChatBubbles);
 		if(s_ScrollRegion.AddRect(DiscordRpc))
 		{
 			DiscordRpc.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -3820,9 +3831,12 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			DiscordRpc.HSplitTop(HeaderHeight, &Button, &DiscordRpc);
 			Ui()->DoLabel(&Button, Localize("Discord RPC"), HeaderSize, HeaderAlignment);
 			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordRpc, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordRpc, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_AcDiscordShowServerName, "Show server name instead of status", &g_Config.m_AcDiscordShowServerName, &DiscordRpc, LineSize);
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordRpc, LineSize))
+					Client()->DiscordRPCchange();
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordRpc, LineSize))
+					Client()->DiscordRPCchange();
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_AcDiscordShowServerName, "Show server name instead of status", &g_Config.m_AcDiscordShowServerName, &DiscordRpc, LineSize))
+					Client()->DiscordRPCchange();
 
 				std::array<float, 2> Sizes = {
 					TextRender()->TextBoundingBox(FontSize, "Online Message:").m_W,
@@ -4118,27 +4132,39 @@ vec2 CMenus::TeeEyeDirection(vec2 Pos)
 	return TeeDirection;
 }
 
-void CMenus::RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover)
+void CMenus::RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover, int TeeIndex)
 {
-	static bool s_OverrideTeePos = false;
-	static bool s_CanDrag = false;
-	static vec2 s_Pos = SpawnPos;
+	static constexpr int MAX_DRAGGABLE_TEES = 4;
+	TeeIndex = std::clamp(TeeIndex, 0, MAX_DRAGGABLE_TEES - 1);
 
-	if(m_ResetTeePos || !s_OverrideTeePos)
-		s_Pos = SpawnPos;
+	static bool s_aOverrideTeePos[MAX_DRAGGABLE_TEES] = {};
+	static bool s_aCanDrag[MAX_DRAGGABLE_TEES] = {};
+	static vec2 s_aPos[MAX_DRAGGABLE_TEES] = {};
+
 	if(m_ResetTeePos)
-		m_ResetTeePos = false;
-
-	if(length(Ui()->MousePos() - s_Pos) < pInfo->m_Size / 2.4f)
 	{
-		s_CanDrag = true;
+		for(bool &Override : s_aOverrideTeePos)
+			Override = false;
+		m_ResetTeePos = false;
+	}
+
+	bool &OverrideTeePos = s_aOverrideTeePos[TeeIndex];
+	bool &CanDrag = s_aCanDrag[TeeIndex];
+	vec2 &Pos = s_aPos[TeeIndex];
+
+	if(!OverrideTeePos)
+		Pos = SpawnPos;
+
+	if(length(Ui()->MousePos() - Pos) < pInfo->m_Size / 2.4f)
+	{
+		CanDrag = true;
 		Ui()->SetHotItem(nullptr);
 	}
 
-	if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && s_CanDrag)
+	if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
 	{
 		vec2 Offset = vec2(0.0f, 2.5f);
-		s_Pos = Ui()->MousePos() - Offset;
+		Pos = Ui()->MousePos() - Offset;
 
 		float MenuTop = MainView.y + 25.0f;
 		float MenuBottom = MainView.Size().y + 35.0f;
@@ -4147,24 +4173,24 @@ void CMenus::RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirecti
 		float MenuRight = MainView.Size().x + 10.0f;
 
 		if(Ui()->MousePos().y < MenuTop)
-			s_Pos.y = MenuTop - Offset.y;
+			Pos.y = MenuTop - Offset.y;
 		if(Ui()->MousePos().y > MenuBottom)
-			s_Pos.y = MenuBottom - Offset.y;
+			Pos.y = MenuBottom - Offset.y;
 
 		if(Ui()->MousePos().x < MenuLeft)
-			s_Pos.x = MenuLeft;
+			Pos.x = MenuLeft;
 		if(Ui()->MousePos().x > MenuRight)
-			s_Pos.x = MenuRight;
+			Pos.x = MenuRight;
 
-		s_CanDrag = true;
-		s_OverrideTeePos = true;
+		CanDrag = true;
+		OverrideTeePos = true;
 	}
-	else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && s_OverrideTeePos && s_CanDrag)
-		s_OverrideTeePos = false;
+	else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && OverrideTeePos && CanDrag)
+		OverrideTeePos = false;
 	else
-		s_CanDrag = false;
+		CanDrag = false;
 
-	RenderTee(s_Pos, TeeEyeDirection(s_Pos), pAnim, pInfo, EyeEmote, HappyHover);
+	RenderTee(Pos, TeeEyeDirection(Pos), pAnim, pInfo, EyeEmote, HappyHover);
 }
 
 void CMenus::RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover)

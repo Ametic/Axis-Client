@@ -256,7 +256,7 @@ public:
 	CNamePlatePartDirection(CGameClient &This, Direction Dir) :
 		CNamePlatePartIcon(This)
 	{
-		m_Texture = g_pData->m_aImages[IMAGE_ARROW].m_Id;
+		m_Texture = This.ArrowTexture();
 		m_Direction = Dir;
 		switch(m_Direction)
 		{
@@ -273,6 +273,7 @@ public:
 	}
 	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
+		m_Texture = This.ArrowTexture();
 		if(!Data.m_ShowDirection)
 		{
 			m_ShiftOnInvis = false;
@@ -482,7 +483,7 @@ private:
 protected:
 	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
-		m_Visible = Data.m_InGame ? g_Config.m_AcNameplateSkins > (This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Local ? 1 : 0) : g_Config.m_AcNameplateSkins > 0;
+		m_Visible = Data.m_ShowName && g_Config.m_AcNameplateSkins > 0 && Data.m_ClientId >= 0 && Data.m_ClientId < MAX_CLIENTS;
 		if(!m_Visible)
 			return false;
 		m_Color = Data.m_Color;

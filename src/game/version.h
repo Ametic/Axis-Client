@@ -20,5 +20,6 @@ extern const char *GIT_SHORTREV_HASH;
 
 // AClient
 #define CLIENT_NAME "AxisClient"
+#define ECLIENT_VERSION "1.8.1"
 #define ACLIENT_VERSION "1.0.0"
 #endif

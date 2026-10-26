@@ -363,11 +363,22 @@ int CMenus::ArrowScan(const char *pName, int IsDir, int DirType, void *pUser)
 	auto *pThis = (CMenus *)pRealUser->m_pUser;
 	IGraphics *pGraphics = pThis->Graphics();
 
+	auto Exists = [&](const char *pItemName) {
+		for(const auto &Item : pThis->m_vArrowList)
+		{
+			if(str_comp(Item.m_aName, pItemName) == 0)
+				return true;
+		}
+		return false;
+	};
+
 	if(IsDir)
 	{
 		if(pName[0] == '.')
 			return 0;
 		if(str_comp(pName, "default") == 0)
+			return 0;
+		if(Exists(pName))
 			return 0;
 
 		SCustomArrow ArrowItem;
@@ -382,6 +393,8 @@ int CMenus::ArrowScan(const char *pName, int IsDir, int DirType, void *pUser)
 			char aName[IO_MAX_PATH_LENGTH];
 			str_truncate(aName, sizeof(aName), pName, str_length(pName) - 4);
 			if(str_comp(aName, "default") == 0)
+				return 0;
+			if(Exists(aName))
 				return 0;
 
 			SCustomArrow ArrowItem;
@@ -801,7 +814,18 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 	}
 	else if(s_CurCustomTab == ASSETS_TAB_ARROW)
 	{
-		InitAssetList(m_vArrowList, "assets/arrow", "arrow", ArrowScan, Graphics(), Storage(), &User);
+		if(m_vArrowList.empty())
+		{
+			SCustomArrow ArrowItem;
+			str_copy(ArrowItem.m_aName, "default");
+			LoadArrowPreview(&ArrowItem, Graphics());
+			m_vArrowList.push_back(ArrowItem);
+
+			Storage()->ListDirectory(IStorage::TYPE_ALL, "assets/arrow", ArrowScan, &User);
+			std::sort(m_vArrowList.begin(), m_vArrowList.end());
+		}
+		if(m_vArrowList.size() != gs_aCustomListSize[s_CurCustomTab])
+			gs_aInitCustomList[s_CurCustomTab] = true;
 	}
 	else if(s_CurCustomTab == ASSETS_TAB_AUDIO)
 	{

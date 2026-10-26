@@ -60,9 +60,6 @@ public:
 	// EClient
 	bool DoLine_RadioMenu_Compact(CUIRect &View, const char *pLabel, std::vector<CButtonContainer> &vButtonContainers, const std::vector<const char *> &vLabels, const std::vector<int> &vValues, int &Value, float LabelSpacing = 5.0f, const std::vector<const char *> *pvTooltips = nullptr);
 
-	bool DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags = 0u, const char *pSuffix = "");
-	bool DoEditBoxWithLabel(CLineInput *LineInput, const CUIRect *pRect, const char *pLabel, const char *pDefault, char *pBuf, size_t BufSize);
-
 	// Axis Client
 	IGraphics *MenuGraphics() const { return Graphics(); }
 	IStorage *MenuStorage() const { return Storage(); }
@@ -86,134 +83,12 @@ private:
 	std::optional<std::chrono::nanoseconds> m_SkinPartsList7LastRefreshTime;
 
 	int m_DirectionQuadContainerIndex;
+
 public:
 	enum
 	{
 		NUM_ASSET_FAVORITE_TABS = 9,
 	};
-
-	enum
-	{
-		ASSETS_EDITOR_TYPE_GAME = 0,
-		ASSETS_EDITOR_TYPE_EMOTICONS,
-		ASSETS_EDITOR_TYPE_ENTITIES,
-		ASSETS_EDITOR_TYPE_HUD,
-		ASSETS_EDITOR_TYPE_PARTICLES,
-		ASSETS_EDITOR_TYPE_EXTRAS,
-		ASSETS_EDITOR_TYPE_COUNT,
-	};
-
-	struct SAssetsEditorAssetEntry
-	{
-		IGraphics::CTextureHandle m_PreviewTexture;
-		int m_PreviewWidth = 0;
-		int m_PreviewHeight = 0;
-		char m_aName[64] = {0};
-		char m_aPath[IO_MAX_PATH_LENGTH] = {0};
-		bool m_IsDefault = false;
-	};
-
-	struct SAssetsEditorPartSlot
-	{
-		int m_SpriteId = -1;
-		int m_SourceSpriteId = -1;
-		int m_Group = 0;
-		int m_DstX = 0;
-		int m_DstY = 0;
-		int m_DstW = 0;
-		int m_DstH = 0;
-		int m_SrcX = 0;
-		int m_SrcY = 0;
-		int m_SrcW = 0;
-		int m_SrcH = 0;
-		char m_aFamilyKey[64] = {0};
-		char m_aSourceAsset[64] = {0};
-	};
-
-private:
-	struct SAssetsEditorState
-	{
-		bool m_VisualsEditorOpen = false;
-		bool m_VisualsEditorInitialized = false;
-		int m_Type = ASSETS_EDITOR_TYPE_GAME;
-		int m_aMainAssetIndex[ASSETS_EDITOR_TYPE_COUNT] = {0};
-		int m_aDonorAssetIndex[ASSETS_EDITOR_TYPE_COUNT] = {0};
-		bool m_ShowGrid = true;
-		bool m_ApplySameSize = false;
-		int m_ApplySameSizeScope = 0;
-		bool m_DragActive = false;
-		int m_ActiveDraggedSlotIndex = -1;
-		char m_aDraggedSourceAsset[64] = {0};
-		int m_HoveredDonorSlotIndex = -1;
-		int m_HoveredTargetSlotIndex = -1;
-		bool m_DirtyPreview = true;
-		bool m_LastComposeFailed = false;
-		char m_aExportName[64] = {0};
-		char m_aaExportNameByType[ASSETS_EDITOR_TYPE_COUNT][64] = {};
-		bool m_aExportNameTouchedByUser[ASSETS_EDITOR_TYPE_COUNT] = {};
-		char m_aStatusMessage[256] = {0};
-		bool m_StatusIsError = false;
-		bool m_HasUnsavedChanges = false;
-		bool m_PendingCloseRequest = false;
-		bool m_ShowExitConfirm = false;
-		bool m_FullscreenOpen = true;
-		int m_HoverCycleSlotIndex = -1;
-		int m_HoverCyclePositionX = -1;
-		int m_HoverCyclePositionY = -1;
-		int m_HoverCycleCandidateCursor = 0;
-		std::vector<int> m_vHoverCycleCandidates;
-		IGraphics::CTextureHandle m_ComposedPreviewTexture;
-		int m_ComposedPreviewWidth = 0;
-		int m_ComposedPreviewHeight = 0;
-		std::vector<SAssetsEditorAssetEntry> m_avAssets[ASSETS_EDITOR_TYPE_COUNT];
-		std::vector<SAssetsEditorPartSlot> m_vPartSlots;
-	};
-
-	struct SComponentsEditorState
-	{
-		bool m_Open = false;
-		bool m_FullscreenOpen = true;
-		int m_StagedMaskLo = 0;
-		int m_StagedMaskHi = 0;
-		int m_AppliedMaskLo = 0;
-		int m_AppliedMaskHi = 0;
-		bool m_HasUnsavedChanges = false;
-		bool m_ShowExitConfirm = false;
-		bool m_ShowRestartConfirm = false;
-	};
-
-	SAssetsEditorState m_AssetsEditorState;
-	SComponentsEditorState m_ComponentsEditorState;
-	void RenderAssetsEditorScreen(CUIRect MainView);
-	void RenderComponentsEditorScreen(CUIRect MainView);
-	void ComponentsEditorOpen();
-	void ComponentsEditorSyncFromConfig();
-	void ComponentsEditorRequestClose();
-	void ComponentsEditorCloseNow();
-	void ComponentsEditorApply();
-	void ComponentsEditorRenderExitConfirm(const CUIRect &Rect);
-	void ComponentsEditorRenderRestartConfirm(const CUIRect &Rect);
-	void AssetsEditorClearAssets();
-	void AssetsEditorReloadAssets();
-	void AssetsEditorReloadAssetsImagesOnly();
-	void AssetsEditorResetPartSlots();
-	void AssetsEditorEnsureDefaultExportNames();
-	void AssetsEditorSyncExportNameFromType();
-	void AssetsEditorCommitExportNameForType();
-	void AssetsEditorValidateRequiredSlotsForType(int Type);
-	bool AssetsEditorComposeImage(CImageInfo &OutputImage);
-	bool AssetsEditorExport();
-	void AssetsEditorRenderCanvas(const CUIRect &Rect, IGraphics::CTextureHandle Texture, int W, int H, int Type, bool ShowGrid, int HighlightSlot);
-	void AssetsEditorCollectHoveredCandidates(const CUIRect &Rect, int Type, const std::vector<SAssetsEditorPartSlot> &vSlots, vec2 Mouse, std::vector<int> &vOutCandidates) const;
-	int AssetsEditorResolveHoveredSlotWithCycle(const CUIRect &Rect, int Type, const std::vector<SAssetsEditorPartSlot> &vSlots, vec2 Mouse, bool ClickedLmb, int PreferredSlotIndex);
-	void AssetsEditorCancelDrag();
-	void AssetsEditorApplyDrop(int TargetSlotIndex, const char *pDonorName, int SourceSlotIndex, bool ApplyAllSameSize);
-	void AssetsEditorUpdatePreviewIfDirty();
-	void AssetsEditorRequestClose();
-	void AssetsEditorCloseNow();
-	void AssetsEditorRenderExitConfirm(const CUIRect &Rect);
-	void AssetsEditorBuildFamilyKey(int Type, const CDataSprite *pSprite, char *pOut, int OutSize);
-	bool AssetsEditorCopyRectScaledNearest(CImageInfo &Dst, const CImageInfo &Src, int DstX, int DstY, int DstW, int DstH, int SrcX, int SrcY, int SrcW, int SrcH);
 
 	// menus_settings_assets.cpp
 public:
@@ -319,8 +194,6 @@ protected:
 	int m_Popup;
 	bool m_ShowStart;
 	bool m_MenuActive;
-	float m_BcIngameMenuOpenPhase = 0.0f;
-	bool m_BcIngameMenuClosing = false;
 
 	bool m_DummyNamePlatePreview = false;
 
@@ -728,13 +601,6 @@ protected:
 		bool m_New;
 	};
 	static CUi::EPopupMenuFunctionResult PopupCountrySelection(void *pContext, CUIRect View, bool Active);
-	struct SPopupSettingsCountrySelectionContext
-	{
-		CMenus *m_pMenus;
-		int *m_pCountry;
-		int m_Selection;
-		bool m_New;
-	};
 	void RenderServerbrowserInfo(CUIRect View);
 	void RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *pSelectedServer);
 	void RenderServerbrowserFriends(CUIRect View);
@@ -827,6 +693,7 @@ public:
 	void SetActive(bool Active);
 
 	void OnInterfacesInit(CGameClient *pClient) override;
+	void OnConsoleInit() override;
 	void OnInit() override;
 
 	void OnStateChange(int NewState, int OldState) override;
@@ -1160,7 +1027,7 @@ public:
 	 */
 	vec2 TeeEyeDirection(vec2 Pos);
 
-	void RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true);
+	void RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true, int TeeIndex = 0);
 	void RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true);
 	bool m_ResetTeePos;
 };

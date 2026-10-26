@@ -275,7 +275,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		static CButtonContainer s_EClientDownload;
 		if(GameClient()->m_Menus.DoButton_Menu(&s_EClientDownload, Localize("Download"), 0, &VersionButton, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.1f, 0.4f, 0.3f, 0.25f), 11.0f))
 		{
-			Client()->ViewLink(Localize("https://github.com/qxdFox/Entity-Client-DDNet/releases/latest"));
+			Client()->ViewLink(Localize("https://github.com/Ametic/Axis-Client/releases/latest"));
 		}
 	}
 
