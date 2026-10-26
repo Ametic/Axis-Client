@@ -5,9 +5,9 @@
 
 #include "dbg.h"
 #include "detect.h"
-#include "math.h"
 #include "mem.h"
 
+#include <algorithm>
 #include <cctype>
 #include <charconv> // std::to_chars
 #include <cstdarg>
@@ -101,29 +101,29 @@ bool str_isnum(char c)
 	return c >= '0' && c <= '9';
 }
 
-int str_isallnum(const char *str)
+bool str_isallnum(const char *str)
 {
 	while(*str)
 	{
 		if(!str_isnum(*str))
-			return 0;
+			return false;
 		str++;
 	}
-	return 1;
+	return true;
 }
 
-int str_isallnum_hex(const char *str)
+bool str_isallnum_hex(const char *str)
 {
 	while(*str)
 	{
 		if(!str_isnum(*str) && !(*str >= 'a' && *str <= 'f') && !(*str >= 'A' && *str <= 'F'))
-			return 0;
+			return false;
 		str++;
 	}
-	return 1;
+	return true;
 }
 
-int str_isspace(char c)
+bool str_isspace(char c)
 {
 	return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
@@ -248,16 +248,11 @@ bool str_valid_filename(const char *str)
 		"CON", "PRN", "AUX", "NUL",
 		"COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "COM¹", "COM²", "COM³",
 		"LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", "LPT¹", "LPT²", "LPT³"};
-	for(const char *reserved_name : RESERVED_NAMES)
-	{
+	return std::none_of(std::begin(RESERVED_NAMES), std::end(RESERVED_NAMES), [str](const char *reserved_name) {
 		const char *prefix = str_startswith_nocase(str, reserved_name);
-		if(prefix != nullptr && (prefix[0] == '\0' || prefix[0] == '.'))
-		{
-			return false; // reserved name not allowed when it makes up the entire filename or when followed by period
-		}
-	}
-
-	return true;
+		// reserved name not allowed when it makes up the entire filename or when followed by period
+		return prefix != nullptr && (prefix[0] == '\0' || prefix[0] == '.');
+	});
 }
 
 int str_comp_filenames(const char *a, const char *b)
@@ -281,8 +276,10 @@ int str_comp_filenames(const char *a, const char *b)
 				return 1;
 			else if(str_isnum(*b))
 				return -1;
-			else if(result || *a == '\0' || *b == '\0')
+			else if(result)
 				return result;
+			else if(*a == '\0' || *b == '\0')
+				return *a - *b;
 		}
 
 		result = tolower(*a) - tolower(*b);
@@ -484,7 +481,7 @@ const char *str_find(const char *haystack, const char *needle)
 	return nullptr;
 }
 
-static const char *str_token_get(const char *str, const char *delim, int *length)
+static const char *str_token_get(const char *str, const char *delim, size_t *length)
 {
 	size_t len = strspn(str, delim);
 	if(len > 1)
@@ -498,11 +495,13 @@ static const char *str_token_get(const char *str, const char *delim, int *length
 	return str;
 }
 
-const char *str_next_token(const char *str, const char *delim, char *buffer, int buffer_size)
+const char *str_next_token(const char *str, const char *delim, char *buffer, size_t buffer_size)
 {
-	int len = 0;
+	dbg_assert(buffer_size > 0, "buffer size 0");
+
+	size_t len = 0;
 	const char *tok = str_token_get(str, delim, &len);
-	if(len < 0 || tok == nullptr)
+	if(tok == nullptr)
 	{
 		buffer[0] = '\0';
 		return nullptr;
@@ -515,10 +514,10 @@ const char *str_next_token(const char *str, const char *delim, char *buffer, int
 	return tok + len;
 }
 
-int str_in_list(const char *list, const char *delim, const char *needle)
+bool str_in_list(const char *list, const char *delim, const char *needle)
 {
 	const char *tok = list;
-	int len = 0, notfound = 1, needlelen = str_length(needle);
+	size_t len = 0, notfound = 1, needlelen = str_length(needle);
 
 	while(notfound && (tok = str_token_get(tok, delim, &len)))
 	{
@@ -847,6 +846,24 @@ void str_escape(char **dst, const char *src, const char *end)
 	**dst = 0;
 }
 
+void str_unescape_newlines(char *str)
+{
+	int i, j;
+	for(i = 0, j = 0; str[i]; i++, j++)
+	{
+		if(str[i] == '\\' && str[i + 1] == 'n')
+		{
+			str[j] = '\n';
+			i++;
+		}
+		else if(i != j)
+		{
+			str[j] = str[i];
+		}
+	}
+	str[j] = '\0';
+}
+
 int str_toint(const char *str)
 {
 	return str_toint_base(str, 10);
@@ -1093,7 +1110,7 @@ void str_utf8_tolower(const char *input, char *output, size_t size)
 	output[out_pos] = '\0';
 }
 
-int str_utf8_isspace(int code)
+bool str_utf8_isspace(int code)
 {
 	return code <= 0x0020 || code == 0x0085 || code == 0x00A0 || code == 0x034F ||
 	       code == 0x115F || code == 0x1160 || code == 0x1680 || code == 0x180E ||
@@ -1104,11 +1121,11 @@ int str_utf8_isspace(int code)
 	       (code >= 0xFFF9 && code <= 0xFFFC);
 }
 
-int str_utf8_isstart(char c)
+bool str_utf8_isstart(char c)
 {
 	if((c & 0xC0) == 0x80) /* 10xxxxxx */
-		return 0;
-	return 1;
+		return false;
+	return true;
 }
 
 int str_utf8_rewind(const char *str, int cursor)
@@ -1219,17 +1236,17 @@ int str_utf8_forward(const char *str, int cursor)
 	return ptr - str;
 }
 
-int str_utf8_check(const char *str)
+bool str_utf8_check(const char *str)
 {
 	int codepoint;
 	while((codepoint = str_utf8_decode(&str)))
 	{
 		if(codepoint == -1)
 		{
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
 void str_utf8_copy_num(char *dst, const char *src, int dst_size, int num)
@@ -1364,10 +1381,11 @@ int str_utf32_dist_buffer(const int *a, int a_len, const int *b, int b_len, int 
 		for(i = 1; i <= a_len; i++)
 		{
 			int subst = (a[i - 1] != b[j - 1]);
-			B(i, j) = minimum(
+			B(i, j) = std::min({
 				B(i - 1, j) + 1,
 				B(i, j - 1) + 1,
-				B(i - 1, j - 1) + subst);
+				B(i - 1, j - 1) + subst,
+			});
 		}
 	}
 	return B(a_len, b_len);

@@ -28,7 +28,7 @@ public:
 	bool m_InGame;
 	ColorRGBA m_Color;
 	bool m_ShowName;
-	char m_aName[std::max<size_t>(MAX_NAME_LENGTH, protocol7::MAX_NAME_ARRAY_SIZE)];
+	char m_aName[std::max((size_t)MAX_NAME_LENGTH, (size_t)protocol7::MAX_NAME_ARRAY_SIZE)];
 	bool m_ShowFriendMark;
 	bool m_ShowClientId;
 	int m_ClientId;
@@ -36,7 +36,7 @@ public:
 	bool m_ClientIdSeparateLine;
 	float m_FontSize;
 	bool m_ShowClan;
-	char m_aClan[std::max<size_t>(MAX_CLAN_LENGTH, protocol7::MAX_CLAN_ARRAY_SIZE)];
+	char m_aClan[std::max((size_t)MAX_CLAN_LENGTH, (size_t)protocol7::MAX_CLAN_ARRAY_SIZE)];
 	float m_FontSizeClan;
 	bool m_ShowDirection;
 	bool m_DirLeft;
@@ -93,6 +93,11 @@ class CNamePlatePartText : public CNamePlatePart
 {
 protected:
 	STextContainerIndex m_TextContainerIndex;
+	// Whether the text container is in sync with the text last seen by UpdateNeeded.
+	// This can't be inferred from m_TextContainerIndex.Valid(), because empty text
+	// produces no container at all -- relying on Valid() alone made every nameplate
+	// with an empty clan/reason rebuild its container from scratch every frame.
+	bool m_TextUpToDate = false;
 	virtual bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) = 0;
 	virtual void UpdateText(CGameClient &This, const CNamePlateData &Data) = 0;
 	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
@@ -105,8 +110,24 @@ protected:
 public:
 	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
-		if(!UpdateNeeded(This, Data) && m_TextContainerIndex.Valid())
+		const bool NeedsUpdate = UpdateNeeded(This, Data);
+
+		// UpdateNeeded sets m_Visible. An invisible part is neither rendered nor does it
+		// take up space in the layout, so there is no reason to build its text container.
+		if(!m_Visible)
 			return;
+
+		if(!NeedsUpdate && m_TextUpToDate)
+		{
+			// The text is unchanged, so the container is still correct. Empty text
+			// produces no container at all, which means there is nothing to render and
+			// the part must not take up any space in the layout either.
+			if(!m_TextContainerIndex.Valid())
+				m_Visible = false;
+			return;
+		}
+
+		m_TextUpToDate = true;
 
 		// Set flags
 		unsigned int Flags = ETextRenderFlags::TEXT_RENDER_FLAG_NO_FIRST_CHARACTER_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_LAST_CHARACTER_ADVANCE;
@@ -117,12 +138,11 @@ public:
 		if(Data.m_InGame)
 		{
 			// Create text at standard zoom
-			float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-			This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+			CScreenRect ScreenRect = This.Graphics()->GetScreen();
 			This.Graphics()->MapScreenToInterface(This.m_Camera.m_Center.x, This.m_Camera.m_Center.y);
 			This.TextRender()->DeleteTextContainer(m_TextContainerIndex);
 			UpdateText(This, Data);
-			This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+			This.Graphics()->MapScreen(ScreenRect);
 		}
 		else
 		{
@@ -143,6 +163,7 @@ public:
 	void Reset(CGameClient &This) override
 	{
 		This.TextRender()->DeleteTextContainer(m_TextContainerIndex);
+		m_TextUpToDate = false;
 	}
 	void Render(CGameClient &This, vec2 Pos) const override
 	{
@@ -393,7 +414,7 @@ public:
 class CNamePlatePartName : public CNamePlatePartText
 {
 private:
-	char m_aText[std::max<size_t>(MAX_NAME_LENGTH, protocol7::MAX_NAME_ARRAY_SIZE)] = "";
+	char m_aText[std::max((size_t)MAX_NAME_LENGTH, (size_t)protocol7::MAX_NAME_ARRAY_SIZE)] = "";
 	float m_FontSize = -INFINITY;
 
 protected:
@@ -427,7 +448,7 @@ protected:
 	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSize;
-		str_copy(m_aText, Data.m_aName, sizeof(m_aText));
+		str_copy(m_aText, Data.m_aName);
 		CTextCursor Cursor;
 		Cursor.m_FontSize = m_FontSize;
 		This.TextRender()->CreateOrAppendTextContainer(m_TextContainerIndex, &Cursor, m_aText);
@@ -441,7 +462,7 @@ public:
 class CNamePlatePartClan : public CNamePlatePartText
 {
 private:
-	char m_aText[std::max<size_t>(MAX_CLAN_LENGTH, protocol7::MAX_CLAN_ARRAY_SIZE)] = "";
+	char m_aText[std::max((size_t)MAX_CLAN_LENGTH, (size_t)protocol7::MAX_CLAN_ARRAY_SIZE)] = "";
 	float m_FontSize = -INFINITY;
 
 protected:
@@ -463,7 +484,7 @@ protected:
 	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSizeClan;
-		str_copy(m_aText, Data.m_aClan, sizeof(m_aText));
+		str_copy(m_aText, Data.m_aClan);
 		CTextCursor Cursor;
 		Cursor.m_FontSize = m_FontSize;
 		This.TextRender()->CreateOrAppendTextContainer(m_TextContainerIndex, &Cursor, m_aText);
@@ -701,7 +722,7 @@ private:
 	PartsVector m_vpParts;
 	void RenderLine(CGameClient &This,
 		vec2 Pos, vec2 Size,
-		PartsVector::iterator Start, PartsVector::iterator End)
+		const PartsVector::iterator &Start, const PartsVector::iterator &End)
 	{
 		Pos.x -= Size.x / 2.0f;
 		for(auto PartIt = Start; PartIt != End; ++PartIt)
@@ -852,20 +873,18 @@ public:
 void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha)
 {
 	// Get screen edges to avoid rendering offscreen
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	CScreenRect ScreenRect = Graphics()->GetScreen();
 
 	// Assume that the name plate fits into a 800x800 box placed directly above the tee
-	ScreenX0 -= 400;
-	ScreenX1 += 400;
-	ScreenY1 += 800;
-	if(!(in_range(Position.x, ScreenX0, ScreenX1) && in_range(Position.y, ScreenY0, ScreenY1)))
+	ScreenRect.m_TopLeft.x -= 400;
+	ScreenRect.m_BottomRight.x += 400;
+	ScreenRect.m_BottomRight.y += 800;
+	if(!ScreenRect.Inside(Position))
 		return;
 
 	CNamePlateData Data;
 
 	const auto &ClientData = GameClient()->m_aClients[pPlayerInfo->m_ClientId];
-	const bool OtherTeam = GameClient()->IsOtherTeam(pPlayerInfo->m_ClientId);
 
 	// TClient
 	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || (g_Config.m_ClWarList && g_Config.m_ClWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_IsWarClan);
@@ -912,8 +931,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 
 	if(g_Config.m_ClNamePlatesAlways == 0)
 		Alpha *= std::clamp(1.0f - std::pow(distance(GameClient()->m_Controls.m_aTargetPos[g_Config.m_ClDummy], Position) / 200.0f, 16.0f), 0.0f, 1.0f);
-	if(OtherTeam)
-		Alpha *= (float)g_Config.m_ClShowOthersAlpha / 100.0f;
+	Alpha *= GameClient()->TeeRenderAlpha(pPlayerInfo->m_ClientId); // EClient
 
 	if(Data.m_Color == ColorRGBA(0, 0, 0, 0)) // If It doesn't have a Value -> so it isn't completely black
 		Data.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
@@ -1003,7 +1021,9 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 			Data.m_HookStrongWeakId = Other.m_ExtendedData.m_StrongWeakId;
 			Data.m_ShowHookStrongWeakId = g_Config.m_Debug || g_Config.m_ClNamePlatesStrong == 2;
 			if(SelectedId == pPlayerInfo->m_ClientId)
+			{
 				Data.m_ShowHookStrongWeak = Data.m_ShowHookStrongWeakId;
+			}
 			else
 			{
 				Data.m_HookStrongWeakState = SelectedStrongWeakId > Other.m_ExtendedData.m_StrongWeakId ? EHookStrongWeakState::STRONG : EHookStrongWeakState::WEAK;
@@ -1140,7 +1160,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	const vec2 DeltaPosition = Ui()->MousePos() - Position;
 	const float Distance = length(DeltaPosition);
 	const float InteractionDistance = 20.0f;
-	const vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.5f))) : normalize(DeltaPosition);
+	const vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, std::max(DeltaPosition.y, 0.5f))) : normalize(DeltaPosition);
 	const int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : (Dummy ? g_Config.m_ClDummyDefaultEyes : g_Config.m_ClPlayerDefaultEyes);
 	RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, Position);
 	Position.y -= (float)g_Config.m_ClNamePlatesOffset;
@@ -1156,6 +1176,10 @@ void CNamePlates::ResetNamePlates()
 
 void CNamePlates::OnRender()
 {
+	// EClient: everything below describes the tee being played, which while practicing is the
+	// practice one. Wrapped rather than taught about it, so the code itself is untouched.
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
+
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
@@ -1164,7 +1188,7 @@ void CNamePlates::OnRender()
 	if(IVideo::Current())
 		ShowDirection = g_Config.m_ClVideoShowDirection;
 #endif
-	if(!g_Config.m_ClNamePlates && ShowDirection == 0)
+	if(!g_Config.m_ClNamePlates && !g_Config.m_ClNamePlatesOwn && ShowDirection == 0)
 		return;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1180,7 +1204,9 @@ void CNamePlates::OnRender()
 			RenderNamePlateGame(RenderPos, pInfo, 0.4f);
 		}
 		// Only render name plates for active characters
-		if(GameClient()->m_Snap.m_aCharacters[i].m_Active)
+		// EClient: a practice tee counts, since the server may have stopped snapping the character
+		// it stands in for -- a dummy far enough away is the usual way
+		if(GameClient()->m_Snap.m_aCharacters[i].m_Active || GameClient()->m_LocalPractice.IsSimulated(i))
 		{
 			if(GameClient()->m_aClients[i].m_IsVolleyBall)
 				continue;

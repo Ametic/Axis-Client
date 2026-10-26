@@ -1,6 +1,8 @@
+#include <base/fs.h>
 #include <base/logger.h>
+#include <base/mem.h>
 #include <base/os.h>
-#include <base/system.h>
+#include <base/str.h>
 
 #include <engine/gfx/image_manipulation.h>
 #include <engine/shared/datafile.h>
@@ -11,6 +13,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <vector>
+
+static constexpr const char *const TOOL_NAME = "map_optimize";
 
 static void ClearTransparentPixels(uint8_t *pImg, int Width, int Height)
 {
@@ -85,12 +89,12 @@ int main(int argc, const char **argv)
 	std::unique_ptr<IStorage> pStorage = std::unique_ptr<IStorage>(CreateStorage(IStorage::EInitializationType::BASIC, argc, argv));
 	if(!pStorage)
 	{
-		log_error("map_optimize", "Error creating basic storage");
+		log_error(TOOL_NAME, "Error creating basic storage");
 		return -1;
 	}
 	if(argc <= 1 || argc > 3)
 	{
-		dbg_msg("map_optimize", "Usage: map_optimize <source map filepath> [<dest map filepath>]");
+		log_error(TOOL_NAME, "Usage: %s <source map filepath> [<dest map filepath>]", argc > 0 ? argv[0] : TOOL_NAME);
 		return -1;
 	}
 
@@ -99,27 +103,35 @@ int main(int argc, const char **argv)
 	{
 		str_format(aFilename, sizeof(aFilename), "out/%s", argv[2]);
 
-		fs_makedir_rec_for(aFilename);
+		if(fs_makedir_rec_for(aFilename) != 0)
+		{
+			// Error already logged by fs_makedir_rec_for
+			return -1;
+		}
 	}
 	else
 	{
-		fs_makedir("out");
+		if(fs_makedir("out") != 0)
+		{
+			// Error already logged by fs_makedir
+			return -1;
+		}
 		char aBuff[IO_MAX_PATH_LENGTH];
-		IStorage::StripPathAndExtension(argv[1], aBuff, sizeof(aBuff));
+		fs_split_file_extension(fs_filename(argv[1]), aBuff, sizeof(aBuff));
 		str_format(aFilename, sizeof(aFilename), "out/%s.map", aBuff);
 	}
 
 	CDataFileReader Reader;
 	if(!Reader.Open(pStorage.get(), argv[1], IStorage::TYPE_ABSOLUTE))
 	{
-		dbg_msg("map_optimize", "Failed to open source file.");
+		log_error(TOOL_NAME, "Failed to open source file '%s'.", argv[1]);
 		return -1;
 	}
 
 	CDataFileWriter Writer;
 	if(!Writer.Open(pStorage.get(), aFilename, IStorage::TYPE_ABSOLUTE))
 	{
-		dbg_msg("map_optimize", "Failed to open target file.");
+		log_error(TOOL_NAME, "Failed to open target file '%s'.", aFilename);
 		return -1;
 	}
 

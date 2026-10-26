@@ -1260,9 +1260,6 @@ Angle:
 Some map images could not be loaded. Check the local console for details.
 == Nie można załadować niektórych obrazów mapy. Sprawdź konsolę, aby poznać szczegóły.
 
-Uploading map data to GPU
-== Wysyłanie danych mapy do GPU
-
 Some map sounds could not be loaded. Check the local console for details.
 == Nie można załadować niektórych dźwięków mapy. Sprawdź konsolę, aby poznać szczegóły.
 
@@ -1766,7 +1763,7 @@ Unable to save the skin with a reserved name
 == %d/%d KiB (%.1f KiB/s)
 
 No local servers found (ports %d-%d)
-== Nie znaleziono serwerów LAN (porty %d-%d)
+== Nie znaleziono serwerów lokalnych (porty %d-%d)
 
 Example of usage
 == Przykładowe użycie
@@ -2142,9 +2139,6 @@ All
 
 Preview dummy's name plate
 == Podgląd plakietki kukły
-
-AntiPing: prediction margin
-== AntyPing: Margines przewidywania
 
 [Graphics error]
 Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
@@ -2579,53 +2573,14 @@ Click to remove this community from your favorites.
 Click to add this community to your favorites.
 == Kliknij, aby dodać tę społeczność do twoich ulubionych.
 
-Preview visibilities
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
 Open DDNet Wiki
 == Otwórz wikipedie Ddnet
 
-Buttons with this behavior execute console commands like regular key binds.
-== 
-
-Buttons with this behavior cycle between executing one of two or more specified commands.
-== 
-
-Buttons with this behavior execute some predefined actions.
-== 
-
 Opens the ingame menu immediately when released.
-== 
-
-The extra menu button which toggles visibility of buttons with "Extra Menu" visibilities. Also opens the ingame menu on long press.
-== 
-
-Swaps the active action (fire and hook) for direct touch input and virtual joysticks.
-== 
-
-Uses the active action with the current aiming position.
-== 
-
-Virtual joystick which uses the active action.
-== 
-
-Virtual joystick which only aims without using an action.
-== 
-
-Virtual joystick which always uses fire.
-== 
-
-Virtual joystick which always uses hook.
-== 
+== Otwiera menu w grze natychmiast pod odciśnięciu.
 
 Player is ingame, i.e. not spectating.
-== 
-
-The extra menu with the given number is activated.
-== 
+== Gracz w trakcie gry, tzn. nie obserwuje.
 
 Update Rate
 == Częstotliwość aktualizowania
@@ -2651,3 +2606,105 @@ When a Tee is hookable
 [Hook collision line color]
 Hook collision line tip
 == Końcówka linii
+
+Refresh the demo list
+== Odśwież listę dem
+
+Open the selected folder
+== Otwórz wybrany folder
+
+Play the selected demo
+== Odtwórz wybrane demo
+
+Prediction margin
+== Zakres przewidywania
+
+Predict events (experimental)
+== Przewiduj wydarzenia (eksperymentalne)
+
+[AntiPing: predict other players]
+Off
+== Wyłączone
+
+[AntiPing: predict other players]
+All
+== Wszystkich
+
+[AntiPing: predict other players]
+Interact
+== Interakcja
+
+Always predict frozen players
+== Zawsze przewiduj zamrożonych graczy
+
+No country flags match your filter criteria
+== Żadna flaga nie odpowiada twoim kryteriom
+
+[Important alert message]
+Tap to dismiss…
+== 
+
+Initializing layers
+== 
+
+[Direct touch input]
+Relative aim
+== 
+
+Preview visibilities
+== 
+
+You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
+== 
+
+[Predefined touch button behaviors]
+Joystick Relative Aim
+== 
+
+Buttons with this behavior execute console commands like regular key binds.
+== 
+
+Buttons with this behavior cycle between executing one of two or more specified commands.
+== 
+
+Buttons with this behavior execute some predefined actions.
+== 
+
+The extra menu button which toggles visibility of buttons with "Extra Menu" visibilities. Also opens the ingame menu on long press.
+== 
+
+Swaps the active action (fire and hook) for direct touch input and virtual joysticks.
+== 
+
+Uses the active action with the current aiming position.
+== 
+
+Virtual joystick which uses the active action.
+== 
+
+Virtual joystick which only aims without using an action.
+== 
+
+Virtual joystick which only aims and moves the mouse pointer relatively.
+== 
+
+Virtual joystick which always uses fire.
+== 
+
+Virtual joystick which always uses hook.
+== 
+
+The extra menu with the given number is activated.
+== 
+
+Credits
+== 
+
+Join
+== 
+
+'%s' not bound.
+== 
+
+Press '%s' to show cursor.
+== 

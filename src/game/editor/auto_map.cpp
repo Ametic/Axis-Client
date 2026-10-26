@@ -14,6 +14,7 @@
 
 #include <cinttypes>
 #include <cstdio> // sscanf
+#include <memory>
 
 // Based on triple32inc from https://github.com/skeeto/hash-prospector/tree/79a6074062a84907df6e45b756134b74e2956760
 static uint32_t HashUInt32(uint32_t Num)
@@ -44,12 +45,12 @@ static int HashLocation(uint32_t Seed, uint32_t Run, uint32_t Rule, uint32_t X, 
 	return Hash % HASH_MAX;
 }
 
-CAutoMapper::CAutoMapper(CEditorMap *pMap) :
+CAutomapper::CAutomapper(CEditorMap *pMap) :
 	CMapObject(pMap)
 {
 }
 
-void CAutoMapper::Load(const char *pTileName)
+void CAutomapper::Load(const char *pTileName)
 {
 	char aPath[IO_MAX_PATH_LENGTH];
 	str_format(aPath, sizeof(aPath), "editor/automap/%s.rules", pTileName);
@@ -88,7 +89,7 @@ void CAutoMapper::Load(const char *pTileName)
 				m_vConfigs.push_back(NewConf);
 				int ConfigurationId = m_vConfigs.size() - 1;
 				pCurrentConf = &m_vConfigs[ConfigurationId];
-				str_copy(pCurrentConf->m_aName, pLine, minimum<int>(sizeof(pCurrentConf->m_aName), str_length(pLine)));
+				str_copy(pCurrentConf->m_aName, pLine, std::min(sizeof(pCurrentConf->m_aName), (size_t)str_length(pLine)));
 
 				// add start run
 				CRun NewRun;
@@ -249,10 +250,10 @@ void CAutoMapper::Load(const char *pTileName)
 					CPosRule NewPosRule = {x, y, Value, vNewIndexList};
 					pCurrentIndex->m_vRules.push_back(NewPosRule);
 
-					pCurrentConf->m_StartX = minimum(pCurrentConf->m_StartX, NewPosRule.m_X);
-					pCurrentConf->m_StartY = minimum(pCurrentConf->m_StartY, NewPosRule.m_Y);
-					pCurrentConf->m_EndX = maximum(pCurrentConf->m_EndX, NewPosRule.m_X);
-					pCurrentConf->m_EndY = maximum(pCurrentConf->m_EndY, NewPosRule.m_Y);
+					pCurrentConf->m_StartX = std::min(pCurrentConf->m_StartX, NewPosRule.m_X);
+					pCurrentConf->m_StartY = std::min(pCurrentConf->m_StartY, NewPosRule.m_Y);
+					pCurrentConf->m_EndX = std::max(pCurrentConf->m_EndX, NewPosRule.m_X);
+					pCurrentConf->m_EndY = std::max(pCurrentConf->m_EndY, NewPosRule.m_Y);
 
 					if(x == 0 && y == 0)
 					{
@@ -361,13 +362,13 @@ void CAutoMapper::Load(const char *pTileName)
 	m_FileLoaded = true;
 }
 
-void CAutoMapper::Unload()
+void CAutomapper::Unload()
 {
 	m_FileLoaded = false;
 	m_vConfigs.clear();
 }
 
-int CAutoMapper::CheckIndexFlag(int Flag, const char *pFlag, bool CheckNone) const
+int CAutomapper::CheckIndexFlag(int Flag, const char *pFlag, bool CheckNone) const
 {
 	if(!str_comp(pFlag, "XFLIP"))
 		Flag |= TILEFLAG_XFLIP;
@@ -381,7 +382,7 @@ int CAutoMapper::CheckIndexFlag(int Flag, const char *pFlag, bool CheckNone) con
 	return Flag;
 }
 
-const char *CAutoMapper::GetConfigName(int Index) const
+const char *CAutomapper::GetConfigName(int Index) const
 {
 	if(Index < 0 || Index >= (int)m_vConfigs.size())
 	{
@@ -390,7 +391,7 @@ const char *CAutoMapper::GetConfigName(int Index) const
 	return m_vConfigs[Index].m_aName;
 }
 
-void CAutoMapper::ProceedLocalized(CLayerTiles *pLayer, CLayerTiles *pGameLayer, int ReferenceId, int ConfigId, int Seed, int X, int Y, int Width, int Height)
+void CAutomapper::ProceedLocalized(CLayerTiles *pLayer, CLayerTiles *pGameLayer, int ReferenceId, int ConfigId, int Seed, int X, int Y, int Width, int Height)
 {
 	if(!m_FileLoaded || pLayer->m_Readonly || ConfigId < 0 || ConfigId >= (int)m_vConfigs.size())
 		return;
@@ -425,6 +426,9 @@ void CAutoMapper::ProceedLocalized(CLayerTiles *pLayer, CLayerTiles *pGameLayer,
 			pOutLayer->m_Index = pInLayer->m_Index;
 			pOutLayer->m_Flags = pInLayer->m_Flags;
 
+			if(x >= pGameLayer->m_Width || y >= pGameLayer->m_Height)
+				continue;
+
 			const CTile *pInGame = &pGameLayer->m_pTiles[y * pGameLayer->m_Width + x];
 			CTile *pOutGame = &pUpdateGame->m_pTiles[(y - UpdateFromY) * pUpdateGame->m_Width + x - UpdateFromX];
 			pOutGame->m_Index = pInGame->m_Index;
@@ -445,6 +449,9 @@ void CAutoMapper::ProceedLocalized(CLayerTiles *pLayer, CLayerTiles *pGameLayer,
 			pOutLayer->m_Flags = pInLayer->m_Flags;
 			pLayer->RecordStateChange(x, y, PreviousLayer, *pOutLayer);
 
+			if(x >= pGameLayer->m_Width || y >= pGameLayer->m_Height)
+				continue;
+
 			const CTile *pInGame = &pUpdateGame->m_pTiles[(y - UpdateFromY) * pUpdateGame->m_Width + x - UpdateFromX];
 			CTile *pOutGame = &pGameLayer->m_pTiles[y * pGameLayer->m_Width + x];
 			CTile PreviousGame = *pOutGame;
@@ -458,7 +465,106 @@ void CAutoMapper::ProceedLocalized(CLayerTiles *pLayer, CLayerTiles *pGameLayer,
 	delete pUpdateGame;
 }
 
-void CAutoMapper::Proceed(CLayerTiles *pLayer, CLayerTiles *pGameLayer, int ReferenceId, int ConfigId, int Seed, int SeedOffsetX, int SeedOffsetY)
+void CAutomapper::AutoMap(CLayerTiles *pLayer, const CLayerTiles *pReadLayer, const CRun *pRun, size_t RunIndex, bool IsFilterable, int Seed, int SeedOffsetX, int SeedOffsetY) const
+{
+	const int LayerWidth = pLayer->m_Width;
+	const int LayerHeight = pLayer->m_Height;
+
+	for(int y = 0; y < LayerHeight; y++)
+	{
+		for(int x = 0; x < LayerWidth; x++)
+		{
+			CTile *pTile = &(pLayer->m_pTiles[y * LayerWidth + x]);
+			const CTile *pReadTile = &(pReadLayer->m_pTiles[y * LayerWidth + x]);
+			pLayer->Map()->OnModify();
+
+			for(size_t i = 0; i < pRun->m_vIndexRules.size(); ++i)
+			{
+				const CIndexRule *pIndexRule = &pRun->m_vIndexRules[i];
+				if(pReadTile->m_Index == 0)
+				{
+					if(pTile->m_Index != 0 && IsFilterable) // TODO: This is a lazy workaround
+					{
+						CTile Previous = *pTile;
+						pTile->m_Index = 0;
+						pTile->m_Flags = pIndexRule->m_Flag;
+						pLayer->RecordStateChange(x, y, Previous, *pTile);
+						continue;
+					}
+
+					if(pIndexRule->m_SkipEmpty) // skip empty tiles
+						continue;
+				}
+				if(pIndexRule->m_SkipFull && pReadTile->m_Index != 0) // skip full tiles
+					continue;
+
+				bool RespectRules = true;
+				for(size_t j = 0; j < pIndexRule->m_vRules.size() && RespectRules; ++j)
+				{
+					const CPosRule *pRule = &pIndexRule->m_vRules[j];
+
+					int CheckIndex, CheckFlags;
+					int CheckX = x + pRule->m_X;
+					int CheckY = y + pRule->m_Y;
+					if(CheckX >= 0 && CheckX < LayerWidth && CheckY >= 0 && CheckY < LayerHeight)
+					{
+						int CheckTile = CheckY * LayerWidth + CheckX;
+						CheckIndex = pReadLayer->m_pTiles[CheckTile].m_Index;
+						CheckFlags = pReadLayer->m_pTiles[CheckTile].m_Flags & (TILEFLAG_ROTATE | TILEFLAG_XFLIP | TILEFLAG_YFLIP);
+					}
+					else
+					{
+						CheckIndex = -1;
+						CheckFlags = 0;
+					}
+
+					if(pRule->m_Value == CPosRule::INDEX)
+					{
+						RespectRules = false;
+						for(const auto &Index : pRule->m_vIndexList)
+						{
+							if(CheckIndex == Index.m_Id && (!Index.m_TestFlag || CheckFlags == Index.m_Flag))
+							{
+								RespectRules = true;
+								break;
+							}
+						}
+					}
+					else if(pRule->m_Value == CPosRule::NOTINDEX)
+					{
+						for(const auto &Index : pRule->m_vIndexList)
+						{
+							if(CheckIndex == Index.m_Id && (!Index.m_TestFlag || CheckFlags == Index.m_Flag))
+							{
+								RespectRules = false;
+								break;
+							}
+						}
+					}
+				}
+
+				bool PassesModuloCheck;
+				if(pIndexRule->m_vModuloRules.empty())
+					PassesModuloCheck = true;
+				else
+					PassesModuloCheck = std::any_of(pIndexRule->m_vModuloRules.cbegin(), pIndexRule->m_vModuloRules.cend(), [&](const CModuloRule &ModuloRule) {
+						return (x + SeedOffsetX + ModuloRule.m_OffsetX) % ModuloRule.m_ModX == 0 && (y + SeedOffsetY + ModuloRule.m_OffsetY) % ModuloRule.m_ModY == 0;
+					});
+
+				if(RespectRules && PassesModuloCheck &&
+					(pIndexRule->m_RandomProbability >= 1.0f || HashLocation(Seed, RunIndex, i, x + SeedOffsetX, y + SeedOffsetY) < HASH_MAX * pIndexRule->m_RandomProbability))
+				{
+					CTile Previous = *pTile;
+					pTile->m_Index = pIndexRule->m_Id;
+					pTile->m_Flags = pIndexRule->m_Flag;
+					pLayer->RecordStateChange(x, y, Previous, *pTile);
+				}
+			}
+		}
+	}
+}
+
+void CAutomapper::Proceed(CLayerTiles *pLayer, CLayerTiles *pGameLayer, int ReferenceId, int ConfigId, int Seed, int SeedOffsetX, int SeedOffsetY)
 {
 	if(!m_FileLoaded || pLayer->m_Readonly || ConfigId < 0 || ConfigId >= (int)m_vConfigs.size())
 		return;
@@ -483,11 +589,10 @@ void CAutoMapper::Proceed(CLayerTiles *pLayer, CLayerTiles *pGameLayer, int Refe
 		bool IsFilterable = h == 0 && ReferenceId >= 0;
 
 		// don't make copy if it's requested
-		CLayerTiles *pReadLayer;
 		CLayerTiles *pBuffer = IsFilterable ? pGameLayer : pLayer;
 		if(pRun->m_AutomapCopy)
 		{
-			pReadLayer = new CLayerTiles(pLayer->Map(), LayerWidth, LayerHeight);
+			std::unique_ptr<CLayerTiles> pCopiedLayer = std::make_unique<CLayerTiles>(pLayer->Map(), LayerWidth, LayerHeight);
 
 			int LoopWidth = IsFilterable ? std::min(pGameLayer->m_Width, LayerWidth) : LayerWidth;
 			int LoopHeight = IsFilterable ? std::min(pGameLayer->m_Height, LayerHeight) : LayerHeight;
@@ -497,7 +602,7 @@ void CAutoMapper::Proceed(CLayerTiles *pLayer, CLayerTiles *pGameLayer, int Refe
 				for(int x = 0; x < LoopWidth; x++)
 				{
 					const CTile *pIn = &pBuffer->m_pTiles[y * pBuffer->m_Width + x];
-					CTile *pOut = &pReadLayer->m_pTiles[y * LayerWidth + x];
+					CTile *pOut = &pCopiedLayer->m_pTiles[y * LayerWidth + x];
 					if(h == 0 && ReferenceId >= 1 && pIn->m_Index != s_aTileIndex[ReferenceId - 1])
 						pOut->m_Index = 0;
 					else
@@ -505,108 +610,12 @@ void CAutoMapper::Proceed(CLayerTiles *pLayer, CLayerTiles *pGameLayer, int Refe
 					pOut->m_Flags = pIn->m_Flags;
 				}
 			}
+
+			AutoMap(pLayer, pCopiedLayer.get(), pRun, h, IsFilterable, Seed, SeedOffsetX, SeedOffsetY);
 		}
 		else
 		{
-			pReadLayer = pBuffer;
+			AutoMap(pLayer, pBuffer, pRun, h, IsFilterable, Seed, SeedOffsetX, SeedOffsetY);
 		}
-
-		// auto map
-		for(int y = 0; y < LayerHeight; y++)
-		{
-			for(int x = 0; x < LayerWidth; x++)
-			{
-				CTile *pTile = &(pLayer->m_pTiles[y * LayerWidth + x]);
-				const CTile *pReadTile = &(pReadLayer->m_pTiles[y * LayerWidth + x]);
-				pLayer->Map()->OnModify();
-
-				for(size_t i = 0; i < pRun->m_vIndexRules.size(); ++i)
-				{
-					CIndexRule *pIndexRule = &pRun->m_vIndexRules[i];
-					if(pReadTile->m_Index == 0)
-					{
-						if(pTile->m_Index != 0 && IsFilterable) // TODO: This is a lazy workaround
-						{
-							CTile Previous = *pTile;
-							pTile->m_Index = 0;
-							pTile->m_Flags = pIndexRule->m_Flag;
-							pLayer->RecordStateChange(x, y, Previous, *pTile);
-							continue;
-						}
-
-						if(pIndexRule->m_SkipEmpty) // skip empty tiles
-							continue;
-					}
-					if(pIndexRule->m_SkipFull && pReadTile->m_Index != 0) // skip full tiles
-						continue;
-
-					bool RespectRules = true;
-					for(size_t j = 0; j < pIndexRule->m_vRules.size() && RespectRules; ++j)
-					{
-						CPosRule *pRule = &pIndexRule->m_vRules[j];
-
-						int CheckIndex, CheckFlags;
-						int CheckX = x + pRule->m_X;
-						int CheckY = y + pRule->m_Y;
-						if(CheckX >= 0 && CheckX < LayerWidth && CheckY >= 0 && CheckY < LayerHeight)
-						{
-							int CheckTile = CheckY * LayerWidth + CheckX;
-							CheckIndex = pReadLayer->m_pTiles[CheckTile].m_Index;
-							CheckFlags = pReadLayer->m_pTiles[CheckTile].m_Flags & (TILEFLAG_ROTATE | TILEFLAG_XFLIP | TILEFLAG_YFLIP);
-						}
-						else
-						{
-							CheckIndex = -1;
-							CheckFlags = 0;
-						}
-
-						if(pRule->m_Value == CPosRule::INDEX)
-						{
-							RespectRules = false;
-							for(const auto &Index : pRule->m_vIndexList)
-							{
-								if(CheckIndex == Index.m_Id && (!Index.m_TestFlag || CheckFlags == Index.m_Flag))
-								{
-									RespectRules = true;
-									break;
-								}
-							}
-						}
-						else if(pRule->m_Value == CPosRule::NOTINDEX)
-						{
-							for(const auto &Index : pRule->m_vIndexList)
-							{
-								if(CheckIndex == Index.m_Id && (!Index.m_TestFlag || CheckFlags == Index.m_Flag))
-								{
-									RespectRules = false;
-									break;
-								}
-							}
-						}
-					}
-
-					bool PassesModuloCheck;
-					if(pIndexRule->m_vModuloRules.empty())
-						PassesModuloCheck = true;
-					else
-						PassesModuloCheck = std::any_of(pIndexRule->m_vModuloRules.cbegin(), pIndexRule->m_vModuloRules.cend(), [&](const CModuloRule &ModuloRule) {
-							return (x + SeedOffsetX + ModuloRule.m_OffsetX) % ModuloRule.m_ModX == 0 && (y + SeedOffsetY + ModuloRule.m_OffsetY) % ModuloRule.m_ModY == 0;
-						});
-
-					if(RespectRules && PassesModuloCheck &&
-						(pIndexRule->m_RandomProbability >= 1.0f || HashLocation(Seed, h, i, x + SeedOffsetX, y + SeedOffsetY) < HASH_MAX * pIndexRule->m_RandomProbability))
-					{
-						CTile Previous = *pTile;
-						pTile->m_Index = pIndexRule->m_Id;
-						pTile->m_Flags = pIndexRule->m_Flag;
-						pLayer->RecordStateChange(x, y, Previous, *pTile);
-					}
-				}
-			}
-		}
-
-		// clean-up
-		if(pRun->m_AutomapCopy && pReadLayer != pLayer)
-			delete pReadLayer;
 	}
 }

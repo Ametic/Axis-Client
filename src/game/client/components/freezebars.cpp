@@ -31,7 +31,9 @@ bool CFreezeBars::RenderKillBar()
 	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
 		return false;
 
-	if(g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
+	// A QFr quad counts as full freeze here too, see RenderFreezeBar
+	const bool IsInFreeze = pCharacter->m_IsInFreeze || GameClient()->m_aClients[ClientId].m_InsideQuadFreeze;
+	if(g_Config.m_ClFreezeKillOnlyFullFrozen && !IsInFreeze)
 		return false;
 
 	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
@@ -44,7 +46,7 @@ bool CFreezeBars::RenderKillBar()
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22.0f;
 
-	float Alpha = GameClient()->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+	float Alpha = GameClient()->TeeRenderAlpha(ClientId); // EClient
 
 	const ColorRGBA Color = ColorRGBA(0.6f, 1.0f, 1.6f, Alpha);
 
@@ -64,13 +66,17 @@ void CFreezeBars::RenderFreezeBar(int ClientId)
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
 	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_RegularPredicted;
 
-	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo || (pCharacter->m_IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
+	// A QFr quad freezes just like a freeze tile does, but the server flags only the tiles, see
+	// CCharacter::m_InsideQuadFreeze
+	const bool IsInFreeze = pCharacter->m_IsInFreeze || GameClient()->m_aClients[ClientId].m_InsideQuadFreeze;
+
+	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo || (IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
 	{
 		return;
 	}
 
-	const int Max = pCharacter->m_FreezeEnd - pCharacter->m_FreezeStart;
-	float FreezeProgress = std::clamp(Max - (Client()->GameTick(g_Config.m_ClDummy) - pCharacter->m_FreezeStart), 0, Max) / (float)Max;
+	const int64_t Max = (int64_t)pCharacter->m_FreezeEnd - pCharacter->m_FreezeStart;
+	float FreezeProgress = std::clamp<int64_t>(Max - ((int64_t)Client()->GameTick(g_Config.m_ClDummy) - pCharacter->m_FreezeStart), 0, Max) / (float)Max;
 	if(FreezeProgress <= 0.0f)
 	{
 		return;
@@ -80,8 +86,8 @@ void CFreezeBars::RenderFreezeBar(int ClientId)
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22.0f;
 
-	float Alpha = GameClient()->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
-	if(pCharacter->m_IsInFreeze)
+	float Alpha = GameClient()->TeeRenderAlpha(ClientId); // EClient
+	if(IsInFreeze)
 	{
 		Alpha *= g_Config.m_ClFreezeBarsAlphaInsideFreeze / 100.0f;
 	}
@@ -251,6 +257,10 @@ inline bool CFreezeBars::IsPlayerInfoAvailable(int ClientId) const
 
 void CFreezeBars::OnRender()
 {
+	// EClient: everything below describes the tee being played, which while practicing is the
+	// practice one. Wrapped rather than taught about it, so the code itself is untouched.
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
+
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
@@ -263,17 +273,13 @@ void CFreezeBars::OnRender()
 		return;
 
 	// get screen edges to avoid rendering offscreen
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	CScreenRect ScreenRect = Graphics()->GetScreen();
 	// expand the edges to prevent popping in/out onscreen
 	//
 	// it is assumed that the tee with the freeze bar fit into a 240x240 box centered on the tee
 	// this may need to be changed or calculated differently in the future
-	float BorderBuffer = 120.0f;
-	ScreenX0 -= BorderBuffer;
-	ScreenX1 += BorderBuffer;
-	ScreenY0 -= BorderBuffer;
-	ScreenY1 += BorderBuffer;
+	constexpr float BorderBuffer = 120.0f;
+	ScreenRect.Expand(BorderBuffer);
 
 	int LocalClientId = GameClient()->m_Snap.m_LocalClientId;
 
@@ -286,8 +292,7 @@ void CFreezeBars::OnRender()
 		}
 
 		// don't render if the tee is offscreen
-		vec2 *pRenderPos = &GameClient()->m_aClients[ClientId].m_RenderPos;
-		if(pRenderPos->x < ScreenX0 || pRenderPos->x > ScreenX1 || pRenderPos->y < ScreenY0 || pRenderPos->y > ScreenY1)
+		if(!ScreenRect.Inside(GameClient()->m_aClients[ClientId].m_RenderPos))
 		{
 			continue;
 		}

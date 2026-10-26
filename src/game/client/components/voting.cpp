@@ -2,7 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "voting.h"
 
-#include <base/system.h>
+#include <base/str.h>
+#include <base/time.h>
 
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
@@ -154,7 +155,7 @@ int CVoting::SecondsLeft() const
 CVoting::CVoting()
 {
 	ClearOptions();
-	OnReset();
+	CVoting::OnReset();
 }
 
 void CVoting::AddOption(const char *pDescription)
@@ -211,7 +212,7 @@ void CVoting::RemoveOption(const char *pDescription)
 				pOption->m_pPrev->m_pNext = pOption;
 			m_pRecycleLast = pOption;
 			if(!m_pRecycleFirst)
-				m_pRecycleLast = pOption;
+				m_pRecycleFirst = pOption;
 
 			break;
 		}
@@ -346,7 +347,11 @@ void CVoting::Render()
 	}
 
 	CUIRect View = {0.0f, 60.0f, 120.0f, 38.0f};
-	View.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_R, 3.0f);
+
+	// EClient
+	CHudLayout &Layout = GameClient()->m_Hud.HudLayout();
+	Layout.ReportNaturalRect(EHudElement::VOTING, vec2(View.x, View.y), vec2(View.w, View.h));
+	View.Draw(CHudLayout::BackgroundColor(), Layout.CornerFlags(EHudElement::VOTING), 3.0f);
 	View.Margin(3.0f, &View);
 
 	SLabelProperties Props;

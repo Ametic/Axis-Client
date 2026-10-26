@@ -17,10 +17,10 @@
 #include <engine/client/updater.h>
 #include <engine/editor.h>
 #include <engine/graphics.h>
+#include <engine/http.h>
 #include <engine/shared/config.h>
 #include <engine/shared/demo.h>
 #include <engine/shared/fifo.h>
-#include <engine/shared/http.h>
 #include <engine/shared/network.h>
 #include <engine/textrender.h>
 #include <engine/warning.h>
@@ -68,6 +68,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	IFavorites *m_pFavorites = nullptr;
 	IGameClient *m_pGameClient = nullptr;
 	IEngineGraphics *m_pGraphics = nullptr;
+	IEngineHttp *m_pHttp = nullptr;
 	IEngineInput *m_pInput = nullptr;
 	IEngineSound *m_pSound = nullptr;
 	ISteam *m_pSteam = nullptr;
@@ -75,11 +76,11 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	IStorage *m_pStorage = nullptr;
 	IEngineTextRender *m_pTextRender = nullptr;
 	IUpdater *m_pUpdater = nullptr;
-	CHttp m_Http;
 
 	CNetClient m_aNetClient[NUM_CONNS];
 	CDemoPlayer m_DemoPlayer;
-	CDemoRecorder m_aDemoRecorder[RECORDER_MAX];
+	CDemoRecorder m_aDemoRecorders[RECORDER_MAX];
+	CDemoRecorder m_aDemoRecordersSixup[RECORDER_MAX];
 	CDemoEditor m_DemoEditor;
 	CGhostRecorder m_GhostRecorder;
 	CGhostLoader m_GhostLoader;
@@ -142,7 +143,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 
 	// map download
 	char m_aMapDownloadUrl[256] = "";
-	std::shared_ptr<CHttpRequest> m_pMapdownloadTask = nullptr;
+	std::shared_ptr<IHttpRequest> m_pMapdownloadTask = nullptr;
 	char m_aMapdownloadFilename[256] = "";
 	char m_aMapdownloadFilenameTemp[256] = "";
 	char m_aMapdownloadName[256] = "";
@@ -165,7 +166,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	std::optional<CMapDetails> m_MapDetails;
 
 	EInfoState m_InfoState = EInfoState::ERROR;
-	std::shared_ptr<CHttpRequest> m_pDDNetInfoTask = nullptr;
+	std::shared_ptr<IHttpRequest> m_pDDNetInfoTask = nullptr;
 
 	// time
 	CSmoothTime m_aGameTime[NUM_DUMMIES];
@@ -189,9 +190,13 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	float m_LastDummyConnectTime = 0.0f;
 	bool m_DummyReconnectOnReload = false;
 	bool m_DummyDeactivateOnReconnect = false;
+	bool m_DummyStayOnMain = false; // EClient
+#if defined(CONF_PLATFORM_IOS)
+	bool m_DummyReconnectOnResume = false;
+#endif
 
 	// graphs
-	CGraph m_InputtimeMarginGraph;
+	CGraph m_aInputtimeMarginGraphs[NUM_DUMMIES];
 	CGraph m_aGametimeMarginGraphs[NUM_DUMMIES];
 	CGraph m_FpsGraph;
 
@@ -204,9 +209,11 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	int m_aSnapshotIncomingDataSize[NUM_DUMMIES] = {0, 0};
 
 	CSnapshotStorage::CHolder m_aDemorecSnapshotHolders[NUM_SNAPSHOT_TYPES];
-	char m_aaaDemorecSnapshotData[NUM_SNAPSHOT_TYPES][2][CSnapshot::MAX_SIZE];
+	CSnapshotBuffer m_aaDemorecSnapshotData[NUM_SNAPSHOT_TYPES][2];
 
 	CSnapshotDelta m_SnapshotDelta;
+	CSnapshotDelta m_SnapshotDeltaSixup;
+	CSnapshotDelta *SnapshotDelta();
 
 	std::deque<std::shared_ptr<CDemoEdit>> m_EditJobs;
 
@@ -289,7 +296,7 @@ public:
 	IStorage *Storage() { return m_pStorage; }
 	IEngineTextRender *TextRender() { return m_pTextRender; }
 	IUpdater *Updater() { return m_pUpdater; }
-	IHttp *Http() { return &m_Http; }
+	IHttp *Http() { return m_pHttp; }
 
 	CClient();
 
@@ -345,7 +352,7 @@ public:
 	bool DummyConnectingDelayed() const override;
 	bool DummyAllowed() const override;
 
-	void GetServerInfo(CServerInfo *pServerInfo) const override;
+	const CServerInfo &ServerInfo() const override;
 	void ServerInfoRequest();
 	void SetCurrentServerInfo(const CServerInfo &ServerInfo);
 
@@ -357,6 +364,7 @@ public:
 	CSnapItem SnapGetItem(int SnapId, int Index) const override;
 	int GetPredictionTick() override;
 	const void *SnapFindItem(int SnapId, int Type, int Id) const override;
+	const void *SnapFindItem(int Conn, int SnapId, int Type, int Id) const override;
 	int SnapNumItems(int SnapId) const override;
 	void SnapSetStaticsize(int ItemType, int Size) override;
 	void SnapSetStaticsize7(int ItemType, int Size) override;
@@ -368,6 +376,9 @@ public:
 	void Restart() override;
 	void Quit() override;
 	void ResetSocket();
+#if defined(CONF_PLATFORM_IOS)
+	void RecreateBrokenSockets();
+#endif
 
 	const char *PlayerName() const override;
 	const char *DummyName() override;
@@ -378,12 +389,12 @@ public:
 
 	int TranslateSysMsg(int *pMsgId, bool System, CUnpacker *pUnpacker, CPacker *pPacker, CNetChunk *pPacket, bool *pIsExMsg);
 
-	void PreprocessConnlessPacket7(CNetChunk *pPacket);
+	bool PreprocessConnlessPacket7(CNetChunk *pPacket);
 	void ProcessConnlessPacket(CNetChunk *pPacket);
 	void ProcessServerInfo(int Type, NETADDR *pFrom, const void *pData, int DataSize);
 	void ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy);
 
-	int UnpackAndValidateSnapshot(CSnapshot *pFrom, CSnapshot *pTo);
+	int UnpackAndValidateSnapshot(CSnapshot *pFrom, CSnapshotBuffer *pTo);
 
 	void ResetMapDownload(bool ResetActive);
 	void FinishMapDownload();
@@ -476,10 +487,12 @@ public:
 
 	const char *DemoPlayer_Play(const char *pFilename, int StorageType) override;
 	void DemoRecorder_Start(const char *pFilename, bool WithTimestamp, int Recorder) override;
+	void DemoRecorder_Stop(int Recorder);
 	void DemoRecorder_HandleAutoStart() override;
 	void DemoRecorder_UpdateReplayRecorder() override;
 	void DemoRecorder_AddDemoMarker(int Recorder);
 	IDemoRecorder *DemoRecorder(int Recorder) override;
+	CDemoRecorder (&DemoRecorders())[RECORDER_MAX];
 
 	void AutoScreenshot_Start() override;
 	void AutoStatScreenshot_Start() override;
@@ -532,7 +545,7 @@ public:
 	std::vector<SWarning> &&QuittingWarnings() { return std::move(m_vQuittingWarnings); }
 
 	CChecksumData *ChecksumData() override { return &m_Checksum.m_Data; }
-	int UdpConnectivity(int NetType) override;
+	EConnectivity UdpConnectivity(int NetType) override;
 
 	bool ViewLink(const char *pLink) override;
 	bool ViewFile(const char *pFilename) override;
@@ -548,16 +561,17 @@ public:
 
 	// <E-Client
 private:
-	static void ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData);
+	static void ConDiscordRPCUpdate(IConsole::IResult *pResult, void *pUserData);
 	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
-	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
+	bool m_aOnConnect[NUM_DUMMIES] = {false, false};
 
 	void SendqxdInfo(int Conn);
 	void SendSupportsCosmeticSnapInfo(int Conn);
 
 public:
-	void DiscordRPCchange() override;
+	void DiscordRPCUpdate() override;
 	void SendFastInputsInfo(int Conn) override;
+	void DummyConnectInBackground() override;
 	// EClient>
 };
 

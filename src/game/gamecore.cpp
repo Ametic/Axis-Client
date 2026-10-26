@@ -6,7 +6,8 @@
 #include "mapitems.h"
 #include "teamscore.h"
 
-#include <base/system.h>
+#include <base/dbg.h>
+#include <base/str.h>
 
 #include <engine/shared/config.h>
 
@@ -140,6 +141,11 @@ void CCharacterCore::SetCoreWorld(CWorldCore *pWorld, CCollision *pCollision, CT
 	m_pWorld = pWorld;
 	m_pCollision = pCollision;
 	m_pTeams = pTeams;
+}
+
+void CCharacterCore::SetAntiPingInterfereCallback(FAntiPingInterfereCallback Callback)
+{
+	m_AntiPingInterfereCallback = std::move(Callback);
 }
 
 void CCharacterCore::Reset()
@@ -363,6 +369,7 @@ void CCharacterCore::Tick(bool UseInput, bool DoDeferredTick)
 							m_HookState = HOOK_GRABBED;
 							SetHookedPlayer(i);
 							Distance = distance(m_HookPos, pCharCore->m_Pos);
+							m_AntiPingInterfereCallback(i, false);
 						}
 					}
 				}
@@ -491,6 +498,8 @@ void CCharacterCore::TickDeferred()
 
 					m_Vel += Dir * a * (Velocity * 0.75f);
 					m_Vel *= 0.85f;
+
+					m_AntiPingInterfereCallback(i, true);
 				}
 
 				// handle hook influence
@@ -566,19 +575,27 @@ void CCharacterCore::Move()
 		float Distance = distance(m_Pos, NewPos);
 		if(Distance > 0)
 		{
+			const CCharacterCore *apColliders[MAX_CLIENTS];
+			int NumColliders = 0;
+			for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+			{
+				const CCharacterCore *pCharCore = m_pWorld->m_apCharacters[ClientId];
+				if(!pCharCore || pCharCore == this)
+					continue;
+				if((!(pCharCore->m_Super || m_Super) && (m_Solo || pCharCore->m_Solo || pCharCore->m_CollisionDisabled || (m_Id != -1 && !m_pTeams->CanCollide(m_Id, ClientId)))))
+					continue;
+				apColliders[NumColliders++] = pCharCore;
+			}
+
 			int End = Distance + 1;
 			vec2 LastPos = m_Pos;
 			for(int i = 0; i < End; i++)
 			{
 				float a = i / Distance;
 				vec2 Pos = mix(m_Pos, NewPos, a);
-				for(int p = 0; p < MAX_CLIENTS; p++)
+				for(int Collider = 0; Collider < NumColliders; Collider++)
 				{
-					CCharacterCore *pCharCore = m_pWorld->m_apCharacters[p];
-					if(!pCharCore || pCharCore == this)
-						continue;
-					if((!(pCharCore->m_Super || m_Super) && (m_Solo || pCharCore->m_Solo || pCharCore->m_CollisionDisabled || (m_Id != -1 && !m_pTeams->CanCollide(m_Id, p)))))
-						continue;
+					const CCharacterCore *pCharCore = apColliders[Collider];
 					float D = distance(Pos, pCharCore->m_Pos);
 					if(D < PhysicalSize())
 					{
@@ -728,11 +745,11 @@ void CCharacterCore::SetTeamsCore(CTeamsCore *pTeams)
 	m_pTeams = pTeams;
 }
 
-bool CCharacterCore::IsSwitchActiveCb(int Number, void *pUser)
+bool CCharacterCore::IsSwitchActiveCb(unsigned char Number, void *pUser)
 {
 	CCharacterCore *pThis = (CCharacterCore *)pUser;
 	if(pThis->m_pWorld && !pThis->m_pWorld->m_vSwitchers.empty())
-		if(pThis->m_Id != -1 && pThis->m_pTeams->Team(pThis->m_Id) != (pThis->m_pTeams->m_IsDDRace16 ? VANILLA_TEAM_SUPER : TEAM_SUPER))
+		if(pThis->m_Id != -1 && pThis->m_pTeams->Team(pThis->m_Id) != pThis->m_pTeams->TeamSuper())
 			return pThis->m_pWorld->m_vSwitchers[Number].m_aStatus[pThis->m_pTeams->Team(pThis->m_Id)];
 	return false;
 }

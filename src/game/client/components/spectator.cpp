@@ -142,7 +142,7 @@ void CSpectator::ConMultiView(IConsole::IResult *pResult, void *pUserData)
 CSpectator::CSpectator()
 {
 	m_SelectorMouse = vec2(0.0f, 0.0f);
-	OnReset();
+	CSpectator::OnReset();
 }
 
 void CSpectator::OnConsoleInit()
@@ -281,13 +281,23 @@ void CSpectator::OnRender()
 		++TotalPlayers;
 	}
 
-	if(TotalPlayers > 64)
+	if(TotalPlayers > 96)
 	{
-		FontSize = 12.0f;
+		FontSize = 15.0f;
 		LineHeight = 15.0f;
 		TeeSizeMod = 0.3f;
 		PerLine = 32;
 		RoundRadius = 5.0f;
+		BoxMove = 3.0f;
+		BoxOffset = 6.0f;
+	}
+	else if(TotalPlayers > 64)
+	{
+		FontSize = 16.0f;
+		LineHeight = 19.0f;
+		TeeSizeMod = 0.45f;
+		PerLine = 24;
+		RoundRadius = 6.0f;
 		BoxMove = 3.0f;
 		BoxOffset = 6.0f;
 	}
@@ -332,7 +342,7 @@ void CSpectator::OnRender()
 		}
 	}
 
-	Graphics()->MapScreen(0, 0, Width, Height);
+	Graphics()->MapScreenToSize(Width, Height);
 
 	SpectatorRect.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.3f), IGraphics::CORNER_ALL, 20.0f);
 
@@ -589,12 +599,7 @@ void CSpectator::OnRender()
 		CTeeRenderInfo TeeInfo = GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_RenderInfo;
 		TeeInfo.m_Size *= TeeSizeMod;
 
-		const CAnimState *pIdleState = CAnimState::GetIdle();
-		vec2 OffsetToMid;
-		CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
-		vec2 TeeRenderPos(Width / 2.0f + x + 20.0f, Height / 2.0f + y + BoxMove + LineHeight / 2.0f + OffsetToMid.y);
-
-		RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos, TeeAlpha);
+		RenderTools()->RenderIdleTeeAtCenter(&TeeInfo, vec2(Width / 2.0f + x + 20.0f, Height / 2.0f + y + BoxMove + LineHeight / 2.0f), EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeAlpha);
 
 		if(GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
 		{

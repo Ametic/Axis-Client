@@ -4,12 +4,14 @@
 #define GAME_CLIENT_UI_H
 
 #include "lineinput.h"
+#include "tooltips.h"
 #include "ui_rect.h"
 
 #include <engine/input.h>
 #include <engine/textrender.h>
 
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -17,6 +19,7 @@ class CScrollRegion;
 class IClient;
 class IGraphics;
 class IKernel;
+class CTooltip;
 
 enum class EEditState
 {
@@ -76,7 +79,7 @@ private:
 public:
 	CLogarithmicScrollbarScale(int MinAdjustment)
 	{
-		m_MinAdjustment = maximum(MinAdjustment, 1); // must be at least 1 to support Min == 0 with logarithm
+		m_MinAdjustment = std::max(MinAdjustment, 1); // must be at least 1 to support Min == 0 with logarithm
 	}
 	float ToRelative(int AbsoluteValue, int Min, int Max) const override
 	{
@@ -216,6 +219,7 @@ struct SLabelProperties
 	bool m_EnableWidthCheck = true;
 	float m_MinimumFontSize = 5.0f;
 	std::vector<STextColorSplit> m_vColorSplits;
+	void *m_pTooltipId = nullptr;
 
 	void SetColor(const ColorRGBA &Color);
 };
@@ -224,6 +228,10 @@ class CLabelResult
 {
 public:
 	bool m_Truncated;
+	// EClient
+	vec2 m_TextPos;
+	float m_TextSize;
+	float m_TextWidth;
 };
 
 enum EButtonFlags : unsigned
@@ -298,6 +306,38 @@ struct SPopupMenuProperties
 	int m_Corners = IGraphics::CORNER_ALL;
 	ColorRGBA m_BorderColor = ColorRGBA(0.5f, 0.5f, 0.5f, 0.75f);
 	ColorRGBA m_BackgroundColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.75f);
+};
+
+/**
+ * Text that keeps its text container across frames and is only rebuilt when the text or
+ * its layout changes, for text that is rendered every frame. The color is applied when
+ * rendering, so changing it does not rebuild the container.
+ *
+ * The container must be released with @link Reset @endlink before the text render drops
+ * its containers, which happens on window resize and language change.
+ */
+class CCachedText
+{
+	STextContainerIndex m_TextContainerIndex;
+	std::string m_Text;
+	float m_FontSize = -1.0f;
+	float m_LineWidth = -1.0f;
+	int m_CursorFlags = 0;
+	STextBoundingBox m_BoundingBox = {0.0f, 0.0f, 0.0f, 0.0f};
+	float m_MaxCharacterHeight = 0.0f;
+
+public:
+	CCachedText() = default;
+	// Copying would leave two owners for the same text container.
+	CCachedText(const CCachedText &) = delete;
+	CCachedText &operator=(const CCachedText &) = delete;
+
+	void Update(ITextRender *pTextRender, const char *pText, float FontSize, float LineWidth = -1.0f, int CursorFlags = TEXTFLAG_RENDER);
+	void Render(ITextRender *pTextRender, vec2 Pos, ColorRGBA Color) const;
+	void Reset(ITextRender *pTextRender);
+
+	float Width() const { return m_BoundingBox.m_W; }
+	float MaxCharacterHeight() const { return m_MaxCharacterHeight; }
 };
 
 class CUi
@@ -402,7 +442,6 @@ private:
 	vec2 m_UpdatedMouseDelta = vec2(0.0f, 0.0f); // in window screen space
 	vec2 m_MousePos = vec2(0.0f, 0.0f); // in gui space
 	vec2 m_MouseDelta = vec2(0.0f, 0.0f); // in gui space
-	vec2 m_MouseWorldPos = vec2(-1.0f, -1.0f); // in world space
 	unsigned m_UpdatedMouseButtons = 0;
 	unsigned m_MouseButtons = 0;
 	unsigned m_LastMouseButtons = 0;
@@ -412,6 +451,21 @@ private:
 	const void *m_pMouseLockId = nullptr;
 
 	unsigned m_HotkeysPressed = 0;
+
+	enum class EBackButtonOp
+	{
+		NONE,
+		CLICKED,
+		DRAGGING,
+	};
+	EBackButtonOp m_BackButtonOp = EBackButtonOp::NONE;
+	vec2 m_BackButtonDragOffset = vec2(0.0f, 0.0f);
+	vec2 m_BackButtonInitialMouse = vec2(0.0f, 0.0f);
+	CUIRect m_BackButtonRect = {0.0f, 0.0f, 0.0f, 0.0f};
+	const char m_BackButtonId = 0;
+
+	std::function<void(const IInput::CEvent &Event)> m_DispatchInputFunction;
+	std::function<void()> m_OnBackButtonPressedFunction;
 
 	CUIRect m_Screen;
 
@@ -426,6 +480,7 @@ private:
 		const SPopupMenuId *m_pId;
 		SPopupMenuProperties m_Props;
 		CUIRect m_Rect;
+		bool m_KeepOpenOnOutsideRelease = false;
 		void *m_pContext;
 		FPopupMenuFunction m_pfnFunc;
 	};
@@ -444,6 +499,7 @@ private:
 
 	std::vector<CUIElement *> m_vpOwnUIElements; // ui elements maintained by CUi class
 	std::vector<CUIElement *> m_vpUIElements;
+	std::unique_ptr<CTooltips> m_pTooltips;
 
 public:
 	static const CLinearScrollbarScale ms_LinearScrollbarScale;
@@ -492,7 +548,7 @@ public:
 
 	void SetEnabled(bool Enabled) { m_Enabled = Enabled; }
 	bool Enabled() const { return m_Enabled; }
-	void Update(vec2 MouseWorldPos = vec2(-1.0f, -1.0f));
+	void Update(bool IsChat = false);
 	void DebugRender(float X, float Y);
 
 	vec2 MousePos() const { return m_MousePos; }
@@ -501,13 +557,12 @@ public:
 	vec2 MouseDelta() const { return m_MouseDelta; }
 	float MouseDeltaX() const { return m_MouseDelta.x; }
 	float MouseDeltaY() const { return m_MouseDelta.y; }
-	vec2 MouseWorldPos() const { return m_MouseWorldPos; }
-	float MouseWorldX() const { return m_MouseWorldPos.x; }
-	float MouseWorldY() const { return m_MouseWorldPos.y; }
 	vec2 UpdatedMousePos() const { return m_UpdatedMousePos; }
 	vec2 UpdatedMouseDelta() const { return m_UpdatedMouseDelta; }
 	int LastMouseButton(int Index) const { return (m_LastMouseButtons >> Index) & 1; } // TClient
 	int MouseButton(int Index) const { return (m_MouseButtons >> Index) & 1; }
+	// EClient: for a component about to start driving the ui after a lull, see the definition
+	void ResumeMouseButtons();
 	int MouseButtonClicked(int Index) const { return MouseButton(Index) && !((m_LastMouseButtons >> Index) & 1); }
 	bool CheckMouseLock()
 	{
@@ -564,6 +619,9 @@ public:
 	void SetMouseSlow(bool MouseSlow) { m_MouseSlow = MouseSlow; }
 
 	bool ConsumeHotkey(EHotkey Hotkey);
+	// EClient: for a component that handles its own input and so cannot hand the whole event to
+	// OnInput, but still has ui of its own that waits on a hotkey
+	void SetHotkey(EHotkey Hotkey) { m_HotkeysPressed |= Hotkey; }
 	void ClearHotkeys() { m_HotkeysPressed = 0; }
 	bool OnInput(const IInput::CEvent &Event);
 
@@ -649,6 +707,7 @@ public:
 	bool DoEditBox_Search(CLineInput *pLineInput, const CUIRect *pRect, float FontSize, bool HotkeyEnabled);
 
 	int DoButton_Menu(CUIElement &UIElement, const CButtonContainer *pId, const std::function<const char *()> &GetTextLambda, const CUIRect *pRect, const SMenuButtonProperties &Props = {});
+	void DrawButton_FontIcon(const char *pText, const CUIRect *pRect, ColorRGBA Color, int Corners = IGraphics::CORNER_ALL, bool Enabled = true) const;
 	int DoButton_FontIcon(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags, int Corners = IGraphics::CORNER_ALL, bool Enabled = true, std::optional<ColorRGBA> ButtonColor = std::nullopt);
 	// only used for popup menus
 	int DoButton_PopupMenu(CButtonContainer *pButtonContainer, const char *pText, const CUIRect *pRect, float Size, int Align, float Padding = 0.0f, bool TransparentInactive = false, bool Enabled = true, std::optional<ColorRGBA> ButtonColor = std::nullopt);
@@ -667,6 +726,7 @@ public:
 	};
 	float DoScrollbarV(const void *pId, const CUIRect *pRect, float Current);
 	float DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner = nullptr, bool Render = true);
+	int ScrollbarKeyboardAdjust(const CUIRect *pRect, int Value, int Min, int Max);
 	bool DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale = &ms_LinearScrollbarScale, unsigned Flags = 0u, const char *pSuffix = "");
 	bool DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale = &ms_LinearScrollbarScale, unsigned Flags = 0u);
 
@@ -677,13 +737,22 @@ public:
 	void RenderProgressBar(CUIRect ProgressBar, float Progress);
 
 	// render time with hundredths or thousands aligned to the right of the UIRect
-	void RenderTime(CUIRect TimeRect, float FontSize, int Seconds, bool NotFinished, int Millis, bool TrueMilliseconds) const;
+	void RenderTime(CUIRect TimeRect, float FontSize, int Seconds, bool NotFinished, int Millis, bool TrueMilliseconds, CCachedText &SecondsText, CCachedText &MillisText, ColorRGBA Color) const;
 
 	// progress spinner
 	void RenderProgressSpinner(vec2 Center, float OuterRadius, const SProgressSpinnerProperties &Props = {}) const;
 
-	// popup menu
+	// virtual back button
+	void DoBackButton();
+	void RenderBackButton();
+	void SetDispatchInputCallback(std::function<void(const IInput::CEvent &Event)> pfnCallback) { m_DispatchInputFunction = std::move(pfnCallback); }
+	// Fired the moment the back button transitions to active (mouse-down inside it).
+	void SetOnBackButtonPressedCallback(std::function<void()> pfnCallback) { m_OnBackButtonPressedFunction = std::move(pfnCallback); }
+
+	// found in ui_popups.cpp
 	void DoPopupMenu(const SPopupMenuId *pId, float X, float Y, float Width, float Height, void *pContext, FPopupMenuFunction pfnFunc, const SPopupMenuProperties &Props = {});
+	bool UpdatePopupMenuRect(const SPopupMenuId *pId, float X, float Y, float Width, float Height);
+	void KeepPopupOpenOnOutsideRelease(const SPopupMenuId *pId);
 	void RenderPopupMenus();
 	void ClosePopupMenu(const SPopupMenuId *pId, bool IncludeDescendants = false);
 	void ClosePopupMenus();
@@ -798,6 +867,12 @@ public:
 
 	// EClient
 	float DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner, bool Draggable);
+
+	void DoToolTip(const void *pId, const CUIRect *pNearRect, const char *pText, float WidthHint = -1.0f) const;
+	void DoToolTip(const CTooltip &Tooltip) const;
+	void DoToolTipFade(const void *pId, const CUIRect *pNearRect, const char *pText, float FadeTime) const;
+	void OnRenderTooltip() const { m_pTooltips->OnRender(); }
+	void OnReset() const { m_pTooltips->OnReset(); }
 };
 
 #endif

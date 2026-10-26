@@ -27,37 +27,6 @@ inline static void RotatePoint(const vec2 &Center, vec2 &Point, float Rotation)
 	Point.y = RelativePos.x * std::sin(Rotation) + RelativePos.y * std::cos(Rotation) + Center.y;
 }
 
-inline static bool QuadName(const int *pInts, size_t NumInts, char *pStr, size_t StrSize)
-{
-	dbg_assert(NumInts > 0, "QuadName: NumInts invalid");
-	dbg_assert(StrSize >= NumInts * sizeof(int), "QuadName: StrSize invalid");
-
-	// Unpack string without validation
-	size_t StrIndex = 0;
-	for(size_t IntIndex = 0; IntIndex < NumInts; IntIndex++)
-	{
-		const int CurrentInt = pInts[IntIndex];
-		pStr[StrIndex] = ((CurrentInt >> 24) & 0xff) - 128;
-		StrIndex++;
-		pStr[StrIndex] = ((CurrentInt >> 16) & 0xff) - 128;
-		StrIndex++;
-		pStr[StrIndex] = ((CurrentInt >> 8) & 0xff) - 128;
-		StrIndex++;
-		pStr[StrIndex] = (CurrentInt & 0xff) - 128;
-		StrIndex++;
-	}
-	// Ensure null-termination
-	pStr[StrIndex - 1] = '\0';
-
-	// Ensure valid UTF-8
-	if(str_utf8_check(pStr))
-	{
-		return true;
-	}
-	pStr[0] = '\0';
-	return false;
-}
-
 void CMovingTiles::Reset()
 {
 	m_vQuads.clear();
@@ -91,7 +60,7 @@ void CMovingTiles::OnMapLoad()
 
 			char aLayerName[30];
 			CMapItemLayerQuads *pTilemap = reinterpret_cast<CMapItemLayerQuads *>(pLayer);
-			QuadName(pTilemap->m_aName, std::size(pTilemap->m_aName), aLayerName, std::size(aLayerName));
+			IntsToStr(pTilemap->m_aName, std::size(pTilemap->m_aName), aLayerName, std::size(aLayerName));
 
 			for(size_t Names = 0; Names < std::size(ValidQuadNames); Names++)
 			{
@@ -107,7 +76,7 @@ void CMovingTiles::OnMapLoad()
 					CQuad *pQuads = (CQuad *)GameClient()->Map()->GetDataSwapped(pTilemap->m_Data);
 					for(int NumQuads = 0; NumQuads < pTilemap->m_NumQuads; NumQuads++)
 					{
-						CQuadData QuadData;
+						CRenderQuad QuadData;
 						QuadData.m_pQuad = &pQuads[NumQuads];
 						QuadData.m_pGroup = pGroup;
 						QuadData.m_pLayer = pTilemap;
@@ -128,12 +97,14 @@ void CMovingTiles::OnMapLoad()
 
 void CMovingTiles::OnRender()
 {
-	if(g_Config.m_ClOverlayEntities != 100)
+	if(g_Config.m_ClOverlayEntities == 0)
 		return;
 	if(!g_Config.m_ClShowMovingTilesEntities)
 		return;
 	if(m_vQuads.empty())
 		return;
+
+	const float Alpha = g_Config.m_ClOverlayEntities * 0.01f;
 
 	const vec2 Center = GameClient()->m_Camera.m_Center;
 	const float Zoom = GameClient()->m_Camera.m_Zoom;
@@ -148,15 +119,14 @@ void CMovingTiles::OnRender()
 		{
 			Graphics()->MapScreenToInterface(Center.x, Center.y, Zoom);
 
-			float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-			Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+			const CScreenRect ScreenRect = Graphics()->GetScreen();
 
-			const float ScreenWidth = ScreenX1 - ScreenX0;
-			const float ScreenHeight = ScreenY1 - ScreenY0;
-			const float Left = pGroup->m_ClipX - ScreenX0;
-			const float Top = pGroup->m_ClipY - ScreenY0;
-			const float Right = pGroup->m_ClipX + pGroup->m_ClipW - ScreenX0;
-			const float Bottom = pGroup->m_ClipY + pGroup->m_ClipH - ScreenY0;
+			const float ScreenWidth = ScreenRect.Width();
+			const float ScreenHeight = ScreenRect.Height();
+			const float Left = pGroup->m_ClipX - ScreenRect.m_TopLeft.x;
+			const float Top = pGroup->m_ClipY - ScreenRect.m_TopLeft.y;
+			const float Right = pGroup->m_ClipX + pGroup->m_ClipW - ScreenRect.m_TopLeft.x;
+			const float Bottom = pGroup->m_ClipY + pGroup->m_ClipH - ScreenRect.m_TopLeft.y;
 
 			if(Right < 0.0f || Left > ScreenWidth || Bottom < 0.0f || Top > ScreenHeight)
 				return false;
@@ -169,14 +139,13 @@ void CMovingTiles::OnRender()
 			Graphics()->ClipEnable(ClipX, ClipY, ClipW, ClipH);
 		}
 
-		const int ParallaxZoom = std::clamp(maximum(pGroup->m_ParallaxX, pGroup->m_ParallaxY), 0, 100);
-		float aPoints[4];
-		Graphics()->MapScreenToWorld(
+		const int ParallaxZoom = std::clamp(std::max(pGroup->m_ParallaxX, pGroup->m_ParallaxY), 0, 100);
+		const CScreenRect WorldRect = Graphics()->MapScreenToWorld(
 			Center.x, Center.y,
 			pGroup->m_ParallaxX, pGroup->m_ParallaxY, (float)ParallaxZoom,
 			pGroup->m_OffsetX, pGroup->m_OffsetY,
-			Graphics()->ScreenAspect(), Zoom, aPoints);
-		Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
+			Graphics()->ScreenAspect(), Zoom);
+		Graphics()->MapScreen(WorldRect);
 
 		return true;
 	};
@@ -218,7 +187,7 @@ void CMovingTiles::OnRender()
 
 			for(size_t QuadIndex = QuadStart; QuadIndex < QuadEnd; QuadIndex++)
 			{
-				const CQuadData &QuadData = m_vQuads[QuadIndex];
+				const CRenderQuad &QuadData = m_vQuads[QuadIndex];
 				const CQuad *pQuad = QuadData.m_pQuad;
 				if(!pQuad)
 					continue;
@@ -259,23 +228,19 @@ void CMovingTiles::OnRender()
 				const vec2 Offset(Position.r, Position.g);
 				const float Rotation = Position.b / 180.0f * pi + QuadData.m_Angle;
 
+				Color.a *= Alpha;
+
 				if(g_Config.m_ClShowMovingTilesEntities > 1 || Invisible)
 				{
-					IGraphics::CColorVertex aColors[4] = {
-						IGraphics::CColorVertex(0, Color.r, Color.g, Color.b, Color.a),
-						IGraphics::CColorVertex(1, Color.r, Color.g, Color.b, Color.a),
-						IGraphics::CColorVertex(2, Color.r, Color.g, Color.b, Color.a),
-						IGraphics::CColorVertex(3, Color.r, Color.g, Color.b, Color.a)};
-					Graphics()->SetColorVertex(aColors, std::size(aColors));
+					Graphics()->SetColor4(Color, Color, Color, Color);
 				}
 				else
 				{
-					IGraphics::CColorVertex aColors[4] = {
-						IGraphics::CColorVertex(0, pQuad->m_aColors[0].r * ColorConv * Color.r, pQuad->m_aColors[0].g * ColorConv * Color.g, pQuad->m_aColors[0].b * ColorConv * Color.b, pQuad->m_aColors[0].a * ColorConv * Color.a),
-						IGraphics::CColorVertex(1, pQuad->m_aColors[1].r * ColorConv * Color.r, pQuad->m_aColors[1].g * ColorConv * Color.g, pQuad->m_aColors[1].b * ColorConv * Color.b, pQuad->m_aColors[1].a * ColorConv * Color.a),
-						IGraphics::CColorVertex(2, pQuad->m_aColors[2].r * ColorConv * Color.r, pQuad->m_aColors[2].g * ColorConv * Color.g, pQuad->m_aColors[2].b * ColorConv * Color.b, pQuad->m_aColors[2].a * ColorConv * Color.a),
-						IGraphics::CColorVertex(3, pQuad->m_aColors[3].r * ColorConv * Color.r, pQuad->m_aColors[3].g * ColorConv * Color.g, pQuad->m_aColors[3].b * ColorConv * Color.b, pQuad->m_aColors[3].a * ColorConv * Color.a)};
-					Graphics()->SetColorVertex(aColors, std::size(aColors));
+					Graphics()->SetColor4(
+						ColorRGBA(pQuad->m_aColors[0].r * ColorConv * Color.r, pQuad->m_aColors[0].g * ColorConv * Color.g, pQuad->m_aColors[0].b * ColorConv * Color.b, pQuad->m_aColors[0].a * ColorConv * Color.a),
+						ColorRGBA(pQuad->m_aColors[1].r * ColorConv * Color.r, pQuad->m_aColors[1].g * ColorConv * Color.g, pQuad->m_aColors[1].b * ColorConv * Color.b, pQuad->m_aColors[1].a * ColorConv * Color.a),
+						ColorRGBA(pQuad->m_aColors[3].r * ColorConv * Color.r, pQuad->m_aColors[3].g * ColorConv * Color.g, pQuad->m_aColors[3].b * ColorConv * Color.b, pQuad->m_aColors[3].a * ColorConv * Color.a),
+						ColorRGBA(pQuad->m_aColors[2].r * ColorConv * Color.r, pQuad->m_aColors[2].g * ColorConv * Color.g, pQuad->m_aColors[2].b * ColorConv * Color.b, pQuad->m_aColors[2].a * ColorConv * Color.a));
 				}
 
 				vec2 aPoints[4] = {

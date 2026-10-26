@@ -10,6 +10,8 @@
 #include <engine/storage.h>
 
 #include <memory>
+#include <optional>
+#include <vector>
 
 static constexpr ColorRGBA CONSOLE_DEFAULT_COLOR = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -72,6 +74,7 @@ public:
 		virtual ~IResult() = default;
 
 		virtual int GetInteger(unsigned Index) const = 0;
+		virtual int64_t GetInteger64(unsigned Index) const = 0; // EClient
 		virtual float GetFloat(unsigned Index) const = 0;
 		virtual const char *GetString(unsigned Index) const = 0;
 		virtual ColorHSLA GetColor(unsigned Index, float DarkestLighting) const = 0;
@@ -83,7 +86,7 @@ public:
 
 		// DDRace
 
-		virtual int GetVictim() const = 0;
+		virtual int GetVictim(unsigned Slot) const = 0;
 	};
 
 	class ICommandInfo
@@ -93,10 +96,13 @@ public:
 		virtual const char *Name() const = 0;
 		virtual const char *Help() const = 0;
 		virtual const char *Params() const = 0;
+		// Whether any parameter of this command is a client id, see `Register`
+		virtual bool TakesClientId() const = 0;
 		virtual int Flags() const = 0;
 		virtual EAccessLevel GetAccessLevel() const = 0;
 	};
 
+	typedef std::optional<std::vector<int>> (*FGetVictimsCommandCallback)(int ClientId, const char *pVictim, void *pUser);
 	typedef void (*FTeeHistorianCommandCallback)(int ClientId, int FlagMask, const char *pCmd, IResult *pResult, void *pUser);
 	typedef void (*FPossibleCallback)(int Index, const char *pCmd, void *pUser);
 	typedef void (*FCommandCallback)(IResult *pResult, void *pUserData);
@@ -115,6 +121,7 @@ public:
 	virtual void ParseArguments(int NumArgs, const char **ppArguments) = 0;
 
 	virtual void Register(const char *pName, const char *pParams, int Flags, FCommandCallback pfnFunc, void *pUser, const char *pHelp) = 0;
+	virtual void Deregister(const char *pName) = 0; // EClient
 	virtual void RegisterTemp(const char *pName, const char *pParams, int Flags, const char *pHelp) = 0;
 	virtual void DeregisterTemp(const char *pName) = 0;
 	virtual void DeregisterTempAll() = 0;
@@ -134,6 +141,7 @@ public:
 	 * - They do not require a pointer to `IConsole` to be used.
 	 */
 	virtual void Print(int Level, const char *pFrom, const char *pStr, ColorRGBA PrintColor = CONSOLE_DEFAULT_COLOR) const = 0;
+	virtual void SetGetVictimsCommandCallback(FGetVictimsCommandCallback pfnCallback, void *pUser) = 0;
 	virtual void SetTeeHistorianCommandCallback(FTeeHistorianCommandCallback pfnCallback, void *pUser) = 0;
 	virtual void SetUnknownCommandCallback(FUnknownCommandCallback pfnCallback, void *pUser) = 0;
 	virtual void SetCanUseCommandCallback(FCanUseCommandCallback pfnCallback, void *pUser) = 0;

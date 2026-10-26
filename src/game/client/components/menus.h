@@ -6,12 +6,14 @@
 #include "tclient/warlist.h"
 
 #include <base/bytes.h>
+#include <base/str.h>
 #include <base/types.h>
 #include <base/vmath.h>
 
 #include <engine/console.h>
 #include <engine/demo.h>
 #include <engine/friends.h>
+#include <engine/map.h>
 #include <engine/serverbrowser.h>
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
@@ -29,9 +31,73 @@
 #include <game/voting.h>
 
 #include <chrono>
-#include <deque>
 #include <optional>
 #include <vector>
+
+// EClient
+enum class ESettingsModuleColumn
+{
+	LEFT,
+	RIGHT,
+	BOTH, // Never a place to put a module, only something to ask for once the columns are merged
+};
+
+// EClient: what a module is about, so the one settings page can be narrowed to a topic without
+// being split back into separate pages. A module carries one or more of these; the page holds a
+// mask of the chips the user has toggled on, and an empty mask shows everything.
+enum ESettingsModuleFilter : unsigned
+{
+	FILTER_NONE = 0, // No chip active: everything shows
+
+	FILTER_VISUAL = 1 << 0,
+	FILTER_HUD = 1 << 1,
+	FILTER_GAMEPLAY = 1 << 2,
+	FILTER_NETWORK = 1 << 3,
+	FILTER_CHAT = 1 << 4,
+	FILTER_WARLIST = 1 << 5,
+	FILTER_MISC = 1 << 6,
+	FILTER_NEW = 1 << 7,
+};
+
+class CSettingsModule
+{
+public:
+	ESettingsModuleColumn m_Column = ESettingsModuleColumn::LEFT;
+	float m_TopMargin = 0.0f;
+	unsigned m_Filters = FILTER_MISC; // Never FILTER_NONE, an untagged module would be unreachable while any chip is on
+	std::vector<std::string_view> m_vSearchTerms;
+	std::function<float(bool)> m_GetHeight;
+	std::function<void(CUIRect, bool)> m_Render;
+
+	CSettingsModule(ESettingsModuleColumn Column, float TopMargin, std::function<float(bool)> GetHeight, std::function<void(CUIRect, bool)> Render) :
+		m_Column(Column),
+		m_TopMargin(TopMargin),
+		m_GetHeight(std::move(GetHeight)),
+		m_Render(std::move(Render))
+	{
+	}
+
+	CSettingsModule(ESettingsModuleColumn Column, unsigned Filters, std::vector<std::string_view> vSearchTerms, std::function<float(bool)> GetHeight, std::function<void(CUIRect, bool)> Render, float TopMargin = 0.0f) :
+		m_Column(Column),
+		m_TopMargin(TopMargin),
+		m_Filters(Filters),
+		m_vSearchTerms(std::move(vSearchTerms)),
+		m_GetHeight(std::move(GetHeight)),
+		m_Render(std::move(Render))
+	{
+	}
+
+	CSettingsModule(ESettingsModuleColumn Column, unsigned Filters, std::initializer_list<std::string_view> SearchTerms, std::function<float(bool)> GetHeight, std::function<void(CUIRect, bool)> Render, float TopMargin = 0.0f) :
+		m_Column(Column),
+		m_TopMargin(TopMargin),
+		m_Filters(Filters),
+		m_vSearchTerms(SearchTerms),
+		m_GetHeight(std::move(GetHeight)),
+		m_Render(std::move(Render))
+	{
+	}
+};
+
 class CMenus : public CComponent
 {
 	static ColorRGBA ms_GuiColor;
@@ -46,8 +112,11 @@ class CMenus : public CComponent
 	static ColorRGBA ms_ColorTabbarHover;
 
 public:
+	// Width of the image in DoButton_Menu, relative to the button height
+	static constexpr float BUTTON_IMAGE_WIDTH_FACTOR = 4.0f;
+
 	int DoButton_Toggle(const void *pId, int Checked, const CUIRect *pRect, bool Active, unsigned Flags = BUTTONFLAG_LEFT);
-	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color, float Size);
+	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color, const void *pImageHotId);
 	int DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners, SUIAnimator *pAnimator = nullptr, const ColorRGBA *pDefaultColor = nullptr, const ColorRGBA *pActiveColor = nullptr, const ColorRGBA *pHoverColor = nullptr, float EdgeRounding = 10.0f, const CCommunityIcon *pCommunityIcon = nullptr);
 
 	int DoButton_CheckBox_Common(const void *pId, const char *pText, const char *pBoxText, const CUIRect *pRect, unsigned Flags);
@@ -59,6 +128,7 @@ public:
 
 	// EClient
 	bool DoLine_RadioMenu_Compact(CUIRect &View, const char *pLabel, std::vector<CButtonContainer> &vButtonContainers, const std::vector<const char *> &vLabels, const std::vector<int> &vValues, int &Value, float LabelSpacing = 5.0f, const std::vector<const char *> *pvTooltips = nullptr);
+	void DoLine_TimeOfDay(CUIRect &View, const char *pLabel, int *pMinuteOfDay);
 
 	// Axis Client
 	IGraphics *MenuGraphics() const { return Graphics(); }
@@ -74,11 +144,9 @@ private:
 	ColorHSLA DoLine_ColorPicker(CButtonContainer *pResetId, float LineSize, float LabelSize, float BottomMargin, CUIRect *pMainRect, const char *pText, unsigned int *pColorValue, ColorRGBA DefaultColor, bool CheckBoxSpacing = true, int *pCheckBoxValue = nullptr, bool Alpha = false);
 	ColorHSLA DoButton_ColorPicker(const CUIRect *pRect, unsigned int *pHslaColor, bool Alpha);
 
-	void DoLaserPreview(const CUIRect *pRect, ColorHSLA OutlineColor, ColorHSLA InnerColor, int LaserType);
 	int DoButton_GridHeader(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Align = TEXTALIGN_ML);
 	int DoButton_Favorite(const void *pButtonId, const void *pParentId, bool Checked, const CUIRect *pRect);
 
-	bool m_SkinListScrollToSelected = false;
 	std::optional<std::chrono::nanoseconds> m_SkinList7LastRefreshTime;
 	std::optional<std::chrono::nanoseconds> m_SkinPartsList7LastRefreshTime;
 
@@ -295,15 +363,6 @@ protected:
 	bool m_NeedRestartUpdate;
 	bool m_NeedSendinfo;
 	bool m_NeedSendDummyinfo;
-	int m_SettingPlayerPage;
-
-	// 0.7 skins
-	bool m_CustomSkinMenu = false;
-	int m_TeePartSelected = protocol7::SKINPART_BODY;
-	const CSkins7::CSkin *m_pSelectedSkin = nullptr;
-	CLineInputBuffered<protocol7::MAX_SKIN_ARRAY_SIZE, protocol7::MAX_SKIN_LENGTH> m_SkinNameInput;
-	bool m_SkinPartListNeedsUpdate = false;
-	void PopupConfirmDeleteSkin7();
 
 	// for map download popup
 	int64_t m_DownloadLastCheckTime;
@@ -413,6 +472,7 @@ protected:
 	std::chrono::nanoseconds m_DemoPopulateStartTime{0};
 
 	void DemolistOnUpdate(bool Reset);
+	void DemolistSelectNeighbor();
 	static int DemolistFetchCallback(const CFsFileInfo *pInfo, int IsDir, int StorageType, void *pUser);
 
 	// friends
@@ -578,9 +638,9 @@ protected:
 	int m_SelectedIndex;
 	bool m_ServerBrowserShouldRevealSelection;
 	std::vector<CUIElement *> m_avpServerBrowserUiElements[IServerBrowser::NUM_TYPES];
+	std::vector<char> m_vServerbrowserElementIds[IServerBrowser::NUM_TYPES];
 	void RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemActivated);
 	void RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItemActivated);
-	void Connect(const char *pAddress);
 	void PopupConfirmSwitchServer();
 	void RenderServerbrowserFilters(CUIRect View);
 	void ResetServerbrowserFilters();
@@ -619,28 +679,65 @@ protected:
 	void UpdateCommunityCache(bool Force);
 
 	// found in menus_settings.cpp
-	void RenderLanguageSettings(CUIRect MainView);
-	bool RenderLanguageSelection(CUIRect MainView);
-	void RenderThemeSelection(CUIRect MainView);
-	void RenderSettingsGeneral(CUIRect MainView);
-	void RenderSettingsPlayer(CUIRect MainView);
-	void RenderSettingsTee(CUIRect MainView);
-	void RenderSettingsTee7(CUIRect MainView);
-	void RenderSettingsTeeCustom7(CUIRect MainView);
-	void RenderSkinSelection7(CUIRect MainView);
-	void RenderSkinPartSelection7(CUIRect MainView);
-	void RenderSettingsGraphics(CUIRect MainView);
-	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
-	void RenderSettingsCustom(CUIRect MainView);
+	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
+
+	// found in menus_settings_assets.cpp
+	void RenderSettingsAssets(CUIRect MainView);
+
+	// found in menus_settings_appearance.cpp
+	void RenderSettingsAppearance(CUIRect MainView);
+	void DoLaserPreview(const CUIRect *pRect, ColorHSLA OutlineColor, ColorHSLA InnerColor, int LaserType);
 
 	// found in menus_settings_controls.cpp
 	// TODO: Change PopupConfirm to avoid using a function pointer to a CMenus
 	//       member function, to move this function to CMenusSettingsControls
 	void ResetSettingsControls();
 
+	// found in menus_settings_credits.cpp
+	void RenderSettingsCredits(CUIRect MainView);
+
+	// found in menus_settings_ddnet.cpp
+	void RenderSettingsDDNet(CUIRect MainView);
+
+	// found in menus_settings_general.cpp
+	void RenderSettingsGeneral(CUIRect MainView);
+	void RenderThemeSelection(CUIRect MainView);
+
+	// found in menus_settings_graphics.cpp
+	void RenderSettingsGraphics(CUIRect MainView);
+
+	// found in menus_settings_language.cpp
+	void RenderLanguageSettings(CUIRect MainView);
+	bool RenderLanguageSelection(CUIRect MainView);
+
+	// found in menus_settings_player.cpp
+	void RenderSettingsPlayer(CUIRect MainView);
+
+	// found in menus_settings_sound.cpp
+	void RenderSettingsSound(CUIRect MainView);
+
+	// found in menus_settings_tee.cpp
+	void RenderSettingsTee(CUIRect MainView);
+	bool m_SkinListScrollToSelected = false;
+
+	// found in menus_settings_tee7.cpp
+	void RenderSettingsTee7(CUIRect MainView);
+	void PopupConfirmDeleteSkin7();
+	void RenderSettingsTeeCustom7(CUIRect MainView);
+	void RenderSkinSelection7(CUIRect MainView);
+	void RenderSkinPartSelection7(CUIRect MainView);
+	bool m_CustomSkinMenu = false;
+	int m_TeePartSelected = protocol7::SKINPART_BODY;
+	const CSkins7::CSkin *m_pSelectedSkin = nullptr;
+	int m_SelectedSkinIndex7 = -1;
+	int m_DeletedSkinIndex7 = -1;
+	CLineInputBuffered<protocol7::MAX_SKIN_ARRAY_SIZE, protocol7::MAX_SKIN_LENGTH> m_SkinNameInput;
+	bool m_SkinPartListNeedsUpdate = false;
+
 	std::vector<CButtonContainer> m_vButtonContainersNamePlateShow = {{}, {}, {}, {}};
 	std::vector<CButtonContainer> m_vButtonContainersNamePlateKeyPresses = {{}, {}, {}, {}};
+	std::vector<CButtonContainer> m_vButtonContainersAntiPingPlayers = {{}, {}, {}};
 
 	class CMapListItem
 	{
@@ -684,6 +781,7 @@ public:
 	CMenus();
 	int Sizeof() const override { return sizeof(*this); }
 
+	void RenderLoadingDirect(const char *pCaption, const char *pContent, std::optional<float> Progress);
 	void RenderLoading(const char *pCaption, const char *pContent, int IncreaseCounter);
 	void FinishLoading();
 
@@ -698,7 +796,6 @@ public:
 
 	void OnStateChange(int NewState, int OldState) override;
 	void OnWindowResize() override;
-	void OnReset() override;
 	void OnRender() override;
 	bool OnInput(const IInput::CEvent &Event) override;
 	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
@@ -724,6 +821,7 @@ public:
 		PAGE_NETWORK,
 		PAGE_GHOST,
 		PAGE_ECLIENTNEWS,
+		PAGE_MODERATION,
 
 		PAGE_LENGTH,
 	};
@@ -774,6 +872,7 @@ public:
 		SMALL_TAB_BROWSER_INFO,
 		SMALL_TAB_BROWSER_FRIENDS,
 		SMALL_TAB_ECLIENT,
+		SMALL_TAB_MODERATION,
 
 		SMALL_TAB_LENGTH,
 	};
@@ -807,8 +906,6 @@ public:
 
 		CGhostItem() :
 			m_Slot(-1), m_Own(false) { m_aFilename[0] = 0; }
-
-		bool operator<(const CGhostItem &Other) const { return m_Time < Other.m_Time; }
 
 		bool Active() const { return m_Slot != -1; }
 		bool HasFile() const { return m_aFilename[0]; }
@@ -874,11 +971,14 @@ public:
 	void SetShowStart(bool ShowStart);
 	void ShowQuitPopup();
 	void JoinTutorial();
+	void Connect(const char *pAddress);
 
 private:
 	CCommunityIcons m_CommunityIcons;
 	CMenusIngameTouchControls m_MenusIngameTouchControls;
 	friend CMenusIngameTouchControls;
+	// The moderation page is a component, it only borrows the menu button helpers
+	friend class CMenusModeration;
 	CMenusSettingsControls m_MenusSettingsControls;
 	friend CMenusSettingsControls;
 	CMenusStart m_MenusStart;
@@ -889,21 +989,14 @@ private:
 	void RenderInGameNetwork(CUIRect MainView);
 	void RenderGhost(CUIRect MainView);
 
-	// found in menus_settings.cpp
-	void RenderSettingsDDNet(CUIRect MainView);
-	void RenderSettingsAppearance(CUIRect MainView);
-
-	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
-
 	// EClient
 	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsEntity(CUIRect MainView);
 	void RenderSettingsEClient(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
-	void RenderSettingsVisual(CUIRect MainView);
 	void RenderSettingsStatusbar(CUIRect MainView);
-	void RenderSettingsQuickActions(CUIRect MainView);
+	void RenderSettingsPlayerActions(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderEClientInfoPage(CUIRect MainView);
 	void RenderEClientNewsPage(CUIRect MainView);
@@ -915,12 +1008,10 @@ private:
 	void PopupConfirmRemoveWarType();
 
 	// Warlist
-	class CWarlistCache
+
+	class CGenericPlayerInfo
 	{
 	public:
-		CWarType *m_pWarType;
-		CWarEntry *m_pEntry;
-
 		char m_aName[MAX_NAME_LENGTH];
 		char m_aClan[MAX_CLAN_LENGTH];
 
@@ -942,11 +1033,8 @@ private:
 		int m_CustomSkinColorBody;
 		int m_CustomSkinColorFeet;
 
-		CWarlistCache(CWarEntry *pEntry, const CServerInfo::CClient *pOnlineClient, const CServerInfo *pServer)
+		CGenericPlayerInfo(const CServerInfo::CClient *pOnlineClient, const CServerInfo *pServer)
 		{
-			m_pEntry = pEntry;
-			m_pWarType = pEntry->m_pWarType;
-
 			str_copy(m_aName, pOnlineClient->m_aName);
 			str_copy(m_aClan, pOnlineClient->m_aClan);
 
@@ -975,9 +1063,30 @@ private:
 		int Latency() const { return m_Latency; }
 
 		const void *ListItemId() const { return &m_aName; }
-		const void *RemoveButtonId() const { return &m_pWarType; }
 		const void *CommunityTooltipId() const { return &m_IsPlayer; }
 		const void *SkinTooltipId() const { return &m_aSkin; }
+
+		bool operator<(const CGenericPlayerInfo &Other) const
+		{
+			const int Result = str_comp_nocase(m_aName, Other.m_aName);
+			return Result < 0 || (Result == 0 && str_comp_nocase(m_aClan, Other.m_aClan) < 0);
+		}
+	};
+
+	class CWarlistCache : public CGenericPlayerInfo
+	{
+	public:
+		CWarType *m_pWarType;
+		CWarEntry *m_pEntry;
+
+		CWarlistCache(CWarEntry *pEntry, const CServerInfo::CClient *pOnlineClient, const CServerInfo *pServer) :
+			CGenericPlayerInfo(pOnlineClient, pServer)
+		{
+			m_pEntry = pEntry;
+			m_pWarType = pEntry->m_pWarType;
+		}
+
+		const void *RemoveButtonId() const { return &m_pWarType; }
 
 		bool operator<(const CWarlistCache &Other) const
 		{
@@ -988,8 +1097,12 @@ private:
 
 	void ServerBrowserUpdate();
 	std::vector<CWarlistCache> m_vWarlistCache;
-	bool m_WarlistCacheDirty = true;
+	bool m_OnlinePlayersCacheDirty = true;
 	const CWarlistCache *m_pRemoveEntry = nullptr;
+	void RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion);
+
+	std::vector<CGenericPlayerInfo> m_vEntityUsersCache;
+	void RenderEntityClientUsers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion);
 
 	int GetWartypePlayerCount(const CWarType *pWarType) const
 	{
@@ -1002,7 +1115,24 @@ private:
 		return Count;
 	}
 
-	void RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion);
+	void RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect &MainView, const std::vector<CSettingsModule> &vModules, CLineInputBuffered<32> &SearchInput);
+	void DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect);
+
+	class CPopupServerSelectionContext
+	{
+	public:
+		CMenus *m_pMenus;
+		char m_aMapName[MAX_MAP_LENGTH];
+		char m_aCommunityId[CServerInfo::MAX_COMMUNITY_ID_LENGTH];
+		unsigned m_MapCrc;
+		const SPopupMenuId *m_pPopupId;
+		vec2 m_PopupAnchor;
+		float m_ExpandedWidth;
+		float m_ExpandedHeight;
+		bool m_OpenedThisFrame;
+		CButtonContainer m_NextMapVersionButton;
+	};
+	static CUi::EPopupMenuFunctionResult PopupServerSelection(void *pContext, CUIRect View, bool Active);
 
 public:
 	int DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake = false, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
@@ -1010,25 +1140,25 @@ public:
 	void RenderFontIcon(CUIRect Rect, const char *pText, float Size, int Align);
 
 	int DoButtonNoRect_FontIcon(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners = IGraphics::CORNER_ALL);
-	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
+	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f), float Size = 0.0f);
 
 	bool DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CButtonContainer &ClearButton, const char *pName, const char *pCommand);
 
-	void UpdateWarlistCache();
+	void UpdateOnlinePlayerCache();
 
 	int m_MenusRainbowColor;
 
-	/*
-	 *
-	 * If Draggable = 1 the Tee can be dragged to anywhere on the screen
-	 * If 2 its limited to the size of the big menu
-	 * If 3 its limited to the size of the settings menu (ToDo)
-	 *
-	 */
 	vec2 TeeEyeDirection(vec2 Pos);
 
-	void RenderDraggableTee(CUIRect MainView, vec2 SpawnPos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true, int TeeIndex = 0);
+	void RenderDraggableTee(CUIRect MainView, vec2 StartPos, vec2 &CurPos, bool &Dragging, vec2 TeeDirection, CTeeRenderInfo *pInfo);
 	void RenderTee(vec2 Pos, vec2 TeeDirection, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int EyeEmote, bool HappyHover = true);
-	bool m_ResetTeePos;
+
+	// EClient
+	// found in menus_demo.cpp
+	// Copy of demo actions rect
+	CUIRect m_DemoControlsRect;
+
+	int GetPopup() const { return m_Popup; }
+	bool IsMenuActive() const { return m_MenuActive; }
 };
 #endif

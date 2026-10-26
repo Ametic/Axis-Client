@@ -1279,9 +1279,6 @@ Initializing map logic
 Sending initial client info
 == 正在發送初始客戶端資訊
 
-Uploading map data to GPU
-== 正在將地圖數據傳輸至顯示卡
-
 Getting game info
 == 正在獲取游戲資訊
 
@@ -2143,9 +2140,6 @@ Others
 All
 == 全部
 
-AntiPing: prediction margin
-== AntiPing：預測容差
-
 [Graphics error]
 Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
 == 顯示記憶體不足。請嘗試將 'cl_skins_loaded_max' 調低，或移除自定義材質（如外觀、實體等），尤其是高解析度的資源。
@@ -2651,3 +2645,66 @@ When a Tee is hookable
 [Hook collision line color]
 Hook collision line tip
 == 鉤索輔助線頭
+
+Refresh the demo list
+== 重新整理回放列表
+
+Open the selected folder
+== 打開所選資料夾
+
+Play the selected demo
+== 播放所選回放
+
+Prediction margin
+== 預測容差
+
+Predict events (experimental)
+== 預測事件（實驗性）
+
+[Important alert message]
+Tap to dismiss…
+== 
+
+Initializing layers
+== 
+
+[Direct touch input]
+Relative aim
+== 
+
+[Predefined touch button behaviors]
+Joystick Relative Aim
+== 
+
+Virtual joystick which only aims and moves the mouse pointer relatively.
+== 
+
+Credits
+== 
+
+[AntiPing: predict other players]
+Off
+== 
+
+[AntiPing: predict other players]
+All
+== 
+
+[AntiPing: predict other players]
+Interact
+== 
+
+Always predict frozen players
+== 
+
+No country flags match your filter criteria
+== 
+
+Join
+== 
+
+'%s' not bound.
+== 
+
+Press '%s' to show cursor.
+== 

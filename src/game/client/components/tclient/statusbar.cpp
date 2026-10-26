@@ -112,12 +112,12 @@ void CStatusBar::PredictionRender()
 float CStatusBar::LocalTimeWidth()
 {
 	return TextRender()->TextWidth(m_FontSize,
-		g_Config.m_ClStatusBar12HourClock ? (g_Config.m_ClStatusBarLocalTimeSeocnds ? "00:00:00 XX" : "00:00 XX") : (g_Config.m_ClStatusBarLocalTimeSeocnds ? "00:00:00" : "00:00"));
+		g_Config.m_ClStatusBar12HourClock ? (g_Config.m_ClStatusBarLocalTimeSeconds ? "00:00:00 XX" : "00:00 XX") : (g_Config.m_ClStatusBarLocalTimeSeconds ? "00:00:00" : "00:00"));
 }
 void CStatusBar::LocalTimeRender()
 {
 	static char s_aTimeBuf[12];
-	str_timestamp_format(s_aTimeBuf, sizeof(s_aTimeBuf), g_Config.m_ClStatusBar12HourClock ? (g_Config.m_ClStatusBarLocalTimeSeocnds ? "%I:%M:%S %p" : "%I:%M %p") : (g_Config.m_ClStatusBarLocalTimeSeocnds ? "%H:%M:%S" : "%H:%M"));
+	str_timestamp_format(s_aTimeBuf, sizeof(s_aTimeBuf), g_Config.m_ClStatusBar12HourClock ? (g_Config.m_ClStatusBarLocalTimeSeconds ? "%I:%M:%S %p" : "%I:%M %p") : (g_Config.m_ClStatusBarLocalTimeSeconds ? "%H:%M:%S" : "%H:%M"));
 	if(s_aTimeBuf[0] == '0')
 		str_copy(s_aTimeBuf, &s_aTimeBuf[1], sizeof(s_aTimeBuf) - 1);
 	TextRender()->Text(m_CursorX, m_CursorY, m_FontSize, s_aTimeBuf);
@@ -320,7 +320,7 @@ void CStatusBar::OnRender()
 
 	UpdateStatusBarSize();
 
-	Graphics()->MapScreen(0.0f, 0.0f, m_Width, m_Height);
+	Graphics()->MapScreen(CScreenRect(0.0f, 0.0f, m_Width, m_Height));
 	Graphics()->DrawRect(m_BarX, m_BarY, m_Width, m_BarHeight, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClStatusBarColor)).WithAlpha(g_Config.m_ClStatusBarAlpha / 100.0f), 0, 0);
 	TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClStatusBarTextColor)).WithAlpha(g_Config.m_ClStatusBarTextAlpha / 100.0f));
 

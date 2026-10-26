@@ -10,7 +10,6 @@
 #include <base/str.h>
 #include <base/time.h>
 
-#include <engine/console.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 
@@ -32,8 +31,6 @@ static const unsigned char gs_OldVersion = 3;
 static const unsigned char gs_Sha256Version = 6;
 static const unsigned char gs_VersionTickCompression = 5; // demo files with this version or higher will use `CHUNKTICKFLAG_TICK_COMPRESSED`
 
-// TODO: rewrite all logs in this file using log_log_color, and remove gs_DemoPrintColor and m_pConsole
-static constexpr ColorRGBA gs_DemoPrintColor{0.75f, 0.7f, 0.7f, 1.0f};
 static constexpr LOG_COLOR DEMO_PRINT_COLOR = {191, 178, 178};
 
 bool CDemoHeader::Valid() const
@@ -46,7 +43,7 @@ bool CDemoHeader::Valid() const
 	       mem_has_null(m_aTimestamp, sizeof(m_aTimestamp)) && str_utf8_check(m_aTimestamp);
 }
 
-CDemoRecorder::CDemoRecorder(class CSnapshotDelta *pSnapshotDelta, bool NoMapData)
+CDemoRecorder::CDemoRecorder(CSnapshotDelta *pSnapshotDelta, bool NoMapData)
 {
 	m_File = nullptr;
 	m_aCurrentFilename[0] = '\0';
@@ -59,15 +56,14 @@ CDemoRecorder::CDemoRecorder(class CSnapshotDelta *pSnapshotDelta, bool NoMapDat
 
 CDemoRecorder::~CDemoRecorder()
 {
-	dbg_assert(m_File == 0, "Demo recorder was not stopped");
+	dbg_assert(m_File == nullptr, "Demo recorder was not stopped");
 }
 
 // Record
-int CDemoRecorder::Start(class IStorage *pStorage, class IConsole *pConsole, const char *pFilename, const char *pNetVersion, const char *pMap, const SHA256_DIGEST &Sha256, unsigned Crc, const char *pType, unsigned MapSize, unsigned char *pMapData, IOHANDLE MapFile, DEMOFUNC_FILTER pfnFilter, void *pUser)
+int CDemoRecorder::Start(IStorage *pStorage, const char *pFilename, const char *pNetVersion, const char *pMap, const SHA256_DIGEST &Sha256, unsigned Crc, const char *pType, unsigned MapSize, unsigned char *pMapData, IOHANDLE MapFile, DEMOFUNC_FILTER pfnFilter, void *pUser)
 {
-	dbg_assert(m_File == 0, "Demo recorder already recording");
+	dbg_assert(m_File == nullptr, "Demo recorder already recording");
 
-	m_pConsole = pConsole;
 	m_pStorage = pStorage;
 
 	if(!str_valid_filename(fs_filename(pFilename)))
@@ -79,19 +75,14 @@ int CDemoRecorder::Start(class IStorage *pStorage, class IConsole *pConsole, con
 	IOHANDLE DemoFile = pStorage->OpenFile(pFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(!DemoFile)
 	{
-		if(m_pConsole)
-		{
-			char aBuf[64 + IO_MAX_PATH_LENGTH];
-			str_format(aBuf, sizeof(aBuf), "Unable to open '%s' for recording", pFilename);
-			m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", aBuf, gs_DemoPrintColor);
-		}
+		log_error_color(DEMO_PRINT_COLOR, "demo_recorder", "Unable to open '%s' for recording", pFilename);
 		return -1;
 	}
 
 	bool CloseMapFile = false;
 
 	if(MapFile)
-		io_seek(MapFile, 0, IOSEEK_START);
+		io_seek(MapFile, 0, EIoSeekOrigin::START);
 
 	char aSha256[SHA256_MAXSTRSIZE];
 	sha256_str(Sha256, aSha256, sizeof(aSha256));
@@ -119,12 +110,8 @@ int CDemoRecorder::Start(class IStorage *pStorage, class IConsole *pConsole, con
 		}
 		if(!MapFile)
 		{
-			if(m_pConsole)
-			{
-				char aBuf[32 + IO_MAX_PATH_LENGTH];
-				str_format(aBuf, sizeof(aBuf), "Unable to open mapfile '%s'", pMap);
-				m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", aBuf, gs_DemoPrintColor);
-			}
+			log_error_color(DEMO_PRINT_COLOR, "demo_recorder", "Unable to open mapfile '%s'", pMap);
+			io_close(DemoFile);
 			return -1;
 		}
 
@@ -145,12 +132,7 @@ int CDemoRecorder::Start(class IStorage *pStorage, class IConsole *pConsole, con
 				io_close(MapFile);
 			}
 			MapSize = 0;
-			if(m_pConsole)
-			{
-				char aBuf[32 + IO_MAX_PATH_LENGTH];
-				str_format(aBuf, sizeof(aBuf), "Mapfile '%s' too large for demo, recording without it", pMap);
-				m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", aBuf, gs_DemoPrintColor);
-			}
+			log_error_color(DEMO_PRINT_COLOR, "demo_recorder", "Mapfile '%s' too large for demo, recording without it", pMap);
 		}
 		else
 		{
@@ -201,7 +183,7 @@ int CDemoRecorder::Start(class IStorage *pStorage, class IConsole *pConsole, con
 		if(CloseMapFile)
 			io_close(MapFile);
 		else
-			io_seek(MapFile, 0, IOSEEK_START);
+			io_seek(MapFile, 0, EIoSeekOrigin::START);
 	}
 
 	m_LastKeyFrame = -1;
@@ -209,12 +191,7 @@ int CDemoRecorder::Start(class IStorage *pStorage, class IConsole *pConsole, con
 	m_FirstTick = -1;
 	m_NumTimelineMarkers = 0;
 
-	if(m_pConsole)
-	{
-		char aBuf[32 + IO_MAX_PATH_LENGTH];
-		str_format(aBuf, sizeof(aBuf), "Recording to '%s'", pFilename);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", aBuf, gs_DemoPrintColor);
-	}
+	log_info_color(DEMO_PRINT_COLOR, "demo_recorder", "Recording to '%s'", pFilename);
 
 	m_pfnFilter = pfnFilter;
 	m_pUser = pUser;
@@ -278,13 +255,16 @@ void CDemoRecorder::WriteTickMarker(int Tick, bool Keyframe)
 		m_FirstTick = Tick;
 }
 
-void CDemoRecorder::Write(int Type, const void *pData, int Size)
+bool CDemoRecorder::Write(int Type, const void *pData, int Size)
 {
 	if(!m_File)
-		return;
+		return false;
 
 	if(Size > 64 * 1024)
-		return;
+	{
+		log_error("demo_recorder", "Dropped chunk of type %d, size %d is too large", Type, Size);
+		return false;
+	}
 
 	/* pad the data with 0 so we get an alignment of 4,
 	else the compression won't work and miss some bytes */
@@ -295,11 +275,11 @@ void CDemoRecorder::Write(int Type, const void *pData, int Size)
 		aBuffer2[Size++] = 0;
 	Size = CVariableInt::Compress(aBuffer2, Size, aBuffer, sizeof(aBuffer)); // buffer2 -> buffer
 	if(Size < 0)
-		return;
+		return false;
 
 	Size = CNetBase::Compress(aBuffer, Size, aBuffer2, sizeof(aBuffer2)); // buffer -> buffer2
 	if(Size < 0)
-		return;
+		return false;
 
 	unsigned char aChunk[3];
 	aChunk[0] = ((Type & 0x3) << 5);
@@ -326,20 +306,24 @@ void CDemoRecorder::Write(int Type, const void *pData, int Size)
 	}
 
 	io_write(m_File, aBuffer2, Size);
+	return true;
 }
 
 void CDemoRecorder::RecordSnapshot(int Tick, const void *pData, int Size)
 {
+	// only advance the delta base when the chunk ended up in the file,
+	// else playback decodes all following deltas against a snapshot it never saw
 	if(m_LastKeyFrame == -1 || (Tick - m_LastKeyFrame) > SERVER_TICK_SPEED * 5)
 	{
 		// write full tickmarker
 		WriteTickMarker(Tick, true);
 
 		// write snapshot
-		Write(CHUNKTYPE_SNAPSHOT, pData, Size);
+		if(!Write(CHUNKTYPE_SNAPSHOT, pData, Size))
+			return;
 
 		m_LastKeyFrame = Tick;
-		mem_copy(m_aLastSnapshotData, pData, Size);
+		mem_copy(&m_LastSnapshotData, pData, Size);
 	}
 	else
 	{
@@ -347,15 +331,13 @@ void CDemoRecorder::RecordSnapshot(int Tick, const void *pData, int Size)
 		WriteTickMarker(Tick, false);
 
 		// create delta
-		char aDeltaData[CSnapshot::MAX_SIZE + sizeof(int)];
-		m_pSnapshotDelta->SetStaticsize(protocol7::NETEVENTTYPE_SOUNDWORLD, true);
-		m_pSnapshotDelta->SetStaticsize(protocol7::NETEVENTTYPE_DAMAGE, true);
-		const int DeltaSize = m_pSnapshotDelta->CreateDelta((CSnapshot *)m_aLastSnapshotData, (CSnapshot *)pData, &aDeltaData);
+		CSnapshotDeltaBuffer DeltaData;
+		const int DeltaSize = m_pSnapshotDelta->CreateDelta(m_LastSnapshotData.AsSnapshot(), (CSnapshot *)pData, &DeltaData);
 		if(DeltaSize)
 		{
 			// record delta
-			Write(CHUNKTYPE_DELTA, aDeltaData, DeltaSize);
-			mem_copy(m_aLastSnapshotData, pData, Size);
+			if(Write(CHUNKTYPE_DELTA, DeltaData.m_aData, DeltaSize))
+				mem_copy(&m_LastSnapshotData, pData, Size);
 		}
 	}
 }
@@ -380,13 +362,13 @@ int CDemoRecorder::Stop(IDemoRecorder::EStopMode Mode, const char *pTargetFilena
 	if(Mode == IDemoRecorder::EStopMode::KEEP_FILE)
 	{
 		// add the demo length to the header
-		io_seek(m_File, offsetof(CDemoHeader, m_aLength), IOSEEK_START);
+		io_seek(m_File, offsetof(CDemoHeader, m_aLength), EIoSeekOrigin::START);
 		unsigned char aLength[sizeof(int32_t)];
 		uint_to_bytes_be(aLength, Length());
 		io_write(m_File, aLength, sizeof(aLength));
 
 		// add the timeline markers to the header
-		io_seek(m_File, sizeof(CDemoHeader) + offsetof(CTimelineMarkers, m_aNumTimelineMarkers), IOSEEK_START);
+		io_seek(m_File, sizeof(CDemoHeader) + offsetof(CTimelineMarkers, m_aNumTimelineMarkers), EIoSeekOrigin::START);
 		unsigned char aNumMarkers[sizeof(int32_t)];
 		uint_to_bytes_be(aNumMarkers, m_NumTimelineMarkers);
 		io_write(m_File, aNumMarkers, sizeof(aNumMarkers));
@@ -405,12 +387,7 @@ int CDemoRecorder::Stop(IDemoRecorder::EStopMode Mode, const char *pTargetFilena
 	{
 		if(!m_pStorage->RemoveFile(m_aCurrentFilename, IStorage::TYPE_SAVE))
 		{
-			if(m_pConsole)
-			{
-				char aBuf[64 + IO_MAX_PATH_LENGTH];
-				str_format(aBuf, sizeof(aBuf), "Could not remove demo file '%s'.", m_aCurrentFilename);
-				m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", aBuf, gs_DemoPrintColor);
-			}
+			log_error_color(DEMO_PRINT_COLOR, "demo_recorder", "Could not remove demo file '%s'.", m_aCurrentFilename);
 			return -1;
 		}
 	}
@@ -418,23 +395,12 @@ int CDemoRecorder::Stop(IDemoRecorder::EStopMode Mode, const char *pTargetFilena
 	{
 		if(!m_pStorage->RenameFile(m_aCurrentFilename, pTargetFilename, IStorage::TYPE_SAVE))
 		{
-			if(m_pConsole)
-			{
-				char aBuf[64 + 2 * IO_MAX_PATH_LENGTH];
-				str_format(aBuf, sizeof(aBuf), "Could not move demo file '%s' to '%s'.", m_aCurrentFilename, pTargetFilename);
-				m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", aBuf, gs_DemoPrintColor);
-			}
+			log_error_color(DEMO_PRINT_COLOR, "demo_recorder", "Could not move demo file '%s' to '%s'.", m_aCurrentFilename, pTargetFilename);
 			return -1;
 		}
 	}
 
-	if(m_pConsole)
-	{
-		char aBuf[64 + IO_MAX_PATH_LENGTH];
-		str_format(aBuf, sizeof(aBuf), "Stopped recording to '%s'", m_aCurrentFilename);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", aBuf, gs_DemoPrintColor);
-	}
-
+	log_info_color(DEMO_PRINT_COLOR, "demo_recorder", "Stopped recording to '%s'", m_aCurrentFilename);
 	return 0;
 }
 
@@ -447,13 +413,11 @@ void CDemoRecorder::AddDemoMarker()
 
 void CDemoRecorder::AddDemoMarker(int Tick)
 {
-	dbg_assert(Tick >= 0, "invalid marker tick");
+	dbg_assert(Tick >= m_FirstTick && Tick <= m_LastTickMarker, "Invalid marker tick: %d", Tick);
+
 	if(m_NumTimelineMarkers >= MAX_TIMELINE_MARKERS)
 	{
-		if(m_pConsole)
-		{
-			m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", "Too many timeline markers", gs_DemoPrintColor);
-		}
+		log_error_color(DEMO_PRINT_COLOR, "demo_recorder", "Too many timeline markers");
 		return;
 	}
 
@@ -463,51 +427,55 @@ void CDemoRecorder::AddDemoMarker(int Tick)
 		const int Diff = Tick - m_aTimelineMarkers[m_NumTimelineMarkers - 1];
 		if(Diff < (float)SERVER_TICK_SPEED)
 		{
-			if(m_pConsole)
-			{
-				m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", "Previous timeline marker too close", gs_DemoPrintColor);
-			}
+			log_error_color(DEMO_PRINT_COLOR, "demo_recorder", "Previous timeline marker too close");
 			return;
 		}
 	}
 
 	m_aTimelineMarkers[m_NumTimelineMarkers++] = Tick;
 
-	if(m_pConsole)
+	log_info_color(DEMO_PRINT_COLOR, "demo_recorder", "Added timeline marker");
+}
+
+CSnapshotDelta *CDemoPlayer::SnapshotDelta()
+{
+	if(IsSixup())
 	{
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_recorder", "Added timeline marker", gs_DemoPrintColor);
+		return m_pSnapshotDeltaSixup;
 	}
+	return m_pSnapshotDelta;
 }
 
-CDemoPlayer::CDemoPlayer(class CSnapshotDelta *pSnapshotDelta, bool UseVideo, TUpdateIntraTimesFunc &&UpdateIntraTimesFunc)
-{
-	Construct(pSnapshotDelta, UseVideo);
-
-	m_UpdateIntraTimesFunc = UpdateIntraTimesFunc;
-}
-
-CDemoPlayer::CDemoPlayer(class CSnapshotDelta *pSnapshotDelta, bool UseVideo)
-{
-	Construct(pSnapshotDelta, UseVideo);
-}
-
-CDemoPlayer::~CDemoPlayer()
-{
-	dbg_assert(m_File == 0, "Demo player not stopped");
-}
-
-void CDemoPlayer::Construct(class CSnapshotDelta *pSnapshotDelta, bool UseVideo)
+void CDemoPlayer::Construct(CSnapshotDelta *pSnapshotDelta, CSnapshotDelta *pSnapshotDeltaSixup, bool UseVideo)
 {
 	m_File = nullptr;
 	m_SpeedIndex = DEMO_SPEED_INDEX_DEFAULT;
 
 	m_pSnapshotDelta = pSnapshotDelta;
+	m_pSnapshotDeltaSixup = pSnapshotDeltaSixup;
 	m_LastSnapshotDataSize = -1;
 	m_pListener = nullptr;
 	m_UseVideo = UseVideo;
 
 	m_aFilename[0] = '\0';
 	m_aErrorMessage[0] = '\0';
+}
+
+CDemoPlayer::CDemoPlayer(CSnapshotDelta *pSnapshotDelta, CSnapshotDelta *pSnapshotDeltaSixup, bool UseVideo, TUpdateIntraTimesFunc &&UpdateIntraTimesFunc)
+{
+	Construct(pSnapshotDelta, pSnapshotDeltaSixup, UseVideo);
+
+	m_UpdateIntraTimesFunc = UpdateIntraTimesFunc;
+}
+
+CDemoPlayer::CDemoPlayer(CSnapshotDelta *pSnapshotDelta, CSnapshotDelta *pSnapshotDeltaSixup, bool UseVideo)
+{
+	Construct(pSnapshotDelta, pSnapshotDeltaSixup, UseVideo);
+}
+
+CDemoPlayer::~CDemoPlayer()
+{
+	dbg_assert(m_File == nullptr, "Demo player not stopped");
 }
 
 void CDemoPlayer::SetListener(IListener *pListener)
@@ -589,7 +557,8 @@ CDemoPlayer::EScanFileResult CDemoPlayer::ScanFile()
 	}
 
 	const auto &ResetToStartPosition = [&](EScanFileResult Result) -> EScanFileResult {
-		if(io_seek(m_File, StartPos, IOSEEK_START) != 0)
+		// Cannot play or seek without at least one keyframe, also when the scan stopped early
+		if(io_seek(m_File, StartPos, EIoSeekOrigin::START) != 0 || m_vKeyFrames.empty())
 		{
 			m_vKeyFrames.clear();
 			return EScanFileResult::ERROR_UNRECOVERABLE;
@@ -600,7 +569,7 @@ CDemoPlayer::EScanFileResult CDemoPlayer::ScanFile()
 	int ChunkTick = -1;
 	if(!m_vKeyFrames.empty())
 	{
-		if(io_seek(m_File, m_vKeyFrames.back().m_Filepos, IOSEEK_START) != 0)
+		if(io_seek(m_File, m_vKeyFrames.back().m_Filepos, EIoSeekOrigin::START) != 0)
 		{
 			return ResetToStartPosition(EScanFileResult::ERROR_RECOVERABLE);
 		}
@@ -653,8 +622,7 @@ CDemoPlayer::EScanFileResult CDemoPlayer::ScanFile()
 		}
 	}
 
-	// Cannot start playback without at least one keyframe
-	return ResetToStartPosition(m_vKeyFrames.empty() ? EScanFileResult::ERROR_UNRECOVERABLE : EScanFileResult::SUCCESS);
+	return ResetToStartPosition(EScanFileResult::SUCCESS);
 }
 
 void CDemoPlayer::DoTick()
@@ -721,35 +689,30 @@ void CDemoPlayer::DoTick()
 
 		if(ChunkType == CHUNKTYPE_DELTA)
 		{
+			if(m_LastSnapshotDataSize == -1)
+			{
+				Stop("Delta snapshot before any full snapshot");
+				break;
+			}
+
 			// process delta snapshot
-			CSnapshot *pNewsnap = (CSnapshot *)m_aSnapshot;
-			DataSize = m_pSnapshotDelta->UnpackDelta((CSnapshot *)m_aLastSnapshotData, pNewsnap, m_aChunkData, DataSize, IsSixup());
+			DataSize = SnapshotDelta()->UnpackDelta(m_LastSnapshotData.AsSnapshot(), &m_Snapshot, m_aChunkData, DataSize);
 
 			if(DataSize < 0)
 			{
-				if(m_pConsole)
-				{
-					char aBuf[64];
-					str_format(aBuf, sizeof(aBuf), "Error unpacking snapshot delta. DataSize=%d", DataSize);
-					m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "demo_player", aBuf);
-				}
+				log_debug_color(DEMO_PRINT_COLOR, "demo_player", "Error unpacking snapshot delta. DataSize=%d", DataSize);
 			}
-			else if(!pNewsnap->IsValid(DataSize))
+			else if(!m_Snapshot.AsSnapshot()->IsValid(DataSize))
 			{
-				if(m_pConsole)
-				{
-					char aBuf[64];
-					str_format(aBuf, sizeof(aBuf), "Snapshot delta invalid. DataSize=%d", DataSize);
-					m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "demo_player", aBuf);
-				}
+				log_debug_color(DEMO_PRINT_COLOR, "demo_player", "Snapshot delta invalid. DataSize=%d", DataSize);
 			}
 			else
 			{
 				if(m_pListener)
-					m_pListener->OnDemoPlayerSnapshot(m_aSnapshot, DataSize);
+					m_pListener->OnDemoPlayerSnapshot(m_Snapshot.AsSnapshot(), DataSize);
 
 				m_LastSnapshotDataSize = DataSize;
-				mem_copy(m_aLastSnapshotData, m_aSnapshot, DataSize);
+				mem_copy(&m_LastSnapshotData, &m_Snapshot, DataSize);
 				GotSnapshot = true;
 			}
 		}
@@ -759,19 +722,14 @@ void CDemoPlayer::DoTick()
 			CSnapshot *pSnap = (CSnapshot *)m_aChunkData;
 			if(!pSnap->IsValid(DataSize))
 			{
-				if(m_pConsole)
-				{
-					char aBuf[64];
-					str_format(aBuf, sizeof(aBuf), "Snapshot invalid. DataSize=%d", DataSize);
-					m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "demo_player", aBuf);
-				}
+				log_debug_color(DEMO_PRINT_COLOR, "demo_player", "Snapshot invalid. DataSize=%d", DataSize);
 			}
 			else
 			{
 				GotSnapshot = true;
 
 				m_LastSnapshotDataSize = DataSize;
-				mem_copy(m_aLastSnapshotData, m_aChunkData, DataSize);
+				mem_copy(&m_LastSnapshotData, m_aChunkData, DataSize);
 				if(m_pListener)
 					m_pListener->OnDemoPlayerSnapshot(m_aChunkData, DataSize);
 			}
@@ -782,7 +740,7 @@ void CDemoPlayer::DoTick()
 			if(!GotSnapshot && m_pListener && m_LastSnapshotDataSize != -1)
 			{
 				GotSnapshot = true;
-				m_pListener->OnDemoPlayerSnapshot(m_aLastSnapshotData, m_LastSnapshotDataSize);
+				m_pListener->OnDemoPlayerSnapshot(&m_LastSnapshotData, m_LastSnapshotDataSize);
 			}
 
 			// check the remaining types
@@ -818,20 +776,14 @@ void CDemoPlayer::Unpause()
 #endif
 }
 
-int CDemoPlayer::Load(class IStorage *pStorage, class IConsole *pConsole, const char *pFilename, int StorageType)
+int CDemoPlayer::Load(IStorage *pStorage, const char *pFilename, int StorageType)
 {
-	dbg_assert(m_File == 0, "Demo player already playing");
+	dbg_assert(m_File == nullptr, "Demo player already playing");
 
-	m_pConsole = pConsole;
 	str_copy(m_aFilename, pFilename);
 	str_copy(m_aErrorMessage, "");
 
-	if(m_pConsole)
-	{
-		char aBuf[32 + IO_MAX_PATH_LENGTH];
-		str_format(aBuf, sizeof(aBuf), "Loading demo '%s'", pFilename);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_player", aBuf);
-	}
+	log_info_color(DEMO_PRINT_COLOR, "demo_player", "Loading demo '%s'", pFilename);
 
 	// clear the playback info
 	mem_zero(&m_Info, sizeof(m_Info));
@@ -844,7 +796,7 @@ int CDemoPlayer::Load(class IStorage *pStorage, class IConsole *pConsole, const 
 	m_SpeedIndex = DEMO_SPEED_INDEX_DEFAULT;
 	m_LastSnapshotDataSize = -1;
 
-	if(!GetDemoInfo(pStorage, m_pConsole, pFilename, StorageType, &m_Info.m_Header, &m_Info.m_TimelineMarkers, &m_MapInfo, &m_File, m_aErrorMessage, sizeof(m_aErrorMessage)))
+	if(!GetDemoInfo(pStorage, pFilename, StorageType, &m_Info.m_Header, &m_Info.m_TimelineMarkers, &m_MapInfo, &m_File, m_aErrorMessage, sizeof(m_aErrorMessage)))
 	{
 		str_copy(m_aFilename, "");
 		return -1;
@@ -859,6 +811,14 @@ int CDemoPlayer::Load(class IStorage *pStorage, class IConsole *pConsole, const 
 		return -1;
 	}
 
+	// Scan the file for interesting points
+	if(ScanFile() == EScanFileResult::ERROR_UNRECOVERABLE)
+	{
+		Stop("Error scanning demo file");
+		return -1;
+	}
+	m_Info.m_LiveStateUpdating = true;
+
 	if(m_Info.m_Header.m_Version > gs_OldVersion)
 	{
 		// get timeline markers
@@ -867,16 +827,13 @@ int CDemoPlayer::Load(class IStorage *pStorage, class IConsole *pConsole, const 
 		for(int i = 0; i < m_Info.m_Info.m_NumTimelineMarkers; i++)
 		{
 			m_Info.m_Info.m_aTimelineMarkers[i] = bytes_be_to_uint(m_Info.m_TimelineMarkers.m_aTimelineMarkers[i]);
+			if(!in_range(m_Info.m_Info.m_aTimelineMarkers[i], m_Info.m_Info.m_FirstTick, m_Info.m_Info.m_LastTick))
+			{
+				Stop("Invalid demo timeline marker");
+				return -1;
+			}
 		}
 	}
-
-	// Scan the file for interesting points
-	if(ScanFile() == EScanFileResult::ERROR_UNRECOVERABLE)
-	{
-		Stop("Error scanning demo file");
-		return -1;
-	}
-	m_Info.m_LiveStateUpdating = true;
 
 	// reset slice markers
 	g_Config.m_ClDemoSliceBegin = -1;
@@ -886,17 +843,17 @@ int CDemoPlayer::Load(class IStorage *pStorage, class IConsole *pConsole, const 
 	return 0;
 }
 
-unsigned char *CDemoPlayer::GetMapData(class IStorage *pStorage)
+unsigned char *CDemoPlayer::GetMapData(IStorage *pStorage)
 {
 	if(!m_MapInfo.m_Size)
 		return nullptr;
 
 	const int64_t CurSeek = io_tell(m_File);
-	if(CurSeek < 0 || io_seek(m_File, m_MapOffset, IOSEEK_START) != 0)
+	if(CurSeek < 0 || io_seek(m_File, m_MapOffset, EIoSeekOrigin::START) != 0)
 		return nullptr;
 	unsigned char *pMapData = (unsigned char *)malloc(m_MapInfo.m_Size);
 	if(io_read(m_File, pMapData, m_MapInfo.m_Size) != m_MapInfo.m_Size ||
-		io_seek(m_File, CurSeek, IOSEEK_START) != 0)
+		io_seek(m_File, CurSeek, EIoSeekOrigin::START) != 0)
 	{
 		free(pMapData);
 		return nullptr;
@@ -904,7 +861,7 @@ unsigned char *CDemoPlayer::GetMapData(class IStorage *pStorage)
 	return pMapData;
 }
 
-bool CDemoPlayer::ExtractMap(class IStorage *pStorage)
+bool CDemoPlayer::ExtractMap(IStorage *pStorage)
 {
 	unsigned char *pMapData = GetMapData(pStorage);
 	if(!pMapData)
@@ -952,9 +909,9 @@ int64_t CDemoPlayer::Time()
 		if(!m_WasRecording)
 		{
 			m_WasRecording = true;
-			m_Info.m_LastUpdate = IVideo::Time();
+			m_Info.m_LastUpdate = IVideo::Current()->Time();
 		}
-		return IVideo::Time();
+		return IVideo::Current()->Time();
 	}
 	else
 	{
@@ -1080,7 +1037,7 @@ bool CDemoPlayer::SetPos(int WantedTick)
 		m_Info.m_Info.m_CurrentTick < m_vKeyFrames[KeyFrame].m_Tick || // we are before the wanted KeyFrame OR
 		(KeyFrame != m_vKeyFrames.size() - 1 && m_Info.m_Info.m_CurrentTick >= m_vKeyFrames[KeyFrame + 1].m_Tick)) // we are after the wanted KeyFrame
 	{
-		if(io_seek(m_File, m_vKeyFrames[KeyFrame].m_Filepos, IOSEEK_START) != 0)
+		if(io_seek(m_File, m_vKeyFrames[KeyFrame].m_Filepos, EIoSeekOrigin::START) != 0)
 		{
 			Stop("Error seeking keyframe position");
 			return false;
@@ -1264,14 +1221,13 @@ void CDemoPlayer::Stop(const char *pErrorMessage)
 	if(!m_File)
 		return;
 
-	if(m_pConsole)
+	if(pErrorMessage[0] == '\0')
 	{
-		char aBuf[256];
-		if(pErrorMessage[0] == '\0')
-			str_copy(aBuf, "Stopped playback");
-		else
-			str_format(aBuf, sizeof(aBuf), "Stopped playback due to error: %s", pErrorMessage);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "demo_player", aBuf);
+		log_info_color(DEMO_PRINT_COLOR, "demo_player", "Stopped playback");
+	}
+	else
+	{
+		log_error_color(DEMO_PRINT_COLOR, "demo_player", "Stopped playback due to error: %s", pErrorMessage);
 	}
 
 	io_close(m_File);
@@ -1283,10 +1239,10 @@ void CDemoPlayer::Stop(const char *pErrorMessage)
 
 void CDemoPlayer::GetDemoName(char *pBuffer, size_t BufferSize) const
 {
-	IStorage::StripPathAndExtension(m_aFilename, pBuffer, BufferSize);
+	fs_split_file_extension(fs_filename(m_aFilename), pBuffer, BufferSize);
 }
 
-bool CDemoPlayer::GetDemoInfo(IStorage *pStorage, IConsole *pConsole, const char *pFilename, int StorageType, CDemoHeader *pDemoHeader, CTimelineMarkers *pTimelineMarkers, CMapInfo *pMapInfo, IOHANDLE *pFile, char *pErrorMessage, size_t ErrorMessageSize) const
+bool CDemoPlayer::GetDemoInfo(IStorage *pStorage, const char *pFilename, int StorageType, CDemoHeader *pDemoHeader, CTimelineMarkers *pTimelineMarkers, CMapInfo *pMapInfo, IOHANDLE *pFile, char *pErrorMessage, size_t ErrorMessageSize) const
 {
 	mem_zero(pDemoHeader, sizeof(CDemoHeader));
 	mem_zero(pTimelineMarkers, sizeof(CTimelineMarkers));
@@ -1354,11 +1310,8 @@ bool CDemoPlayer::GetDemoInfo(IStorage *pStorage, IConsole *pConsole, const char
 		else
 		{
 			// This hopes whatever happened during the version increment didn't add something here
-			if(pConsole)
-			{
-				pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "demo_player", "Demo version incremented, but not by DDNet");
-			}
-			if(io_seek(File, -(int64_t)ExtensionUuidSize, IOSEEK_CUR) != 0)
+			log_warn_color(DEMO_PRINT_COLOR, "demo_player", "Demo version incremented, but not by DDNet");
+			if(io_seek(File, -(int64_t)ExtensionUuidSize, EIoSeekOrigin::CURRENT) != 0)
 			{
 				if(pErrorMessage != nullptr)
 					str_copy(pErrorMessage, "Error rewinding SHA256 extension UUID", ErrorMessageSize);
@@ -1413,17 +1366,17 @@ public:
 	}
 };
 
-void CDemoEditor::Init(class CSnapshotDelta *pSnapshotDelta, class IConsole *pConsole, class IStorage *pStorage)
+void CDemoEditor::Init(CSnapshotDelta *pSnapshotDelta, CSnapshotDelta *pSnapshotDeltaSixup, IStorage *pStorage)
 {
 	m_pSnapshotDelta = pSnapshotDelta;
-	m_pConsole = pConsole;
+	m_pSnapshotDeltaSixup = pSnapshotDeltaSixup;
 	m_pStorage = pStorage;
 }
 
 bool CDemoEditor::Slice(const char *pDemo, const char *pDst, int StartTick, int EndTick, DEMOFUNC_FILTER pfnFilter, void *pUser)
 {
-	CDemoPlayer DemoPlayer(m_pSnapshotDelta, false);
-	if(DemoPlayer.Load(m_pStorage, m_pConsole, pDemo, IStorage::TYPE_ALL_OR_ABSOLUTE) == -1)
+	CDemoPlayer DemoPlayer(m_pSnapshotDelta, m_pSnapshotDeltaSixup, false);
+	if(DemoPlayer.Load(m_pStorage, pDemo, IStorage::TYPE_ALL_OR_ABSOLUTE) == -1)
 		return false;
 
 	const CMapInfo *pMapInfo = DemoPlayer.GetMapInfo();
@@ -1443,9 +1396,9 @@ bool CDemoEditor::Slice(const char *pDemo, const char *pDst, int StartTick, int 
 		return false;
 	}
 
-	CDemoRecorder DemoRecorder(m_pSnapshotDelta);
+	CDemoRecorder DemoRecorder(DemoPlayer.IsSixup() ? m_pSnapshotDeltaSixup : m_pSnapshotDelta);
 	unsigned char *pMapData = DemoPlayer.GetMapData(m_pStorage);
-	const int Result = DemoRecorder.Start(m_pStorage, m_pConsole, pDst, pInfo->m_Header.m_aNetversion, pMapInfo->m_aName, Sha256.value(), pMapInfo->m_Crc, pInfo->m_Header.m_aType, pMapInfo->m_Size, pMapData, nullptr, pfnFilter, pUser) == -1;
+	const int Result = DemoRecorder.Start(m_pStorage, pDst, pInfo->m_Header.m_aNetversion, pMapInfo->m_aName, Sha256.value(), pMapInfo->m_Crc, pInfo->m_Header.m_aType, pMapInfo->m_Size, pMapData, nullptr, pfnFilter, pUser) == -1;
 	free(pMapData);
 	if(Result != 0)
 	{

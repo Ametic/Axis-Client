@@ -2,8 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "menus_settings_controls.h"
 
-#include <base/math.h>
-#include <base/system.h>
+#include <base/str.h>
 
 #include <engine/font_icons.h>
 #include <engine/graphics.h>
@@ -19,6 +18,7 @@
 #include <game/client/ui_scrollregion.h>
 #include <game/localization.h>
 
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <vector>
@@ -40,8 +40,7 @@ bool CBindSlotUiElement::operator<(const CBindSlotUiElement &Other) const
 	{
 		return true;
 	}
-	return m_Bind.m_ModifierMask < Other.m_Bind.m_ModifierMask ||
-	       m_Bind.m_Key < Other.m_Bind.m_Key;
+	return (m_Bind.m_ModifierMask != Other.m_Bind.m_ModifierMask) ? (m_Bind.m_ModifierMask < Other.m_Bind.m_ModifierMask) : (m_Bind.m_Key < Other.m_Bind.m_Key);
 }
 
 std::vector<CBindSlotUiElement>::iterator CBindOption::GetBindSlotElement(const CBindSlot &BindSlot)
@@ -94,6 +93,8 @@ void CMenusSettingsControls::OnInterfacesInit(CGameClient *pClient)
 		{EBindOptionGroup::DUMMY, Localizable("Toggle dummy"), "toggle cl_dummy 0 1"},
 		{EBindOptionGroup::DUMMY, Localizable("Dummy copy"), "toggle cl_dummy_copy_moves 0 1"},
 		{EBindOptionGroup::DUMMY, Localizable("Hammerfly dummy"), "toggle cl_dummy_hammer 0 1"},
+		{EBindOptionGroup::PRACTICE, Localizable("Teleport to cursor"), "tp_to_cursor"},
+		{EBindOptionGroup::PRACTICE, Localizable("Teleport dummy to cursor"), "tp_dummy_to_cursor"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Emoticon"), "+emote"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Spectator mode"), "+spectate"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Spectate next"), "spectate_next"},
@@ -173,7 +174,7 @@ void CMenusSettingsControls::Render(CUIRect MainView)
 
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = 6.0f * BUTTON_HEIGHT;
-	ScrollParams.m_Flags = CScrollRegionParams::FLAG_CONTENT_STATIC_WIDTH;
+	ScrollParams.m_ForceShowScrollbar = true;
 	m_SettingsScrollRegion.Begin(&MainView, &ScrollParams);
 
 	CUIRect LeftColumn, RightColumn;
@@ -191,6 +192,7 @@ void CMenusSettingsControls::Render(CUIRect MainView)
 	RenderSettingsBindsBlock(EBindOptionGroup::VOTING, &RightColumn, Localize("Voting"));
 	RenderSettingsBindsBlock(EBindOptionGroup::CHAT, &RightColumn, Localize("Chat"));
 	RenderSettingsBindsBlock(EBindOptionGroup::DUMMY, &RightColumn, Localize("Dummy"));
+	RenderSettingsBindsBlock(EBindOptionGroup::PRACTICE, &RightColumn, Localize("Practice"));
 	RenderSettingsBindsBlock(EBindOptionGroup::MISCELLANEOUS, &RightColumn, Localize("Miscellaneous"));
 	if(std::any_of(m_vBindOptions.begin(), m_vBindOptions.end(), [](const CBindOption &Option) { return Option.m_Group == EBindOptionGroup::CUSTOM; }))
 	{
@@ -503,12 +505,14 @@ void CMenusSettingsControls::RenderSettingsBinds(EBindOptionGroup Group, CUIRect
 		{
 			LabelProps.SetColor(ColorRGBA(0.4f, 0.4f, 0.9f, 1.0f));
 		}
+		LabelProps.m_pTooltipId = BindOption.m_Group == EBindOptionGroup::CUSTOM ? &BindOption.m_TooltipButtonId : nullptr;
 		const CLabelResult LabelResult = Ui()->DoLabel(&Label, BindOption.m_Group == EBindOptionGroup::CUSTOM ? BindOption.m_Command.c_str() : Localize(BindOption.m_pLabel),
 			FONT_SIZE, TEXTALIGN_ML, LabelProps);
 		if(BindOption.m_Group != EBindOptionGroup::CUSTOM || LabelResult.m_Truncated)
 		{
 			Ui()->DoButtonLogic(&BindOption.m_TooltipButtonId, 0, &Label, BUTTONFLAG_NONE);
-			GameClient()->m_Tooltips.DoToolTip(&BindOption.m_TooltipButtonId, &Label, BindOption.m_Command.c_str());
+			if(BindOption.m_Group != EBindOptionGroup::CUSTOM)
+				Ui()->DoToolTip(&BindOption.m_TooltipButtonId, &Label, BindOption.m_Command.c_str(), -1.0f);
 		}
 
 		for(CBindSlotUiElement &CurrentBind : BindOption.m_vCurrentBinds)
@@ -560,21 +564,55 @@ void CMenusSettingsControls::RenderSettingsBinds(EBindOptionGroup Group, CUIRect
 
 float CMenusSettingsControls::MeasureSettingsMouseHeight() const
 {
-	return 2.0f * BUTTON_HEIGHT + BUTTON_SPACING;
+	float Size = 3.0 * BUTTON_HEIGHT + 2.0f * BUTTON_SPACING;
+	if(g_Config.m_ClDecoupleMouseSens)
+		Size = 5.0f * BUTTON_HEIGHT + 2.0f * BUTTON_SPACING;
+	return Size;
 }
 
 void CMenusSettingsControls::RenderSettingsMouse(CUIRect View)
 {
 	CUIRect Button;
 	View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
-	Ui()->DoScrollbarOption(&g_Config.m_InpMousesens, &g_Config.m_InpMousesens, &Button, Localize("Ingame mouse sens."), 1, 500,
-		&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE);
 
+	if(GameClient()->m_Menus.DoButton_CheckBox(&g_Config.m_ClDecoupleMouseSens, Localize("Decouple mouse sens."), g_Config.m_ClDecoupleMouseSens, &Button))
+	{
+		g_Config.m_ClDecoupleMouseSens ^= 1;
+	}
 	View.HSplitTop(BUTTON_SPACING, nullptr, &View);
 
-	View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
-	Ui()->DoScrollbarOption(&g_Config.m_UiMousesens, &g_Config.m_UiMousesens, &Button, Localize("UI mouse sens."), 1, 500,
-		&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE);
+	if(g_Config.m_ClDecoupleMouseSens)
+	{
+		View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
+		Ui()->DoScrollbarOption(&g_Config.m_ClMouseSensXIngame, &g_Config.m_ClMouseSensXIngame, &Button, Localize("Ingame mouse sens. x"), 1, 500,
+			&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE);
+
+		View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
+		Ui()->DoScrollbarOption(&g_Config.m_ClMouseSensYIngame, &g_Config.m_ClMouseSensYIngame, &Button, Localize("Ingame mouse sens. y"), 1, 500,
+			&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE);
+
+		View.HSplitTop(BUTTON_SPACING, nullptr, &View);
+
+		View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
+		Ui()->DoScrollbarOption(&g_Config.m_ClMouseSensXUi, &g_Config.m_ClMouseSensXUi, &Button, Localize("UI mouse sens. x"), 1, 500,
+			&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE);
+
+		View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
+		Ui()->DoScrollbarOption(&g_Config.m_ClMouseSensYUi, &g_Config.m_ClMouseSensYUi, &Button, Localize("UI mouse sens. y"), 1, 500,
+			&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE);
+	}
+	else
+	{
+		View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
+		Ui()->DoScrollbarOption(&g_Config.m_InpMousesens, &g_Config.m_InpMousesens, &Button, Localize("Ingame mouse sens."), 1, 500,
+			&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE);
+
+		View.HSplitTop(BUTTON_SPACING, nullptr, &View);
+
+		View.HSplitTop(BUTTON_HEIGHT, &Button, &View);
+		Ui()->DoScrollbarOption(&g_Config.m_UiMousesens, &g_Config.m_UiMousesens, &Button, Localize("UI mouse sens."), 1, 500,
+			&CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE);
+	}
 }
 
 float CMenusSettingsControls::MeasureSettingsJoystickHeight() const
@@ -707,7 +745,7 @@ void CMenusSettingsControls::RenderJoystickAxisPicker(CUIRect View)
 	Ui()->DoLabel(&AimBind, Localize("Aim bind"), FONT_SIZE, TEXTALIGN_MC);
 
 	IInput::IJoystick *pJoystick = Input()->GetActiveJoystick();
-	for(int i = 0; i < std::min<int>(pJoystick->GetNumAxes(), NUM_JOYSTICK_AXES); i++)
+	for(int i = 0; i < std::min(pJoystick->GetNumAxes(), (int)NUM_JOYSTICK_AXES); i++)
 	{
 		View.HSplitTop(BUTTON_SPACING, nullptr, &View);
 		View.HSplitTop(BUTTON_HEIGHT, &Row, &View);
@@ -777,6 +815,13 @@ void CMenusSettingsControls::RenderJoystickBar(const CUIRect *pRect, float Curre
 void CMenus::ResetSettingsControls()
 {
 	GameClient()->m_Binds.SetDefaults();
+
+	// EClient
+	g_Config.m_ClDecoupleMouseSens = 0;
+	g_Config.m_ClMouseSensXIngame = 200;
+	g_Config.m_ClMouseSensYIngame = 200;
+	g_Config.m_ClMouseSensXUi = 200;
+	g_Config.m_ClMouseSensYUi = 200;
 
 	g_Config.m_InpMousesens = 200;
 	g_Config.m_UiMousesens = 200;

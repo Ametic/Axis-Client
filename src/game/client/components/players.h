@@ -10,12 +10,14 @@
 class CPlayers : public CComponent
 {
 	friend class CGhost;
+	friend class CLocalPractice; // EClient
 
 	void RenderHand6(const CTeeRenderInfo *pInfo, vec2 HandPos, float HandAngle, float Alpha);
 	void RenderHand7(const CTeeRenderInfo *pInfo, vec2 HandPos, float HandAngle, float Alpha);
 
 	void RenderHand(const CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset, float Alpha);
 	void RenderPlayer(
+		const CScreenRect &ScreenRect,
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
 		const CTeeRenderInfo *pRenderInfo,
@@ -30,6 +32,7 @@ class CPlayers : public CComponent
 		float Intra = 0.f);
 
 	void RenderHook(
+		const CScreenRect &ScreenRect,
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
 		const CTeeRenderInfo *pRenderInfo,
@@ -37,11 +40,29 @@ class CPlayers : public CComponent
 		float Intra = 0.f);
 
 	void RenderHookCollLine(
+		const CScreenRect &ScreenRect,
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
 		int ClientId);
 	bool IsPlayerInfoAvailable(int ClientId) const;
 
+public:
+	// EClient: the skin lookups shared by every tee in a frame. They are by name and do not depend
+	// on the client, so they are done once and handed down rather than repeated per tee.
+	class CFrameSkins
+	{
+	public:
+		const CSkin *m_pOwnTee = nullptr;
+		const CSkin *m_pNinja = nullptr;
+		const CSkin *m_pSweat = nullptr;
+	};
+	CFrameSkins LookupFrameSkins() const;
+
+	// EClient: builds one tee's render info, out of whatever the client data currently says about
+	// it -- which is how the same call serves a practice tee and the real tee behind it.
+	void BuildTeeRenderInfo(int ClientId, const CFrameSkins &Skins, CTeeRenderInfo &Info) const;
+
+private:
 	int m_WeaponEmoteQuadContainerIndex;
 	int m_aWeaponSpriteMuzzleQuadContainerIndex[NUM_WEAPONS];
 

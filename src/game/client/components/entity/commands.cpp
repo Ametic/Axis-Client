@@ -1,14 +1,14 @@
-﻿
+
 #include "entity.h"
 
 #include <base/log.h>
 #include <base/str.h>
-#include <base/system.h>
 
 #include <engine/client.h>
 #include <engine/client/enums.h>
 #include <engine/config.h>
 #include <engine/console.h>
+#include <engine/external/tinyexpr.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 
@@ -17,6 +17,8 @@
 #include <game/client/components/tclient/warlist.h>
 #include <game/client/gameclient.h>
 
+#include <cinttypes>
+#include <cstdint>
 #include <cstdlib>
 #include <vector>
 
@@ -189,6 +191,38 @@ void CEClient::ConViewLink(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Client()->ViewLink(pResult->GetString(0));
 }
 
+void CEClient::ConSetDeathCounter(IConsole::IResult *pResult, void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+	pSelf->m_DeathCounter = pResult->GetInteger64(0);
+}
+
+void CEClient::ConSetPlaytime(IConsole::IResult *pResult, void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+	pSelf->m_Playtime = pResult->GetInteger64(0);
+}
+
+void CEClient::ConDumpVotes(IConsole::IResult *pResult, void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+
+	int Page = pResult->NumArguments() > 0 ? pResult->GetInteger(0) : 0;
+	static const int s_EntriesPerPage = 20;
+	const int Start = Page * s_EntriesPerPage;
+	const int End = (Page + 1) * s_EntriesPerPage;
+
+	int Count = 0;
+	for(const CVoteOptionClient *pOption = pSelf->GameClient()->m_Voting.FirstOption(); pOption; pOption = pOption->m_pNext, Count++)
+	{
+		if(Count < Start || Count >= End)
+		{
+			continue;
+		}
+		log_info("votes", "%s", pOption->m_aDescription);
+	}
+}
+
 void CEClient::RestoreSkin()
 {
 	if(g_Config.m_ClDummy)
@@ -281,7 +315,10 @@ void CEClient::OnlineInfo()
 			bool Muted = WarData.m_IsMuted;
 
 			if(Muted && WarlistType == 1)
+			{
 				Mutes++;
+				HasAny = true;
+			}
 			if(Matches)
 			{
 				Amount++;
@@ -319,8 +356,33 @@ void CEClient::OnlineInfo()
 		Info.m_ActiveAmount = AmountActive;
 		OnlineInfos.push_back(Info);
 	}
-	if(Mutes > 0)
-		HasAny = true;
+
+	if(g_Config.m_ClClientUsersOnlineInfo)
+	{
+		int Amount = 0;
+		int AmountActive = 0;
+		for(const CGameClient::CClientData &Client : GameClient()->m_aClients)
+		{
+			if(Client.m_IsEntityClientUser)
+			{
+				Amount++;
+				if(!Client.m_Afk)
+					AmountActive++;
+			}
+		}
+		if(Amount > 0)
+		{
+			COnlineInfo Info;
+			int NumActive = Amount - AmountActive;
+			char Label[16] = "";
+			str_format(Label, sizeof(Label), "entity user%s", NumActive != 1 ? "s" : "");
+			str_copy(Info.m_aLabel, Label, sizeof(Info.m_aLabel));
+			Info.m_Amount = Amount;
+			Info.m_ActiveAmount = AmountActive;
+			OnlineInfos.push_back(Info);
+			HasAny = true;
+		}
+	}
 
 	if(!HasAny)
 	{
@@ -371,8 +433,6 @@ void CEClient::PlayerInfo(const char *pName)
 	if(Id >= 0)
 	{
 		GameClient()->ClientMessage("╭──                  Player Info");
-		GameClient()->ClientMessage("│");
-
 		str_format(aBuf, sizeof(aBuf), "│ Name: %s", pName);
 		GameClient()->ClientMessage(aBuf);
 		str_format(aBuf, sizeof(aBuf), "│ Clan: %s", GameClient()->m_aClients[Id].m_aClan);
@@ -384,18 +444,16 @@ void CEClient::PlayerInfo(const char *pName)
 		str_format(aBuf, sizeof(aBuf), "│ Feet Color: %d", GameClient()->m_aClients[Id].m_ColorFeet);
 		GameClient()->ClientMessage(aBuf);
 		GameClient()->ClientMessage("│");
-
 		str_format(aBuf, sizeof(aBuf), "│ Skin Name: %s", GameClient()->m_aClients[Id].m_aSkinName);
 		GameClient()->ClientMessage(aBuf);
 		GameClient()->ClientMessage("│");
-
 		if(GameClient()->m_aClients[Id].m_AuthLevel > 0)
 			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %d", GameClient()->m_aClients[Id].m_AuthLevel);
 		else
 			str_copy(aBuf, "│ Authed: No");
 		GameClient()->ClientMessage(aBuf);
-
-		GameClient()->ClientMessage("│");
+		if(GameClient()->m_aClients[Id].m_IsEntityClientUser)
+			GameClient()->ClientMessage("│ Entity Client User: Yes");
 		GameClient()->ClientMessage("╰───────────────────────");
 	}
 	else
@@ -449,6 +507,16 @@ void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
 	exit(666);
 }
 
+void CEClient::ConCalc(IConsole::IResult *pResult, void *pUserData)
+{
+	int Error = 0;
+	double Out = te_interp(pResult->GetString(0), &Error);
+	if(Out == NAN || Error != 0)
+		log_info("tclient", "Calc error: %d", Error);
+	else
+		log_info("tclient", "Calc result: %lf", Out);
+}
+
 void CEClient::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
@@ -457,19 +525,10 @@ void CEClient::OnConsoleInit()
 		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::ENTITY);
 
 	// Misc
+	Console()->Register("calc", "r[expression]", CFGFLAG_CLIENT, ConCalc, this, "Evaluate an expression");
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");
 	Console()->Register("onlineinfo", "", CFGFLAG_CLIENT, ConOnlineInfo, this, "Shows you how many people of default lists are on the current server");
-	Console()->Register("playerinfo", "s[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");
-
-	// Temporary Lists
-	//Console()->Register("addtempwar", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempWar, this, "temporary War");
-	//Console()->Register("deltempwar", "s[name]", CFGFLAG_CLIENT, ConUnTempWar, this, "remove temporary War");
-
-	//Console()->Register("addtemphelper", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempHelper, this, "temporary Helper");
-	//Console()->Register("deltemphelper", "s[name]", CFGFLAG_CLIENT, ConUnTempHelper, this, "remove temporary Helper");
-
-	//Console()->Register("addtempmute", "s[name]", CFGFLAG_CLIENT, ConTempMute, this, "temporary Mute");
-	//Console()->Register("deltempmute", "s[name]", CFGFLAG_CLIENT, ConUnTempMute, this, "remove temporary Mute");
+	Console()->Register("playerinfo", "r[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");
 
 	// Skin Saving/Restoing
 	Console()->Register("restoreskin", "", CFGFLAG_CLIENT, ConRestoreSkin, this, "Restore Your Saved Info");
@@ -490,6 +549,12 @@ void CEClient::OnConsoleInit()
 	Console()->Register("reply_last", "?r[message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
 	Console()->Register("specid", "i[id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
 	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Crash your own client");
+
+	Console()->Register("ec_self_murder_count", "l[amount]", CFGFLAG_CLIENT, ConSetDeathCounter, this, "Legacy alias for death_counter");
+	Console()->Register("playtime", "l[amount]", CFGFLAG_CLIENT, ConSetPlaytime, this, "Crash your own client");
+	Console()->Register("death_counter", "l[amount]", CFGFLAG_CLIENT, ConSetDeathCounter, this, "Crash your own client");
+
+	Console()->Register("dump_votes", "?i[offset]", CFGFLAG_CLIENT, ConDumpVotes, this, "Dump 20 votes with optional offset");
 
 	Console()->Chain("ec_fast_input", ConchainFastInputs, this);
 	Console()->Chain("ec_fast_input_amount", ConchainFastInputs, this);
@@ -513,7 +578,7 @@ void CEClient::ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData
 {
 	pfnCallback(pResult, pCallbackUserData);
 	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->Client()->DiscordRPCchange();
+	pSelf->Client()->DiscordRPCUpdate();
 }
 
 void CEClient::ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -543,6 +608,11 @@ void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 	CEClient *pThis = (CEClient *)pUserData;
 
 	char aBuf[128];
+
+	str_format(aBuf, sizeof(aBuf), "playtime %" PRIi64, pThis->m_Playtime);
+	pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
+	str_format(aBuf, sizeof(aBuf), "death_counter %" PRIi64, pThis->m_DeathCounter);
+	pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
 
 	str_format(aBuf, sizeof(aBuf), "server_rainbow_speed %d", pThis->m_RainbowSpeed);
 	pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);

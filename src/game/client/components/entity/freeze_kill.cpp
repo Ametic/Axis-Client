@@ -145,21 +145,17 @@ bool CFreezeKill::HandleClients(int ClientId)
 {
 	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
 
-	CGameClient::CClientData OtherTee = GameClient()->m_aClients[ClientId];
+	const CGameClient::CClientData &OtherTee = GameClient()->m_aClients[ClientId];
 
 	bool Solo = OtherTee.m_Solo;
 	bool Teammate = GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[2];
 	bool SameTeam = GameClient()->m_Teams.SameTeam(ClientId, LocalId);
 
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	float BorderBuffer = 128;
-	ScreenX0 -= BorderBuffer;
-	ScreenX1 += BorderBuffer;
-	ScreenY0 -= BorderBuffer;
-	ScreenY1 += BorderBuffer;
+	CScreenRect ScreenRect = Graphics()->GetScreen();
+	constexpr float BorderBuffer = 128.0f;
+	ScreenRect.Expand(BorderBuffer);
 
-	const bool InRange = in_range(OtherTee.m_RenderPos.x, ScreenX0, ScreenX1) && in_range(OtherTee.m_RenderPos.y, ScreenY0, ScreenY1);
+	const bool InRange = ScreenRect.Inside(OtherTee.m_RenderPos);
 
 	if(Teammate && SameTeam && !Solo)
 	{

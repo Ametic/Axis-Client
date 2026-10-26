@@ -16,7 +16,7 @@ CEnvelopeState::CEnvelopeState(IMap *pMap, bool OnlineOnly) :
 	m_OnlineOnly = OnlineOnly;
 }
 
-void CEnvelopeState::EnvelopeEval(int TimeOffsetMillis, int EnvelopeIndex, ColorRGBA &Result, size_t Channels)
+void CEnvelopeState::EnvelopeEval(int TimeOffsetMillis, int EnvelopeIndex, ColorRGBA &Result, size_t Channels) const
 {
 	using namespace std::chrono;
 
@@ -31,7 +31,7 @@ void CEnvelopeState::EnvelopeEval(int TimeOffsetMillis, int EnvelopeIndex, Color
 	const CMapItemEnvelope *pItem = (CMapItemEnvelope *)m_pMap->GetItem(EnvelopeStart + EnvelopeIndex);
 	if(pItem->m_Channels <= 0)
 		return;
-	Channels = minimum<size_t>(Channels, pItem->m_Channels, CEnvPoint::MAX_CHANNELS);
+	Channels = std::min({Channels, (size_t)pItem->m_Channels, (size_t)CEnvPoint::MAX_CHANNELS});
 
 	m_pEnvelopePoints->SetPointsRange(pItem->m_StartPoint, pItem->m_NumPoints);
 	if(m_pEnvelopePoints->NumPoints() == 0)
@@ -64,6 +64,10 @@ void CEnvelopeState::EnvelopeEval(int TimeOffsetMillis, int EnvelopeIndex, Color
 			{
 				EnvelopeTick = Client()->PredGameTick(g_Config.m_ClDummy) - 1 - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick;
 				TickRatio = (double)Client()->PredIntraGameTick(g_Config.m_ClDummy);
+
+				// EClient: Fast Input changes local tee rendering to be "in the future" basically, so offset quads as well.
+				if(g_Config.m_EcFastInput)
+					TickRatio += GameClient()->GetFastInputOffsetTicks();
 			}
 			Time = duration_cast<nanoseconds>(TickRatio * s_NanosPerTick) + EnvelopeTick * s_NanosPerTick;
 		}

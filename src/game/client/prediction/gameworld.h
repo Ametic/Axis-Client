@@ -12,6 +12,7 @@
 class CCollision;
 class CCharacter;
 class CEntity;
+class CQuadZones;
 class CMapBugs;
 
 class CGameWorld
@@ -37,7 +38,7 @@ public:
 
 	CGameWorld();
 	~CGameWorld();
-	void Init(CCollision *pCollision, CTuningParams *pTuningList, const CMapBugs *pMapBugs);
+	void Init(CCollision *pCollision, CTuningParams *pTuningList, const CMapBugs *pMapBugs, CQuadZones *pQuadZones);
 
 	CEntity *FindFirst(int Type);
 	CEntity *FindLast(int Type);
@@ -60,6 +61,9 @@ public:
 	int GameTickSpeed() const { return SERVER_TICK_SPEED; }
 	const CCollision *Collision() const { return m_pCollision; }
 	CCollision *Collision() { return m_pCollision; }
+	// <FoxNet
+	CQuadZones *QuadZones() { return m_pQuadZones; }
+	// FoxNet>
 	CTeamsCore *Teams() { return &m_Teams; }
 	std::vector<SSwitchers> &Switchers() { return m_Core.m_vSwitchers; }
 	CEntity *GetEntity(int Id, int EntityType);
@@ -84,6 +88,7 @@ public:
 		bool m_BugDDRaceInput;
 		bool m_NoWeakHookAndBounce;
 		bool m_PredictEvents;
+		bool m_OldLaser;
 	} m_WorldConfig;
 
 	bool m_IsValidCopy;
@@ -97,6 +102,7 @@ public:
 	void NetObjBegin(CTeamsCore Teams, int LocalClientId);
 	void NetCharAdd(int ObjId, CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtended, int GameTeam, bool IsLocal);
 	void NetObjAdd(int ObjId, int ObjType, const void *pObjData, const CNetObj_EntityEx *pDataEx);
+	void ResetDoorCollision();
 	void NetObjEnd();
 	void CopyWorld(CGameWorld *pFrom);
 	void CopyWorldClean(CGameWorld *pFrom); // TClient
@@ -149,6 +155,7 @@ private:
 	CCharacter *m_apCharacters[MAX_CLIENTS];
 
 	CCollision *m_pCollision;
+	CQuadZones *m_pQuadZones;
 	CTuningParams *m_pTuningList;
 	const CMapBugs *m_pMapBugs;
 };

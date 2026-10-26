@@ -1,6 +1,9 @@
+#include <base/dbg.h>
 #include <base/logger.h>
+#include <base/mem.h>
 #include <base/os.h>
-#include <base/system.h>
+#include <base/str.h>
+#include <base/time.h>
 
 #include <engine/client.h>
 #include <engine/shared/demo.h>
@@ -12,7 +15,7 @@
 
 #include <memory>
 
-static const char *TOOL_NAME = "demo_extract_chat";
+static constexpr const char *const TOOL_NAME = "demo_extract_chat";
 
 class CClientSnapshotHandler
 {
@@ -23,21 +26,21 @@ public:
 	};
 	CClientData m_aClients[MAX_CLIENTS];
 
-	char m_aaDemoSnapshotData[IClient::NUM_SNAPSHOT_TYPES][CSnapshot::MAX_SIZE];
+	CSnapshotBuffer m_aDemoSnapshotData[IClient::NUM_SNAPSHOT_TYPES];
 	CSnapshot *m_apAltSnapshots[IClient::NUM_SNAPSHOT_TYPES];
 
 	CClientSnapshotHandler() :
 		m_aClients()
 	{
-		mem_zero(m_aaDemoSnapshotData, sizeof(m_aaDemoSnapshotData));
+		mem_zero(m_aDemoSnapshotData, sizeof(m_aDemoSnapshotData));
 
 		for(int SnapshotType = 0; SnapshotType < IClient::NUM_SNAPSHOT_TYPES; SnapshotType++)
 		{
-			m_apAltSnapshots[SnapshotType] = (CSnapshot *)&m_aaDemoSnapshotData[SnapshotType];
+			m_apAltSnapshots[SnapshotType] = m_aDemoSnapshotData[SnapshotType].AsSnapshot();
 		}
 	}
 
-	int UnpackAndValidateSnapshot(CSnapshot *pFrom, CSnapshot *pTo)
+	int UnpackAndValidateSnapshot(CSnapshot *pFrom, CSnapshotBuffer *pTo)
 	{
 		CUnpacker Unpacker;
 		CSnapshotBuilder Builder;
@@ -63,16 +66,15 @@ public:
 
 			Unpacker.Reset(pData, FromItemSize);
 
-			void *pRawObj = NetObjHandler.SecureUnpackObj(ItemType, &Unpacker);
-			if(!pRawObj)
+			void *pSecuredData = NetObjHandler.SecureUnpackObj(ItemType, &Unpacker);
+			if(!pSecuredData)
 				continue;
 
 			const int ItemSize = NetObjHandler.GetUnpackedObjSize(ItemType);
-			void *pObj = Builder.NewItem(ItemType, pFromItem->Id(), ItemSize);
-			if(!pObj)
+			if(!Builder.NewItem(ItemType, pFromItem->Id(), pSecuredData, ItemSize))
+			{
 				return -4;
-
-			mem_copy(pObj, pRawObj, ItemSize);
+			}
 		}
 
 		return Builder.Finish(pTo);
@@ -119,14 +121,13 @@ public:
 
 	void OnDemoPlayerSnapshot(void *pData, int Size)
 	{
-		unsigned char aAltSnapBuffer[CSnapshot::MAX_SIZE];
-		CSnapshot *pAltSnapBuffer = (CSnapshot *)aAltSnapBuffer;
-		const int AltSnapSize = UnpackAndValidateSnapshot((CSnapshot *)pData, pAltSnapBuffer);
+		CSnapshotBuffer AltSnapBuffer;
+		const int AltSnapSize = UnpackAndValidateSnapshot((CSnapshot *)pData, &AltSnapBuffer);
 		if(AltSnapSize < 0)
 			return;
 
 		std::swap(m_apAltSnapshots[IClient::SNAP_PREV], m_apAltSnapshots[IClient::SNAP_CURRENT]);
-		mem_copy(m_apAltSnapshots[IClient::SNAP_CURRENT], pAltSnapBuffer, AltSnapSize);
+		mem_copy(m_apAltSnapshots[IClient::SNAP_CURRENT], AltSnapBuffer.AsSnapshot(), AltSnapSize);
 
 		OnNewSnapshot();
 	}
@@ -206,12 +207,11 @@ public:
 	}
 };
 
-static int ExtractDemoChat(const char *pDemoFilePath, IStorage *pStorage)
+static int ExtractDemoChat(const char *pDemoFilePath, CSnapshotDelta *pSnapshotDelta, CSnapshotDelta *pSnapshotDeltaSixup, IStorage *pStorage)
 {
-	std::unique_ptr<CSnapshotDelta> pDemoSnapshotDelta = std::make_unique<CSnapshotDelta>();
-	CDemoPlayer DemoPlayer(pDemoSnapshotDelta.get(), false);
+	CDemoPlayer DemoPlayer(pSnapshotDelta, pSnapshotDeltaSixup, false);
 
-	if(DemoPlayer.Load(pStorage, nullptr, pDemoFilePath, IStorage::TYPE_ALL_OR_ABSOLUTE) == -1)
+	if(DemoPlayer.Load(pStorage, pDemoFilePath, IStorage::TYPE_ALL_OR_ABSOLUTE) == -1)
 	{
 		log_error(TOOL_NAME, "Demo file '%s' failed to load: %s", pDemoFilePath, DemoPlayer.ErrorMessage());
 		return -1;
@@ -239,13 +239,40 @@ static int ExtractDemoChat(const char *pDemoFilePath, IStorage *pStorage)
 	return 0;
 }
 
+static std::unique_ptr<CSnapshotDelta> CreateSnapshotDelta()
+{
+	std::unique_ptr<CSnapshotDelta> pResult = std::make_unique<CSnapshotDelta>();
+	CNetObjHandler NetObjHandler;
+	for(int i = 0; i < NUM_NETOBJTYPES; i++)
+	{
+		pResult->SetStaticsize(i, NetObjHandler.GetObjSize(i));
+	}
+	return pResult;
+}
+
+static std::unique_ptr<CSnapshotDelta> CreateSnapshotDeltaSixup()
+{
+	std::unique_ptr<CSnapshotDelta> pResult = std::make_unique<CSnapshotDelta>();
+	protocol7::CNetObjHandler NetObjHandler7;
+	// HACK: only set static size for items, which were available in the first 0.7 release
+	// so new items don't break the snapshot delta
+	static const int OLD_NUM_NETOBJTYPES = 23;
+	for(int i = 0; i < OLD_NUM_NETOBJTYPES; i++)
+	{
+		pResult->SetStaticsize(i, NetObjHandler7.GetObjSize(i));
+	}
+	return pResult;
+}
+
 int main(int argc, const char *argv[])
 {
 	// Create storage before setting logger to avoid log messages from storage creation
 	std::unique_ptr<IStorage> pStorage = CreateLocalStorage();
 
 	CCmdlineFix CmdlineFix(&argc, &argv);
-	log_set_global_logger_default();
+	ILogger *pDefaultLogger = log_logger_default().release();
+	pDefaultLogger->SetFilter(CLogFilter{LEVEL_WARN});
+	log_set_global_logger(pDefaultLogger);
 
 	if(!pStorage)
 	{
@@ -255,9 +282,12 @@ int main(int argc, const char *argv[])
 
 	if(argc != 2)
 	{
-		log_error(TOOL_NAME, "Usage: %s <demo_filename>", TOOL_NAME);
+		log_error(TOOL_NAME, "Usage: %s <demo_filename>", argc > 0 ? argv[0] : TOOL_NAME);
 		return -1;
 	}
 
-	return ExtractDemoChat(argv[1], pStorage.get());
+	std::unique_ptr<CSnapshotDelta> pSnapshotDelta = CreateSnapshotDelta();
+	std::unique_ptr<CSnapshotDelta> pSnapshotDeltaSixup = CreateSnapshotDeltaSixup();
+
+	return ExtractDemoChat(argv[1], pSnapshotDelta.get(), pSnapshotDeltaSixup.get(), pStorage.get());
 }

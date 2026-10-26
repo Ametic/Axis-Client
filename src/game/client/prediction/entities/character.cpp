@@ -9,8 +9,12 @@
 
 #include <generated/client_data.h>
 
+#include <game/client/prediction/quad_zones.h>
 #include <game/collision.h>
 #include <game/mapitems.h>
+
+#include <algorithm>
+#include <limits>
 
 // Character, "physical" player's part
 
@@ -36,7 +40,7 @@ void CCharacter::SetSuper(bool Super)
 {
 	m_Core.m_Super = Super;
 	if(m_Core.m_Super)
-		TeamsCore()->Team(GetCid(), TeamsCore()->m_IsDDRace16 ? VANILLA_TEAM_SUPER : TEAM_SUPER);
+		TeamsCore()->Team(GetCid(), TeamsCore()->TeamSuper());
 }
 
 bool CCharacter::IsGrounded()
@@ -51,6 +55,9 @@ bool CCharacter::IsGrounded()
 void CCharacter::HandleJetpack()
 {
 	if(m_NumInputs < 2)
+		return;
+
+	if(m_Core.m_ActiveWeapon < 0)
 		return;
 
 	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
@@ -283,7 +290,7 @@ void CCharacter::FireWeapon()
 	if(CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
 		WillFire = true;
 
-	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
+	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_ActiveWeapon >= 0 && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		WillFire = true;
 
 	if(!WillFire)
@@ -301,7 +308,7 @@ void CCharacter::FireWeapon()
 	}
 
 	// check for ammo
-	if(!m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo || m_FreezeTime)
+	if(m_Core.m_ActiveWeapon < 0 || !m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo || m_FreezeTime)
 	{
 		return;
 	}
@@ -363,13 +370,17 @@ void CCharacter::FireWeapon()
 				}
 			}
 			else
+			{
 				Force *= Strength;
+			}
 
 			pTarget->TakeDamage(Force, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
 				GetCid(), m_Core.m_ActiveWeapon);
 			pTarget->Unfreeze();
 
 			Hits++;
+
+			AntiPingInterference(pTarget->GetCid());
 		}
 
 		// if we Hit anything, we have to wait for the reload
@@ -540,7 +551,16 @@ void CCharacter::OnPredictedInput(const CNetObj_PlayerInput *pNewInput)
 	}
 
 	// copy new input
+	const int PrevTargetX = m_Input.m_TargetX;
+	const int PrevTargetY = m_Input.m_TargetY;
 	mem_copy(&m_Input, pNewInput, sizeof(m_Input));
+
+	// reset target due to spectator mode input not being in aim space
+	if(pNewInput->m_PlayerFlags & PLAYERFLAG_SPEC_CAM)
+	{
+		m_Input.m_TargetX = PrevTargetX;
+		m_Input.m_TargetY = PrevTargetY;
+	}
 
 	// it is not allowed to aim in the center
 	if(m_Input.m_TargetX == 0 && m_Input.m_TargetY == 0)
@@ -564,6 +584,13 @@ void CCharacter::OnDirectInput(const CNetObj_PlayerInput *pNewInput)
 	m_NumInputs++;
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 	mem_copy(&m_LatestInput, pNewInput, sizeof(m_LatestInput));
+
+	// reset target due to spectator mode input not being in aim space
+	if(pNewInput->m_PlayerFlags & PLAYERFLAG_SPEC_CAM)
+	{
+		m_LatestInput.m_TargetX = m_LatestPrevInput.m_TargetX;
+		m_LatestInput.m_TargetY = m_LatestPrevInput.m_TargetY;
+	}
 
 	// it is not allowed to aim in the center
 	if(m_LatestInput.m_TargetX == 0 && m_LatestInput.m_TargetY == 0)
@@ -626,6 +653,17 @@ void CCharacter::Tick()
 	HandleWeapons();
 
 	DDRacePostCoreTick();
+
+	// antiping
+	if(IsInterfering())
+	{
+		// Disable dynamic interaction based antiping when player moved or hooked a wall
+		if((!m_FreezeTime || g_Config.m_ClAntiPingPlayers != 3) &&
+			(m_Input.m_Direction != m_PrevInput.m_Direction || m_Input.m_Jump != m_PrevInput.m_Jump || m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND))
+		{
+			m_Interfering = false;
+		}
+	}
 
 	// Previnput
 	m_PrevInput = m_Input;
@@ -726,7 +764,9 @@ void CCharacter::HandleSkippableTiles(int Index)
 						TempVel += Direction * SpeedLeft;
 				}
 				else
+				{
 					TempVel += Direction * Force;
+				}
 
 				m_Core.m_Vel = ClampVel(m_MoveRestrictions, TempVel);
 			}
@@ -736,8 +776,8 @@ void CCharacter::HandleSkippableTiles(int Index)
 			constexpr float MaxSpeedScale = 5.0f;
 			if(MaxSpeed == 0)
 			{
-				float MaxRampSpeed = GetTuning(GetOverriddenTuneZone())->m_VelrampRange / (50 * log(maximum((float)GetTuning(GetOverriddenTuneZone())->m_VelrampCurvature, 1.01f)));
-				MaxSpeed = maximum(MaxRampSpeed, GetTuning(GetOverriddenTuneZone())->m_VelrampStart / 50) * MaxSpeedScale;
+				float MaxRampSpeed = GetTuning(GetOverriddenTuneZone())->m_VelrampRange / (50 * log(std::max((float)GetTuning(GetOverriddenTuneZone())->m_VelrampCurvature, 1.01f)));
+				MaxSpeed = std::max(MaxRampSpeed, GetTuning(GetOverriddenTuneZone())->m_VelrampStart / 50) * MaxSpeedScale;
 			}
 
 			// (signed) length of projection
@@ -752,11 +792,11 @@ void CCharacter::HandleSkippableTiles(int Index)
 	}
 }
 
-bool CCharacter::IsSwitchActiveCb(int Number, void *pUser)
+bool CCharacter::IsSwitchActiveCb(unsigned char Number, void *pUser)
 {
 	CCharacter *pThis = (CCharacter *)pUser;
 	auto &aSwitchers = pThis->Switchers();
-	return !aSwitchers.empty() && pThis->Team() != TEAM_SUPER && aSwitchers[Number].m_aStatus[pThis->Team()];
+	return !aSwitchers.empty() && pThis->Team() != pThis->TeamsCore()->TeamSuper() && aSwitchers[Number].m_aStatus[pThis->Team()];
 }
 
 void CCharacter::HandleTiles(int Index)
@@ -945,100 +985,103 @@ void CCharacter::HandleTiles(int Index)
 	m_Core.m_Vel = ClampVel(m_MoveRestrictions, m_Core.m_Vel);
 
 	// handle switch tiles
-	if(Collision()->GetSwitchType(MapIndex) == TILE_SWITCHOPEN && Team() != TEAM_SUPER && Collision()->GetSwitchNumber(MapIndex) > 0)
+	const int SwitchType = Collision()->GetSwitchType(MapIndex);
+	const int SwitchNumber = Collision()->GetSwitchNumber(MapIndex);
+	const int SwitchDelay = Collision()->GetSwitchDelay(MapIndex);
+	if(SwitchType == TILE_SWITCHOPEN && Team() != TeamsCore()->TeamSuper() && SwitchNumber > 0)
 	{
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()] = true;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aEndTick[Team()] = 0;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aType[Team()] = TILE_SWITCHOPEN;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
+		Switchers()[SwitchNumber].m_aStatus[Team()] = true;
+		Switchers()[SwitchNumber].m_aEndTick[Team()] = 0;
+		Switchers()[SwitchNumber].m_aType[Team()] = TILE_SWITCHOPEN;
+		Switchers()[SwitchNumber].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_SWITCHTIMEDOPEN && Team() != TEAM_SUPER && Collision()->GetSwitchNumber(MapIndex) > 0)
+	else if(SwitchType == TILE_SWITCHTIMEDOPEN && Team() != TeamsCore()->TeamSuper() && SwitchNumber > 0)
 	{
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()] = true;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aEndTick[Team()] = GameWorld()->GameTick() + 1 + Collision()->GetSwitchDelay(MapIndex) * GameWorld()->GameTickSpeed();
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aType[Team()] = TILE_SWITCHTIMEDOPEN;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
+		Switchers()[SwitchNumber].m_aStatus[Team()] = true;
+		Switchers()[SwitchNumber].m_aEndTick[Team()] = GameWorld()->GameTick() + 1 + SwitchDelay * GameWorld()->GameTickSpeed();
+		Switchers()[SwitchNumber].m_aType[Team()] = TILE_SWITCHTIMEDOPEN;
+		Switchers()[SwitchNumber].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_SWITCHTIMEDCLOSE && Team() != TEAM_SUPER && Collision()->GetSwitchNumber(MapIndex) > 0)
+	else if(SwitchType == TILE_SWITCHTIMEDCLOSE && Team() != TeamsCore()->TeamSuper() && SwitchNumber > 0)
 	{
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()] = false;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aEndTick[Team()] = GameWorld()->GameTick() + 1 + Collision()->GetSwitchDelay(MapIndex) * GameWorld()->GameTickSpeed();
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aType[Team()] = TILE_SWITCHTIMEDCLOSE;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
+		Switchers()[SwitchNumber].m_aStatus[Team()] = false;
+		Switchers()[SwitchNumber].m_aEndTick[Team()] = GameWorld()->GameTick() + 1 + SwitchDelay * GameWorld()->GameTickSpeed();
+		Switchers()[SwitchNumber].m_aType[Team()] = TILE_SWITCHTIMEDCLOSE;
+		Switchers()[SwitchNumber].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_SWITCHCLOSE && Team() != TEAM_SUPER && Collision()->GetSwitchNumber(MapIndex) > 0)
+	else if(SwitchType == TILE_SWITCHCLOSE && Team() != TeamsCore()->TeamSuper() && SwitchNumber > 0)
 	{
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()] = false;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aEndTick[Team()] = 0;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aType[Team()] = TILE_SWITCHCLOSE;
-		Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
+		Switchers()[SwitchNumber].m_aStatus[Team()] = false;
+		Switchers()[SwitchNumber].m_aEndTick[Team()] = 0;
+		Switchers()[SwitchNumber].m_aType[Team()] = TILE_SWITCHCLOSE;
+		Switchers()[SwitchNumber].m_aLastUpdateTick[Team()] = GameWorld()->GameTick();
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_FREEZE && Team() != TEAM_SUPER && !m_Core.m_Invincible)
+	else if(SwitchType == TILE_FREEZE && Team() != TeamsCore()->TeamSuper() && !m_Core.m_Invincible)
 	{
-		if(Collision()->GetSwitchNumber(MapIndex) == 0 || Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()])
+		if(SwitchNumber == 0 || Switchers()[SwitchNumber].m_aStatus[Team()])
 		{
-			Freeze(Collision()->GetSwitchDelay(MapIndex));
+			Freeze(SwitchDelay);
 		}
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_DFREEZE && Team() != TEAM_SUPER && !m_Core.m_Invincible)
+	else if(SwitchType == TILE_DFREEZE && Team() != TeamsCore()->TeamSuper() && !m_Core.m_Invincible)
 	{
-		if(Collision()->GetSwitchNumber(MapIndex) == 0 || Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()])
+		if(SwitchNumber == 0 || Switchers()[SwitchNumber].m_aStatus[Team()])
 			m_Core.m_DeepFrozen = true;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_DUNFREEZE && Team() != TEAM_SUPER && !m_Core.m_Invincible)
+	else if(SwitchType == TILE_DUNFREEZE && Team() != TeamsCore()->TeamSuper() && !m_Core.m_Invincible)
 	{
-		if(Collision()->GetSwitchNumber(MapIndex) == 0 || Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()])
+		if(SwitchNumber == 0 || Switchers()[SwitchNumber].m_aStatus[Team()])
 			m_Core.m_DeepFrozen = false;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_LFREEZE && Team() != TEAM_SUPER && !m_Core.m_Invincible)
+	else if(SwitchType == TILE_LFREEZE && Team() != TeamsCore()->TeamSuper() && !m_Core.m_Invincible)
 	{
-		if(Collision()->GetSwitchNumber(MapIndex) == 0 || Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()])
+		if(SwitchNumber == 0 || Switchers()[SwitchNumber].m_aStatus[Team()])
 		{
 			m_Core.m_LiveFrozen = true;
 		}
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_LUNFREEZE && Team() != TEAM_SUPER && !m_Core.m_Invincible)
+	else if(SwitchType == TILE_LUNFREEZE && Team() != TeamsCore()->TeamSuper() && !m_Core.m_Invincible)
 	{
-		if(Collision()->GetSwitchNumber(MapIndex) == 0 || Switchers()[Collision()->GetSwitchNumber(MapIndex)].m_aStatus[Team()])
+		if(SwitchNumber == 0 || Switchers()[SwitchNumber].m_aStatus[Team()])
 		{
 			m_Core.m_LiveFrozen = false;
 		}
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_ENABLE && m_Core.m_HammerHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_HAMMER)
+	else if(SwitchType == TILE_HIT_ENABLE && m_Core.m_HammerHitDisabled && SwitchDelay == WEAPON_HAMMER)
 	{
 		m_Core.m_HammerHitDisabled = false;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_DISABLE && !m_Core.m_HammerHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_HAMMER)
+	else if(SwitchType == TILE_HIT_DISABLE && !m_Core.m_HammerHitDisabled && SwitchDelay == WEAPON_HAMMER)
 	{
 		m_Core.m_HammerHitDisabled = true;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_ENABLE && m_Core.m_ShotgunHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_SHOTGUN)
+	else if(SwitchType == TILE_HIT_ENABLE && m_Core.m_ShotgunHitDisabled && SwitchDelay == WEAPON_SHOTGUN)
 	{
 		m_Core.m_ShotgunHitDisabled = false;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_DISABLE && !m_Core.m_ShotgunHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_SHOTGUN)
+	else if(SwitchType == TILE_HIT_DISABLE && !m_Core.m_ShotgunHitDisabled && SwitchDelay == WEAPON_SHOTGUN)
 	{
 		m_Core.m_ShotgunHitDisabled = true;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_ENABLE && m_Core.m_GrenadeHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_GRENADE)
+	else if(SwitchType == TILE_HIT_ENABLE && m_Core.m_GrenadeHitDisabled && SwitchDelay == WEAPON_GRENADE)
 	{
 		m_Core.m_GrenadeHitDisabled = false;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_DISABLE && !m_Core.m_GrenadeHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_GRENADE)
+	else if(SwitchType == TILE_HIT_DISABLE && !m_Core.m_GrenadeHitDisabled && SwitchDelay == WEAPON_GRENADE)
 	{
 		m_Core.m_GrenadeHitDisabled = true;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_ENABLE && m_Core.m_LaserHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_LASER)
+	else if(SwitchType == TILE_HIT_ENABLE && m_Core.m_LaserHitDisabled && SwitchDelay == WEAPON_LASER)
 	{
 		m_Core.m_LaserHitDisabled = false;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_HIT_DISABLE && !m_Core.m_LaserHitDisabled && Collision()->GetSwitchDelay(MapIndex) == WEAPON_LASER)
+	else if(SwitchType == TILE_HIT_DISABLE && !m_Core.m_LaserHitDisabled && SwitchDelay == WEAPON_LASER)
 	{
 		m_Core.m_LaserHitDisabled = true;
 	}
-	else if(Collision()->GetSwitchType(MapIndex) == TILE_JUMP)
+	else if(SwitchType == TILE_JUMP)
 	{
-		int NewJumps = Collision()->GetSwitchDelay(MapIndex);
+		int NewJumps = SwitchDelay;
 		if(NewJumps == 255)
 		{
 			NewJumps = -1;
@@ -1056,6 +1099,250 @@ void CCharacter::HandleTuneLayer()
 	m_Core.m_Tuning = *GetTuning(GetOverriddenTuneZone());
 }
 
+// <FoxNet
+void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj)
+{
+	const float Radius = m_ProximityRadius * 0.55f;
+	const vec2 Pos = m_Pos;
+
+	const vec2 *pPoints = Quad.m_aPoints;
+	const vec2 aA[4] = {pPoints[0], pPoints[1], pPoints[2], pPoints[3]};
+	const vec2 aB[4] = {pPoints[1], pPoints[2], pPoints[3], pPoints[0]};
+
+	bool Buried = true;
+	for(int i = 0; i < 4; i++)
+	{
+		const vec2 Edge = aB[i] - aA[i];
+		if(dot(Edge, Edge) <= 1e-6f)
+			continue;
+
+		if(dot(Pos - aA[i], normalize(vec2(-Edge.y, Edge.x))) < 0.0f)
+		{
+			Buried = false;
+			break;
+		}
+	}
+
+	// Only a quad overlapping this one can hide one of its edges, and that is a handful of the layer
+	std::vector<const CQuadData *> vpNeighbours;
+	for(const CQuadData &Other : vQuads)
+	{
+		if(&Other == &Quad)
+			continue;
+		if(Other.m_AabbMax.x < Quad.m_AabbMin.x || Other.m_AabbMin.x > Quad.m_AabbMax.x)
+			continue;
+		if(Other.m_AabbMax.y < Quad.m_AabbMin.y || Other.m_AabbMin.y > Quad.m_AabbMax.y)
+			continue;
+		vpNeighbours.push_back(&Other);
+	}
+
+	const auto BuriedAt = [&](const vec2 &Point) {
+		for(const CQuadData *pOther : vpNeighbours)
+		{
+			if(pOther->Contains(Point))
+				return true;
+		}
+		return false;
+	};
+
+	const auto SeamEdge = [&](const vec2 &A, const vec2 &B, const vec2 &Outward) {
+		if(vpNeighbours.empty())
+			return false;
+		for(int Sample = 1; Sample <= 3; Sample++)
+		{
+			if(!BuriedAt(mix(A, B, Sample * 0.25f) + Outward))
+				return false;
+		}
+		return true;
+	};
+
+	vec2 PushDir = vec2(0.0f, 0.0f);
+	float PushDepth = 0.0f;
+	vec2 BestEdge = vec2(0.0f, 0.0f);
+	int BestEdgeIndex = -1;
+
+	if(Buried)
+	{
+		// Inside, the shallowest edge is the way out, and the seams are not ways out at all
+		float MinPenetration = std::numeric_limits<float>::infinity();
+		vec2 BestInwardNormal = vec2(0.0f, 0.0f);
+
+		for(int i = 0; i < 4; i++)
+		{
+			const vec2 Edge = aB[i] - aA[i];
+			if(dot(Edge, Edge) <= 1e-6f)
+				continue;
+
+			const vec2 InwardNormal = normalize(vec2(-Edge.y, Edge.x));
+
+			if(SeamEdge(aA[i], aB[i], -InwardNormal))
+				continue;
+
+			const float Penetration = dot(Pos - aA[i], InwardNormal) + Radius;
+			if(Penetration < MinPenetration)
+			{
+				MinPenetration = Penetration;
+				BestInwardNormal = InwardNormal;
+				BestEdge = Edge;
+				BestEdgeIndex = i;
+			}
+		}
+
+		if(BestEdgeIndex < 0 || MinPenetration <= 0.0f)
+			return;
+
+		PushDepth = MinPenetration;
+		PushDir = -BestInwardNormal;
+	}
+	else
+	{
+		float Nearest = std::numeric_limits<float>::max();
+		vec2 NearestPoint = vec2(0.0f, 0.0f);
+
+		for(int i = 0; i < 4; i++)
+		{
+			const vec2 Edge = aB[i] - aA[i];
+			const float Len2 = dot(Edge, Edge);
+			if(Len2 <= 1e-6f)
+				continue;
+
+			const vec2 Point = aA[i] + Edge * std::clamp(dot(Pos - aA[i], Edge) / Len2, 0.0f, 1.0f);
+			const float Dist = distance(Pos, Point);
+			if(Dist < Nearest)
+			{
+				Nearest = Dist;
+				NearestPoint = Point;
+				BestEdge = Edge;
+				BestEdgeIndex = i;
+			}
+		}
+
+		if(BestEdgeIndex < 0 || Nearest >= Radius)
+			return; // only the box around the entity ever reached this quad
+
+		const vec2 InwardNormal = normalize(vec2(-BestEdge.y, BestEdge.x));
+		if(BuriedAt(NearestPoint - InwardNormal))
+			return; // touching this quad through the neighbour that covers it
+
+		PushDepth = Radius - Nearest;
+		PushDir = Nearest > 0.0001f ? (Pos - NearestPoint) / Nearest : -InwardNormal;
+	}
+
+	const vec2 Mtv = PushDir * PushDepth;
+
+	const auto CanPlace = [&](const vec2 &Place) {
+		return !Collision()->TestBox(Place, vec2(m_ProximityRadius, m_ProximityRadius));
+	};
+
+	// Gives up as much of the push as it takes to stay out of the map, rather than all of it
+	const auto MoveAxis = [&](vec2 &Place, const vec2 &Delta) {
+		if(Delta.x == 0.0f && Delta.y == 0.0f)
+			return vec2(0.0f, 0.0f);
+
+		if(CanPlace(Place + Delta))
+		{
+			Place += Delta;
+			return Delta;
+		}
+
+		float Low = 0.0f;
+		float High = 1.0f;
+		for(int i = 0; i < 10; i++)
+		{
+			const float Mid = (Low + High) * 0.5f;
+			if(CanPlace(Place + Delta * Mid))
+				Low = Mid;
+			else
+				High = Mid;
+		}
+		if(Low > 0.0f)
+		{
+			const vec2 Applied = Delta * Low;
+			Place += Applied;
+			return Applied;
+		}
+		return vec2(0.0f, 0.0f);
+	};
+
+	vec2 NewPos = m_Pos;
+	const vec2 AppliedX = MoveAxis(NewPos, vec2(Mtv.x, 0.0f));
+	const vec2 AppliedY = MoveAxis(NewPos, vec2(0.0f, Mtv.y));
+
+	const vec2 Vel = m_Core.m_Vel;
+	m_Pos = NewPos;
+	m_Core.m_Pos = NewPos;
+
+	vec2 NewVel = Vel;
+
+	const vec2 SurfaceNormal = PushDir;
+	const float SurfaceSpeed = dot(QuadMotion, SurfaceNormal);
+	const float Target = std::max(SurfaceSpeed, 0.0f);
+	const float Along = dot(NewVel, SurfaceNormal);
+	if(Along < Target)
+		NewVel += SurfaceNormal * (Target - Along);
+
+	if(AppliedX.x == 0.0f && Mtv.x != 0.0f)
+		NewVel.x = 0.0f;
+	if(AppliedY.y == 0.0f && Mtv.y != 0.0f)
+		NewVel.y = 0.0f;
+
+	SetRawVelocity(NewVel);
+
+	m_Core.Quantize();
+	m_Pos = m_Core.m_Pos;
+
+	if(!GivesDj || BestEdgeIndex < 0)
+		return;
+
+	const float EdgeLength = length(BestEdge);
+	const float EdgeSlope = EdgeLength > 1e-6f ? absolute(BestEdge.y) / EdgeLength : 1.0f;
+	if(PushDir.y <= -0.35f && EdgeSlope <= 0.60f && AppliedY.y < 0.0f && Vel.y >= 0.0f)
+	{
+		m_Core.m_JumpedTotal = 0;
+		m_Core.m_Jumped = 0;
+	}
+}
+// FoxNet>
+
+void CCharacter::QuadZoneTick()
+{
+	CQuadZones *pQuadZones = GameWorld()->QuadZones();
+
+	m_InsideQuadFreeze = false;
+
+	if(!pQuadZones || !pQuadZones->Active() || !GameWorld()->m_WorldConfig.m_PredictDDRace)
+		return;
+
+	const int Tick = GameWorld()->GameTick();
+
+	if(!m_Core.m_IsInFreeze && !m_Core.m_DeepFrozen && !m_Core.m_LiveFrozen)
+	{
+		if(m_TileIndex != TILE_UNFREEZE && m_TileFIndex != TILE_UNFREEZE &&
+			pQuadZones->Inside(EPredictedZone::Freeze, m_Pos, Tick))
+		{
+			Freeze();
+			m_InsideQuadFreeze = true;
+		}
+
+		if((m_FreezeTime != 0 || m_InsideQuadFreeze) &&
+			pQuadZones->Inside(EPredictedZone::Unfreeze, m_Pos, Tick))
+		{
+			Unfreeze();
+			m_InsideQuadFreeze = false;
+		}
+	}
+
+	const vec2 Size = vec2(m_ProximityRadius, m_ProximityRadius) * 0.55f;
+	const std::vector<CQuadData> &vStopA = pQuadZones->Quads(EPredictedZone::StopA, Tick);
+	for(const CQuadData &Quad : vStopA)
+	{
+		const vec2 TestPos = m_Pos;
+		const vec2 QuadMotion = Quad.MotionAt(TestPos);
+		if(Quad.Overlaps(TestPos, Size))
+			QuadZonePush(Quad, vStopA, QuadMotion, pQuadZones->StopAGivesDj());
+	}
+}
+
 void CCharacter::DDRaceTick()
 {
 	mem_copy(&m_Input, &m_SavedInput, sizeof(m_Input));
@@ -1063,7 +1350,6 @@ void CCharacter::DDRaceTick()
 	{
 		m_Input.m_Direction = 0;
 		m_Input.m_Jump = 0;
-		// Hook and weapons are possible in live freeze
 	}
 	if(m_FreezeTime > 0)
 	{
@@ -1078,12 +1364,12 @@ void CCharacter::DDRaceTick()
 			Unfreeze();
 
 		m_AliveAccumulation = std::min(m_AliveAccumulation - 1, 0);
-		m_AliveAccumulation = std::max(m_AliveAccumulation, -g_Config.m_TcUnfreezeLagDelayTicks);
+		m_AliveAccumulation = std::max(m_AliveAccumulation, -g_Config.m_EcUnfreezeLagDelayTicks);
 	}
 	else
 	{
 		m_AliveAccumulation = std::max(m_AliveAccumulation, 1);
-		m_AliveAccumulation = std::min(m_AliveAccumulation + 1, g_Config.m_TcUnfreezeLagDelayTicks);
+		m_AliveAccumulation = std::min(m_AliveAccumulation + 1, g_Config.m_EcUnfreezeLagDelayTicks);
 	}
 
 	HandleTuneLayer();
@@ -1160,12 +1446,19 @@ void CCharacter::DDRacePostCoreTick()
 	// handle Anti-Skip tiles
 	std::vector<int> vIndices = Collision()->GetMapIndices(m_PrevPos, m_Pos);
 	if(!vIndices.empty())
+	{
 		for(int Index : vIndices)
 			HandleTiles(Index);
+	}
 	else
 	{
 		HandleTiles(CurrentIndex);
 	}
+
+	// <FoxNet
+	if(m_InsideQuadFreeze)
+		Freeze();
+	// FoxNet>
 }
 
 bool CCharacter::Freeze(int Seconds)
@@ -1193,7 +1486,7 @@ bool CCharacter::Unfreeze()
 {
 	if(m_FreezeTime > 0)
 	{
-		if(!m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Got)
+		if(m_Core.m_ActiveWeapon >= 0 && !m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Got)
 			m_Core.m_ActiveWeapon = WEAPON_GUN;
 		m_FreezeTime = 0;
 		m_Core.m_FreezeStart = 0;
@@ -1276,12 +1569,14 @@ CCharacter::CCharacter(CGameWorld *pGameWorld, int Id, CNetObj_Character *pChar,
 	m_IsLocal = false;
 
 	m_LastWeapon = WEAPON_HAMMER;
+	m_LastSnapWeapon = -1;
 	m_QueuedWeapon = -1;
 	m_LastRefillJumps = false;
 	m_PrevPrevPos = m_PrevPos = m_Pos = vec2(pChar->m_X, pChar->m_Y);
 	m_Core.Reset();
 	m_Core.Init(&GameWorld()->m_Core, GameWorld()->Collision(), GameWorld()->Teams());
 	m_Core.m_Id = Id;
+	m_Core.m_ActiveWeapon = -1; // set by the first Read below
 	mem_zero(&m_Core.m_Ninja, sizeof(m_Core.m_Ninja));
 	m_Core.m_LeftWall = true;
 	m_ReloadTimer = 0;
@@ -1290,6 +1585,8 @@ CCharacter::CCharacter(CGameWorld *pGameWorld, int Id, CNetObj_Character *pChar,
 	m_CanMoveInFreeze = false;
 	m_TeleCheckpoint = 0;
 	m_StrongWeakId = 0;
+	m_TuneZone = 0;
+	m_TuneZoneOverride = TuneZone::OVERRIDE_NONE;
 
 	mem_zero(&m_Input, sizeof(m_Input));
 	// never initialize both to zero
@@ -1300,6 +1597,33 @@ CCharacter::CCharacter(CGameWorld *pGameWorld, int Id, CNetObj_Character *pChar,
 
 	ResetPrediction();
 	Read(pChar, pExtended, false);
+}
+
+void CCharacter::AntiPingInterference(int ClientId, bool DisallowReset, bool HasToBeUnfrozen)
+{
+	// Enable antiping for players that we hook or bump while unfrozen, the unfrozen check helps when being saved in gores
+	// If we interfered with a player that bounces or hooks someone else, we want to chain the prediction
+	// thus interfering players can enable antiping on others
+	if(HasToBeUnfrozen && m_FreezeTime)
+		return;
+
+	CCharacter *pChar = GameWorld()->GetCharacterById(ClientId);
+	if(!pChar)
+		return;
+
+	bool AllowEnablePrediction = m_IsLocal || m_Interfering;
+	if(!AllowEnablePrediction && !DisallowReset)
+	{
+		// disable antiping on players if a non-predicted player interacts with them, but not player bounces here
+		if(!pChar->m_FreezeTime || g_Config.m_ClAntiPingPlayers != 3)
+		{
+			pChar->m_Interfering = false;
+		}
+	}
+	else if(AllowEnablePrediction)
+	{
+		pChar->m_Interfering = true;
+	}
 }
 
 void CCharacter::ResetPrediction()
@@ -1337,6 +1661,7 @@ void CCharacter::ResetPrediction()
 	}
 	m_LastWeaponSwitchTick = 0;
 	m_LastTuneZoneTick = 0;
+	m_Interfering = false;
 }
 
 void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtended, bool IsLocal)
@@ -1365,13 +1690,25 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 			{
 				if(m_FreezeTime == 0)
 					Freeze();
-				m_FreezeTime = maximum(1, pExtended->m_FreezeEnd - GameWorld()->GameTick());
+				m_FreezeTime = std::max(1, pExtended->m_FreezeEnd - GameWorld()->GameTick());
 			}
 			else if(pExtended->m_FreezeEnd == -1)
+			{
 				m_Core.m_DeepFrozen = true;
+			}
+
+			// We wait for the server to tell us who is frozen instead of using predicted Freeze() function
+			// because that can still mispredict and would cause jitter by enabling and disabling antiping
+			if(pExtended->m_FreezeEnd != 0 && g_Config.m_ClAntiPingPlayers == 3)
+			{
+				// If wanted, every frozen player will always be predicted to catch them easier
+				m_Interfering = true;
+			}
 		}
 		else
+		{
 			Unfreeze();
+		}
 
 		m_Core.ReadDDNet(pExtended);
 
@@ -1385,10 +1722,12 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 		// ddnetcharacter is not available, try to get some info from the tunings and the character netobject instead.
 
 		// remove weapons that are unavailable. if the current weapon is ninja just set ammo to zero in case the player is frozen
-		if(pChar->m_Weapon != m_Core.m_ActiveWeapon)
+		if(m_Core.m_ActiveWeapon >= 0 && pChar->m_Weapon != m_Core.m_ActiveWeapon)
 		{
 			if(pChar->m_Weapon == WEAPON_NINJA)
+			{
 				m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = 0;
+			}
 			else
 			{
 				if(m_Core.m_ActiveWeapon == WEAPON_NINJA)
@@ -1430,7 +1769,9 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 					m_Core.m_Jumps = m_Core.m_JumpedTotal + 1;
 			}
 			else if(m_Core.m_Jumps < 2)
+			{
 				m_Core.m_Jumps = m_Core.m_JumpedTotal + 2;
+			}
 			if(GetTuning(GetOverriddenTuneZone())->m_AirJumpImpulse == 0)
 			{
 				m_Core.m_Jumps = 0;
@@ -1483,6 +1824,10 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 		if(pChar->m_Weapon != m_Core.m_ActiveWeapon)
 			SetActiveWeapon(pChar->m_Weapon);
 	}
+	else if(m_Core.m_ActiveWeapon < 0)
+	{
+		SetActiveWeapon(pChar->m_Weapon);
+	}
 
 	// reset all input except direction and hook for non-local players (as in vanilla prediction)
 	if(!IsLocal)
@@ -1508,17 +1853,40 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 	// (this is only needed for autofire weapons to prevent the predicted reload timer from desyncing)
 	if(IsLocal && m_Core.m_ActiveWeapon != -1 && m_Core.m_ActiveWeapon != WEAPON_HAMMER && !m_Core.m_aWeapons[WEAPON_NINJA].m_Got)
 	{
-		if(maximum(m_LastTuneZoneTick, m_LastWeaponSwitchTick) + GameWorld()->GameTickSpeed() < GameWorld()->GameTick())
+		if(std::max(m_LastTuneZoneTick, m_LastWeaponSwitchTick) + GameWorld()->GameTickSpeed() < GameWorld()->GameTick())
 		{
 			const int FireDelayTicks = GetTuning(GetOverriddenTuneZone())->GetWeaponFireDelay(m_Core.m_ActiveWeapon) * GameWorld()->GameTickSpeed();
-			m_ReloadTimer = maximum(0, m_AttackTick + FireDelayTicks - GameWorld()->GameTick());
+			m_ReloadTimer = std::max(0, m_AttackTick + FireDelayTicks - GameWorld()->GameTick());
 		}
 	}
 }
 
+// <EClient
+void CCharacter::RebaseTicks(int Delta)
+{
+	if(Delta == 0)
+		return;
+
+	// Everything here is a stamp rather than a duration, so it only means anything against the
+	// clock it was taken on. Durations, m_FreezeTime above all, are already clock independent and
+	// are deliberately left alone.
+	m_AttackTick += Delta;
+	m_LastWeaponSwitchTick += Delta;
+	m_LastTuneZoneTick += Delta;
+	m_Core.m_Ninja.m_ActivationTick += Delta;
+	if(m_Core.m_FreezeStart != 0)
+		m_Core.m_FreezeStart += Delta;
+	if(m_Core.m_FreezeEnd > 0)
+		m_Core.m_FreezeEnd += Delta;
+}
+// EClient>
+
 void CCharacter::SetCoreWorld(CGameWorld *pGameWorld)
 {
 	m_Core.SetCoreWorld(&pGameWorld->m_Core, pGameWorld->Collision(), pGameWorld->Teams());
+	m_Core.SetAntiPingInterfereCallback([this](int ClientId, bool DisallowReset) {
+		AntiPingInterference(ClientId, DisallowReset, true);
+	});
 }
 
 bool CCharacter::Match(CCharacter *pChar) const

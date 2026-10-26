@@ -6,7 +6,6 @@
 #include "controls.h"
 
 #include <base/log.h>
-#include <base/math.h>
 #include <base/vmath.h>
 
 #include <engine/shared/config.h>
@@ -235,7 +234,7 @@ void CCamera::UpdateCamera()
 		}
 		else
 		{
-			m_DyncamSmoothingSpeedBias = maximum(5.0f, CameraSpeed); // make sure toggle back is fast
+			m_DyncamSmoothingSpeedBias = std::max(5.0f, CameraSpeed); // make sure toggle back is fast
 		}
 	}
 
@@ -260,11 +259,11 @@ void CCamera::UpdateCamera()
 			}
 		}
 
-		float OffsetAmount = maximum(l - CurrentDeadzone, 0.0f) * (CurrentFollowFactor / 100.0f);
+		float OffsetAmount = std::max(l - CurrentDeadzone, 0.0f) * (CurrentFollowFactor / 100.0f);
 
 		if(CanUseCameraInfo)
 		{
-			OffsetAmount = minimum(OffsetAmount, 350.0f * m_Zoom);
+			OffsetAmount = std::min(OffsetAmount, 350.0f * m_Zoom);
 		}
 
 		m_DyncamTargetCameraOffset = normalize_pre_length(TargetPos, l) * OffsetAmount;
@@ -274,7 +273,7 @@ void CCamera::UpdateCamera()
 	vec2 CurrentCameraOffset = m_aDyncamCurrentCameraOffset[g_Config.m_ClDummy];
 	float SpeedBias = m_CameraSmoothing ? 50.0f : m_DyncamSmoothingSpeedBias;
 	if(Smoothness > 0)
-		CurrentCameraOffset += (m_DyncamTargetCameraOffset - CurrentCameraOffset) * minimum(DeltaTime * SpeedBias, 1.0f);
+		CurrentCameraOffset += (m_DyncamTargetCameraOffset - CurrentCameraOffset) * std::min(DeltaTime * SpeedBias, 1.0f);
 	else
 		CurrentCameraOffset = m_DyncamTargetCameraOffset;
 
@@ -354,7 +353,9 @@ void CCamera::OnRender()
 		m_ForceFreeview = false;
 	}
 	else
+	{
 		m_ForceFreeviewPos = m_Center;
+	}
 
 	const int SpecId = GameClient()->m_Snap.m_SpecInfo.m_SpectatorId;
 
@@ -498,16 +499,19 @@ void CCamera::ConGotoTele(IConsole::IResult *pResult, void *pUserData)
 	pSelf->GotoTele(pResult->GetInteger(0), pResult->NumArguments() > 1 ? pResult->GetInteger(1) : -1);
 }
 
-void CCamera::SetView(ivec2 Pos, bool Relative)
+void CCamera::SetViewPos(vec2 Pos)
 {
-	vec2 RealPos = vec2(Pos.x * 32.0, Pos.y * 32.0);
-	vec2 UntestedViewPos = Relative ? m_ForceFreeviewPos + RealPos : RealPos;
-
 	m_ForceFreeview = true;
 
 	m_ForceFreeviewPos = vec2(
-		std::clamp(UntestedViewPos.x, 200.0f, Collision()->GetWidth() * 32 - 200.0f),
-		std::clamp(UntestedViewPos.y, 200.0f, Collision()->GetHeight() * 32 - 200.0f));
+		std::clamp(Pos.x, 200.0f, Collision()->GetWidth() * 32 - 200.0f),
+		std::clamp(Pos.y, 200.0f, Collision()->GetHeight() * 32 - 200.0f));
+}
+
+void CCamera::SetView(ivec2 Pos, bool Relative)
+{
+	vec2 RealPos = vec2(Pos.x * 32.0, Pos.y * 32.0);
+	SetViewPos(Relative ? m_ForceFreeviewPos + RealPos : RealPos);
 }
 
 void CCamera::GotoSwitch(int Number, int Offset)

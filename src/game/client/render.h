@@ -82,6 +82,7 @@ public:
 		m_GotAirJump = true;
 		m_TeeRenderFlags = 0;
 		m_FeetFlipped = false;
+		m_ClientId = -1;
 
 		for(auto &Sixup : m_aSixup)
 			Sixup.Reset();
@@ -132,6 +133,8 @@ public:
 	bool m_GotAirJump;
 	int m_TeeRenderFlags;
 	bool m_FeetFlipped;
+	// EClient
+	int m_ClientId;
 
 	bool Valid() const
 	{
@@ -241,6 +244,10 @@ public:
 	static void GetRenderTeeOffsetToRenderedTee(const CAnimState *pAnim, const CTeeRenderInfo *pInfo, vec2 &TeeOffsetToMid);
 	// object render methods
 	void RenderTee(const CAnimState *pAnim, const CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos, float Alpha = 1.0f) const;
+	// renders an idle tee so that it is visually centered at Center
+	void RenderIdleTeeAtCenter(const CTeeRenderInfo *pInfo, vec2 Center, int Emote = EMOTE_NORMAL, vec2 Dir = vec2(1.0f, 0.0f), float Alpha = 1.0f) const;
+
+	static ColorRGBA GetPingTextColor(int Latency);
 };
 
 #endif

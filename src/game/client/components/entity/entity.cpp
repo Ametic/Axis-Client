@@ -1,4 +1,4 @@
-﻿#include "entity.h"
+#include "entity.h"
 
 #include <base/log.h>
 #include <base/math.h>
@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <memory>
 #if defined(CONF_FAMILY_WINDOWS)
 #include <Windows.h>
 #endif
@@ -236,14 +237,11 @@ void CEClient::GoresMode()
 		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = WEAPON_GUN + 1;
 }
 
-void CEClient::OnConnect()
+void CEClient::OnConnect(int Conn)
 {
-	if(g_Config.m_ClDummy)
+	if(Conn != IClient::CONN_MAIN)
 		return;
 
-	// if current server is type "Gores", turn the config on, else turn it off
-	CServerInfo CurrentServerInfo;
-	Client()->GetServerInfo(&CurrentServerInfo);
 	static bool s_SentInfoMessage = false;
 	if(m_FirstLaunch && !s_SentInfoMessage)
 	{
@@ -262,9 +260,10 @@ void CEClient::OnConnect()
 	}
 	else
 	{
+		// if current server is type "Gores", turn the config on, else turn it off
 		if(g_Config.m_ClAutoEnableGoresMode)
 		{
-			if(str_find_nocase(CurrentServerInfo.m_aGameType, "Gores"))
+			if(str_find_nocase(Client()->ServerInfo().m_aGameType, "Gores"))
 			{
 				m_GoresServer = true;
 				g_Config.m_ClGoresMode = 1;
@@ -293,9 +292,13 @@ void CEClient::NotifyOnMove()
 	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
 		return;
 
-	int LocalId = GameClient()->m_Snap.m_LocalClientId;
+	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
 
-	vec2 LocalPos = GameClient()->m_aClients[LocalId].m_RenderPos;
+	const vec2 LocalPos = GameClient()->m_aClients[LocalId].m_RenderPos;
+	const vec2 LastPos = m_LastPos;
+	m_LastPos = LocalPos;
+	if(LastPos == LocalPos)
+		return;
 	if(!pGraphics->WindowActive())
 	{
 		const float MaxDist = 27.5f;
@@ -303,16 +306,14 @@ void CEClient::NotifyOnMove()
 		bool Moved = false;
 		for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 		{
-			if(m_LastPos == LocalPos)
-				continue;
-			CGameClient::CClientData pClient = GameClient()->m_aClients[ClientId];
-			if(ClientId == LocalId || !pClient.m_Active)
-				continue;
-			if(pClient.m_Solo)
-				continue;
-			if(!GameClient()->m_Teams.SameTeam(LocalId, ClientId))
+			const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
+			if(ClientId == LocalId || !ClientData.m_Active)
 				continue;
 			if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData)
+				continue;
+			if(ClientData.m_Solo)
+				continue;
+			if(!GameClient()->m_Teams.SameTeam(LocalId, ClientId))
 				continue;
 			const CNetObj_Character *pOtherChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
 			vec2 OtherPos = GameClient()->m_aClients[ClientId].m_RenderPos;
@@ -326,7 +327,7 @@ void CEClient::NotifyOnMove()
 				Moved = true;
 
 			// Check for hammer firing
-			bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
+			const bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
 			Dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
 			if(Hammering && Dist < 70.0f)
 				Moved = true;
@@ -338,7 +339,6 @@ void CEClient::NotifyOnMove()
 			Graphics()->NotifyWindow();
 		}
 	}
-	m_LastPos = LocalPos;
 }
 
 void CEClient::UpdateVolleyball()
@@ -428,8 +428,6 @@ void CEClient::OnShutdown()
 		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 	}
-
-	g_Config.m_ClKillCounter = m_KillCount;
 }
 
 void CEClient::SetDDNetProcessPriority(bool Set)
@@ -537,14 +535,22 @@ void CEClient::OnInit()
 	// Dummy Rainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
 
-	// Set Kill Counter
-	m_KillCount = g_Config.m_ClKillCounter;
-
 	// First Launch
 	if(g_Config.m_ClFirstLaunch)
 	{
 		m_FirstLaunch = true;
 		g_Config.m_ClFirstLaunch = 0;
+	}
+
+	if(g_Config.m_ClMouseSensXIngame == -1 || g_Config.m_ClMouseSensYIngame == -1)
+	{
+		g_Config.m_ClMouseSensXIngame = g_Config.m_InpMousesens;
+		g_Config.m_ClMouseSensYIngame = g_Config.m_InpMousesens;
+	}
+	if(g_Config.m_ClMouseSensXUi == -1 || g_Config.m_ClMouseSensYUi == -1)
+	{
+		g_Config.m_ClMouseSensXUi = g_Config.m_UiMousesens;
+		g_Config.m_ClMouseSensYUi = g_Config.m_UiMousesens;
 	}
 }
 
@@ -567,6 +573,14 @@ void CEClient::OnStateChange(int NewState, int OldState)
 
 void CEClient::OnRender()
 {
+	// Every minute
+	static int64_t LastTime = 0;
+	if(time_freq() * 60 < time_get() - LastTime)
+	{
+		m_Playtime++;
+		LastTime = time_get();
+	}
+
 	const int64_t DiscordPriorityDelay = m_DiscordPriorityDelay.load();
 	if(g_Config.m_ClDiscordNormalProcessPriority && !m_DiscordPriorityThreadRunning.load() && DiscordPriorityDelay < time_get())
 	{
@@ -585,9 +599,13 @@ void CEClient::OnRender()
 	}
 }
 
-void CEClient::OnSelfDeath()
+void CEClient::OnSelfDeath(bool Dummy)
 {
-	m_KillCount++;
+	// only count deaths of the tee we are playing on, like before dummy support
+	if(Dummy != (bool)g_Config.m_ClDummy)
+		return;
+
+	m_DeathCounter++;
 }
 
 void CEClient::OnFocusChange(bool IsFocused)

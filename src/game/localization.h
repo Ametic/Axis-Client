@@ -17,6 +17,9 @@ public:
 
 	std::string m_Name;
 	std::string m_Filename;
+	/**
+	 * Country code in ISO 3166-1 numeric.
+	 */
 	int m_CountryCode;
 	std::vector<std::string> m_vLanguageCodes;
 
@@ -61,5 +64,6 @@ public:
 extern CLocalizationDatabase g_Localization;
 
 [[gnu::format_arg(1)]] extern const char *Localize(const char *pStr, const char *pContext = "");
+[[gnu::format_arg(1)]] extern const char *EcLocalize(const char *pStr, const char *pContext = "");
 
 #endif

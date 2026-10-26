@@ -77,12 +77,12 @@ void CTrails::OnRender()
 		{
 			StartTick = PredTick;
 			IntraTick = Client()->PredIntraGameTick(g_Config.m_ClDummy);
-			if(g_Config.m_TcRemoveAnti)
+			if(g_Config.m_EcRemoveAnti)
 			{
 				StartTick = GameClient()->m_SmoothTick;
 				IntraTick = GameClient()->m_SmoothIntraTick;
 			}
-			if(g_Config.m_TcUnpredOthersInFreeze && !Local && Client()->m_IsLocalFrozen)
+			if(g_Config.m_EcUnpredOthersInFreeze && !Local && Client()->m_IsLocalFrozen)
 			{
 				StartTick = GameTick;
 			}
@@ -111,8 +111,8 @@ void CTrails::OnRender()
 		// Taken from players.cpp
 		if(ClientId == -2)
 			Alpha *= g_Config.m_ClRaceGhostAlpha / 100.0f;
-		else if(ClientId < 0 || GameClient()->IsOtherTeam(ClientId))
-			Alpha *= g_Config.m_ClShowOthersAlpha / 100.0f;
+		else
+			Alpha *= GameClient()->TeeRenderAlpha(ClientId); // EClient
 
 		int TrailLength = g_Config.m_EcTeeTrailLength;
 		float Width = g_Config.m_EcTeeTrailWidth;

@@ -1,7 +1,11 @@
 #include "uuid_manager.h"
 
+#include <base/bytes.h>
+#include <base/dbg.h>
 #include <base/hash_ctxt.h>
-#include <base/system.h>
+#include <base/mem.h>
+#include <base/secure.h>
+#include <base/str.h>
 
 #include <engine/shared/packer.h>
 
@@ -90,6 +94,24 @@ int ParseUuid(CUuid *pUuid, const char *pBuffer)
 		return 1;
 	}
 	return 0;
+}
+
+void UuidToInts(const CUuid &Uuid, int *pInts)
+{
+	for(size_t IntIndex = 0; IntIndex < UUID_INT_SIZE; IntIndex++)
+	{
+		pInts[IntIndex] = bytes_be_to_uint(&Uuid.m_aData[IntIndex * sizeof(int32_t)]);
+	}
+}
+
+CUuid UuidFromInts(const int *pInts)
+{
+	CUuid Uuid;
+	for(size_t IntIndex = 0; IntIndex < UUID_INT_SIZE; IntIndex++)
+	{
+		uint_to_bytes_be(&Uuid.m_aData[IntIndex * sizeof(int32_t)], pInts[IntIndex]);
+	}
+	return Uuid;
 }
 
 bool CUuid::operator==(const CUuid &Other) const

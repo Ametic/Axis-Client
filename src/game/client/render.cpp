@@ -222,7 +222,7 @@ void CRenderTools::GetRenderTeeOffsetToRenderedTee(const CAnimState *pAnim, cons
 	const CAnimKeyframe *pFoot = pAnim->GetFrontFoot();
 	FeetPos = vec2(pFoot->m_X * AnimScale, pFoot->m_Y * AnimScale);
 	pFoot = pAnim->GetBackFoot();
-	FeetPos = vec2(FeetPos.x, maximum(FeetPos.y, pFoot->m_Y * AnimScale));
+	FeetPos = vec2(FeetPos.x, std::max(FeetPos.y, pFoot->m_Y * AnimScale));
 
 	vec2 BodyOffset;
 	float BodyWidth, BodyHeight;
@@ -243,7 +243,7 @@ void CRenderTools::GetRenderTeeOffsetToRenderedTee(const CAnimState *pAnim, cons
 	float MaxY = MinY + BodyHeight;
 	// if the body is smaller than the total feet offset, use feet
 	// since feet are smaller in height, respect the assumed relative position
-	MaxY = maximum(MaxY, (-16.0f * AssumedScale + FeetPos.y) + FeetOffset.y + FeetHeight);
+	MaxY = std::max(MaxY, (-16.0f * AssumedScale + FeetPos.y) + FeetOffset.y + FeetHeight);
 
 	// now we got the full rendered size
 	float FullHeight = (MaxY - MinY);
@@ -266,6 +266,14 @@ void CRenderTools::RenderTee(const CAnimState *pAnim, const CTeeRenderInfo *pInf
 
 	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
 	Graphics()->QuadsSetRotation(0);
+}
+
+void CRenderTools::RenderIdleTeeAtCenter(const CTeeRenderInfo *pInfo, vec2 Center, int Emote, vec2 Dir, float Alpha) const
+{
+	const CAnimState *pIdleState = CAnimState::GetIdle();
+	vec2 OffsetToMid;
+	GetRenderTeeOffsetToRenderedTee(pIdleState, pInfo, OffsetToMid);
+	RenderTee(pIdleState, pInfo, Emote, Dir, Center + vec2(0.0f, OffsetToMid.y), Alpha);
 }
 
 void CRenderTools::RenderTee7(const CAnimState *pAnim, const CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos, float Alpha) const
@@ -590,7 +598,12 @@ void CRenderTools::RenderTee6(const CAnimState *pAnim, const CTeeRenderInfo *pIn
 			Graphics()->SetColor(pInfo->m_ColorFeet.r * ColorScale, pInfo->m_ColorFeet.g * ColorScale, pInfo->m_ColorFeet.b * ColorScale, Alpha);
 
 			Graphics()->TextureSet(OutLine == 1 ? pSkinTextures->m_FeetOutline : pSkinTextures->m_Feet);
-			if(g_Config.m_ClWhiteFeet)
+
+			const bool RenderAsWhite = pInfo->m_ClientId != -1 && ((g_Config.m_ClWhiteFeet == 1 && (pInfo->m_ClientId == GameClient()->m_aLocalIds[0] || pInfo->m_ClientId == GameClient()->m_aLocalIds[1])) ||
+										      (g_Config.m_ClWhiteFeet == 2 && pInfo->m_ClientId != GameClient()->m_aLocalIds[0] && pInfo->m_ClientId != GameClient()->m_aLocalIds[1]) ||
+										      (g_Config.m_ClWhiteFeet == 3));
+
+			if(RenderAsWhite && !GameClient()->m_aClients[pInfo->m_ClientId].m_SpecCharPresent)
 			{
 				const float WhiteFeetColor = 1.0f * ColorScale;
 				Graphics()->SetColor(WhiteFeetColor, WhiteFeetColor, WhiteFeetColor, Alpha);
@@ -609,4 +622,9 @@ void CRenderTools::RenderTee6(const CAnimState *pAnim, const CTeeRenderInfo *pIn
 			Graphics()->RenderQuadContainerAsSprite(m_TeeQuadContainerIndex, QuadOffset, Position.x + pFoot->m_X * AnimScale, Position.y + pFoot->m_Y * AnimScale, w / 64.f, h / 32.f);
 		}
 	}
+}
+
+ColorRGBA CRenderTools::GetPingTextColor(int Latency)
+{
+	return color_cast<ColorRGBA>(ColorHSLA((300.0f - std::clamp(Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f));
 }

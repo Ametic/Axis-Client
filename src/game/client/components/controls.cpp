@@ -2,7 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "controls.h"
 
-#include <base/math.h>
+#include <base/dbg.h>
+#include <base/mem.h>
 #include <base/time.h>
 #include <base/vmath.h>
 
@@ -17,6 +18,9 @@
 #include <game/client/components/scoreboard.h>
 #include <game/client/gameclient.h>
 #include <game/collision.h>
+#include <game/localization.h>
+
+#include <algorithm>
 
 CControls::CControls()
 {
@@ -32,8 +36,7 @@ void CControls::OnReset()
 	ResetInput(0);
 	ResetInput(1);
 
-	for(int &AmmoCount : m_aAmmoCount)
-		AmmoCount = 0;
+	std::fill(std::begin(m_aAmmoCount), std::end(m_aAmmoCount), 0);
 
 	m_LastSendTime = 0;
 }
@@ -54,8 +57,7 @@ void CControls::ResetInput(int Dummy)
 
 void CControls::OnPlayerDeath()
 {
-	for(int &AmmoCount : m_aAmmoCount)
-		AmmoCount = 0;
+	std::fill(std::begin(m_aAmmoCount), std::end(m_aAmmoCount), 0);
 }
 
 struct CInputState
@@ -167,6 +169,50 @@ void CControls::OnConsoleInit()
 		static CInputSet s_Set = {this, {&m_aInputData[0].m_PrevWeapon, &m_aInputData[1].m_PrevWeapon}, 0};
 		Console()->Register("+prevweapon", "", CFGFLAG_CLIENT, ConKeyInputNextPrevWeapon, &s_Set, "Switch to previous weapon");
 	}
+
+	Console()->Register("tp_to_cursor", "", CFGFLAG_CLIENT, ConTpToCursor, this, "Practice: teleport yourself to your cursor");
+	Console()->Register("tp_dummy_to_cursor", "", CFGFLAG_CLIENT, ConTpDummyToCursor, this, "Practice: teleport the other tee to your cursor");
+}
+
+void CControls::ConTpToCursor(IConsole::IResult *pResult, void *pUserData)
+{
+	CControls *pSelf = (CControls *)pUserData;
+	if(pSelf->Client()->State() != IClient::STATE_ONLINE)
+		return;
+
+	pSelf->SendPracticeTeleportToCursor(g_Config.m_ClDummy ? IClient::CONN_DUMMY : IClient::CONN_MAIN);
+}
+
+void CControls::ConTpDummyToCursor(IConsole::IResult *pResult, void *pUserData)
+{
+	CControls *pSelf = (CControls *)pUserData;
+	if(pSelf->Client()->State() != IClient::STATE_ONLINE)
+		return;
+
+	if(!pSelf->Client()->DummyConnected())
+	{
+		pSelf->GameClient()->Echo(Localize("Dummy is not connected"));
+		return;
+	}
+
+	// Send on the inactive connection; the server only teleports the sender.
+	pSelf->SendPracticeTeleportToCursor(g_Config.m_ClDummy ? IClient::CONN_MAIN : IClient::CONN_DUMMY);
+}
+
+vec2 CControls::CursorWorldPos() const
+{
+	const vec2 Center = GameClient()->m_Camera.m_Center;
+	const vec2 TargetPos = m_aTargetPos[g_Config.m_ClDummy];
+	return Center + (TargetPos - Center) * GameClient()->m_Camera.m_Zoom;
+}
+
+void CControls::SendPracticeTeleportToCursor(int Conn)
+{
+	const vec2 CursorPos = CursorWorldPos();
+	CNetMsg_Cl_PracticeTeleport Msg;
+	Msg.m_X = round_to_int(CursorPos.x);
+	Msg.m_Y = round_to_int(CursorPos.y);
+	Client()->SendPackMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
 void CControls::OnMessage(int Msg, void *pRawMsg)
@@ -177,7 +223,7 @@ void CControls::OnMessage(int Msg, void *pRawMsg)
 		if(g_Config.m_ClAutoswitchWeapons)
 			m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = pMsg->m_Weapon + 1;
 		// We don't really know ammo count, until we'll switch to that weapon, but any non-zero count will suffice here
-		m_aAmmoCount[maximum(0, pMsg->m_Weapon % NUM_WEAPONS)] = 10;
+		m_aAmmoCount[std::max(0, pMsg->m_Weapon % NUM_WEAPONS)] = 10;
 	}
 }
 
@@ -363,7 +409,7 @@ void CControls::OnRender()
 	if(g_Config.m_ClAutoswitchWeaponsOutOfAmmo && !GameClient()->m_GameInfo.m_UnlimitedAmmo && GameClient()->m_Snap.m_pLocalCharacter)
 	{
 		// Keep track of ammo count, we know weapon ammo only when we switch to that weapon, this is tracked on server and protocol does not track that
-		m_aAmmoCount[maximum(0, GameClient()->m_Snap.m_pLocalCharacter->m_Weapon % NUM_WEAPONS)] = GameClient()->m_Snap.m_pLocalCharacter->m_AmmoCount;
+		m_aAmmoCount[std::max(0, GameClient()->m_Snap.m_pLocalCharacter->m_Weapon % NUM_WEAPONS)] = GameClient()->m_Snap.m_pLocalCharacter->m_AmmoCount;
 		// Autoswitch weapon if we're out of ammo
 		if(m_aInputData[g_Config.m_ClDummy].m_Fire % 2 != 0 &&
 			GameClient()->m_Snap.m_pLocalCharacter->m_AmmoCount == 0 &&
@@ -403,7 +449,7 @@ void CControls::OnRender()
 
 bool CControls::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
 {
-	if(GameClient()->m_Snap.m_pGameInfoObj && (GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_PAUSED))
+	if(GameClient()->IsWorldPaused())
 		return false;
 
 	if(CursorType == IInput::CURSOR_JOYSTICK && g_Config.m_InpControllerAbsolute && GameClient()->m_Snap.m_pGameInfoObj && !GameClient()->m_Snap.m_SpecInfo.m_Active)
@@ -440,7 +486,16 @@ bool CControls::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
 	if(GameClient()->m_Snap.m_SpecInfo.m_Active && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId < 0)
 		Factor *= GameClient()->m_Camera.m_Zoom;
 
-	m_aMousePos[g_Config.m_ClDummy] += vec2(x, y) * Factor;
+	if(g_Config.m_ClDecoupleMouseSens && CursorType == IInput::CURSOR_MOUSE)
+	{
+		vec2 MouseSens = vec2(g_Config.m_ClMouseSensXIngame / 100.0f, g_Config.m_ClMouseSensYIngame / 100.0f);
+		if(GameClient()->m_Snap.m_SpecInfo.m_Active && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId < 0)
+			MouseSens *= GameClient()->m_Camera.m_Zoom;
+
+		m_aMousePos[g_Config.m_ClDummy] += vec2(x, y) * MouseSens;
+	}
+	else
+		m_aMousePos[g_Config.m_ClDummy] += vec2(x, y) * Factor;
 	GameClient()->m_Controls.m_aMouseInputType[g_Config.m_ClDummy] = CControls::EMouseInputType::RELATIVE;
 	ClampMousePos();
 	return true;
@@ -496,7 +551,7 @@ float CControls::GetMaxMouseDistance() const
 	float FollowFactor = (g_Config.m_ClDyncam ? g_Config.m_ClDyncamFollowFactor : g_Config.m_ClMouseFollowfactor) / 100.0f;
 	float DeadZone = g_Config.m_ClDyncam ? g_Config.m_ClDyncamDeadzone : g_Config.m_ClMouseDeadzone;
 	float MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
-	return minimum((FollowFactor != 0 ? CameraMaxDistance / FollowFactor + DeadZone : MaxDistance), MaxDistance);
+	return std::min(FollowFactor != 0.0f ? CameraMaxDistance / FollowFactor + DeadZone : MaxDistance, MaxDistance);
 }
 
 bool CControls::CheckNewInput()

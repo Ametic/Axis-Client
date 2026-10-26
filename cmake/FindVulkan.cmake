@@ -21,11 +21,13 @@ if(NOT VULKAN_FOUND)
   elseif(TARGET_OS STREQUAL "mac")
     find_library(VULKAN_LIBRARIES
       NAMES MoltenVK
+      HINTS "$ENV{VULKAN_SDK}/lib"
     )
 
     find_path(
       VULKAN_INCLUDE_DIRS
       NAMES vulkan/vulkan.h
+      HINTS "$ENV{VULKAN_SDK}/include"
     )
   else()
     set_extra_dirs_lib(VULKAN vulkan)
@@ -57,7 +59,7 @@ if(NOT VULKAN_FOUND)
     find_path(
       VULKAN_INCLUDE_DIRS
       NAMES vulkan/vulkan.h
-      HINTS ${HINTS_VULKAN_INCLUDEDIR} ${PC_VULKAN_INCLUDEDIR} ${PC_VULKAN_INCLUDE_DIRS}
+      HINTS ${HINTS_VULKAN_INCLUDEDIR} ${PC_VULKAN_INCLUDE_DIRS}
       PATHS ${PATHS_VULKAN_INCLUDEDIR}
       ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH}
     )

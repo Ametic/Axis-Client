@@ -95,7 +95,7 @@ void CMutes::UnmuteAddr(const NETADDR *pAddr)
 	auto It = m_Mutes.find(KeyAddr);
 	if(It == m_Mutes.end())
 	{
-		log_info(m_pSystemName, "No mutes for this IP address found: %s", aAddrString);
+		log_info(m_pSystemName, "No mutes for this IP address found: <{%s}>", aAddrString);
 		return;
 	}
 	if(It->second.m_NameKnown)
@@ -112,7 +112,7 @@ std::optional<CMute> CMutes::IsMuted(const NETADDR *pAddr, bool RespectInitialDe
 	{
 		return std::nullopt;
 	}
-	if(!RespectInitialDelay && !It->second.m_InitialDelay)
+	if(!RespectInitialDelay && It->second.m_InitialDelay)
 	{
 		return std::nullopt;
 	}
@@ -246,7 +246,7 @@ void CGameContext::ConMuteId(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	const int Victim = pResult->GetVictim();
+	const int Victim = pResult->GetVictim(0);
 	if(!CheckClientId(Victim) || !pSelf->m_apPlayers[Victim])
 	{
 		log_info("mutes", "Client ID not found: %d", Victim);
@@ -284,7 +284,7 @@ void CGameContext::ConUnmuteId(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	const int Victim = pResult->GetVictim();
+	const int Victim = pResult->GetVictim(0);
 	if(!CheckClientId(Victim) || !pSelf->m_apPlayers[Victim])
 	{
 		log_info("mutes", "Client ID not found: %d", Victim);
@@ -324,7 +324,7 @@ void CGameContext::ConVoteMuteId(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	const int Victim = pResult->GetVictim();
+	const int Victim = pResult->GetVictim(0);
 	if(!CheckClientId(Victim) || !pSelf->m_apPlayers[Victim])
 	{
 		log_info("votemutes", "Client ID not found: %d", Victim);
@@ -362,7 +362,7 @@ void CGameContext::ConVoteUnmuteId(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	const int Victim = pResult->GetVictim();
+	const int Victim = pResult->GetVictim(0);
 	if(!CheckClientId(Victim) || !pSelf->m_apPlayers[Victim])
 	{
 		log_info("votemutes", "Client ID not found: %d", Victim);

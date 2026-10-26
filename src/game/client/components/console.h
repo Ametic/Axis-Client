@@ -134,8 +134,6 @@ class CGameConsole : public CComponent
 		 * @param aCmd the command the cursor is at
 		 */
 		void GetCommand(const char *pInput, char (&aCmd)[IConsole::CMDLINE_LENGTH]);
-		static void PossibleCommandsCompleteCallback(int Index, const char *pStr, void *pUser);
-		static void PossibleArgumentsCompleteCallback(int Index, const char *pStr, void *pUser);
 
 		void UpdateEntryTextAttributes(CBacklogEntry *pEntry) const;
 
@@ -166,6 +164,11 @@ class CGameConsole : public CComponent
 
 	bool m_WantsSelectionCopy = false;
 	CUi::CTouchState m_TouchState;
+
+	vec2 m_ButtonPressPosition = vec2(0.0f, 0.0f);
+	bool m_ButtonPressed = false;
+
+	bool DoButton(const CUIRect &Rect, const char *pIcon, vec2 MousePosition, bool Released);
 
 	static constexpr ColorRGBA ms_SearchHighlightColor = ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f);
 	static constexpr ColorRGBA ms_SearchSelectedColor = ColorRGBA(1.0f, 1.0f, 0.0f, 1.0f);
@@ -210,7 +213,9 @@ public:
 	void Prompt(char (&aPrompt)[32]);
 
 	void Toggle(int Type);
+	void Close(); // EClient
 	bool IsActive() const { return m_ConsoleState != CONSOLE_CLOSED; }
+	void SetRemoteConsoleInput(const char *pText, bool Open = true);
 
 	void ForceUpdateRemoteCompletionSuggestions();
 };

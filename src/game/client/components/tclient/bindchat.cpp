@@ -217,7 +217,7 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("votekick", "votekick");
 	AddDefaultBind("onlineinfo", "OnlineInfo");
 	AddDefaultBind("playerinfo", "PlayerInfo");
-	AddBindDefault(".github", "view_link github.com/FoxNet-DDNet/Entity-Client-DDNet");
+	AddBindDefault(".github", "view_link https://github.com/FoxNet-DDNet/Entity-Client-DDNet");
 	AddDefaultBind("r", "reply_last");
 
 	AddDefaultBind("friend", "add_friend");
@@ -228,8 +228,6 @@ void CBindChat::OnConsoleInit()
 
 	AddDefaultBind("restore", "restoreskin");
 	AddDefaultBind("save", "saveskin");
-
-	AddDefaultBind("tempmute", "addtempmute");
 
 	AddDefaultBind("tempwar", "war_name_index 1 1");
 	AddDefaultBind("war", "war_name_index 0 1");
@@ -263,7 +261,6 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("translate_id", "translate_id");
 
 	AddDefaultBind("firetext", "chai entity/builtinscripts/firetext.chai");
-	AddDefaultBind("antiad", "chai entity/builtinscripts/anti-bot-ad.chai");
 }
 
 void CBindChat::OnInit()
@@ -290,7 +287,8 @@ bool CBindChat::CheckBindChat(const char *pText)
 	size_t SpaceIndex = pSpace ? pSpace - pText : strlen(pText);
 	for(const CBind &Bind : m_vBinds)
 	{
-		if(str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
+		if(str_startswith_nocase(pText, Bind.m_aName) &&
+			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 			return true;
 	}
 	return false;

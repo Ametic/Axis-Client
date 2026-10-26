@@ -7,7 +7,10 @@
 
 #include <game/client/prediction/entity.h>
 #include <game/gamecore.h>
+#include <game/quad_data.h>
 #include <game/race_state.h>
+
+#include <vector>
 
 enum
 {
@@ -81,6 +84,10 @@ public:
 
 	int m_TileIndex;
 	int m_TileFIndex;
+	// <FoxNet
+	// Standing in a moving freeze quad this tick, see CFreezeZone::OnTick
+	bool m_InsideQuadFreeze = false;
+	// FoxNet>
 
 	bool m_LastRefillJumps;
 
@@ -92,6 +99,11 @@ public:
 	CCharacterCore GetCore() { return m_Core; }
 	void SetCore(const CCharacterCore &Core) { m_Core = Core; }
 	const CCharacterCore *Core() const { return &m_Core; }
+	// EClient: the practice world sets core flags directly, see CLocalPractice
+	CCharacterCore *Core() { return &m_Core; }
+	// EClient: moves every tick stamped field onto a different clock, for a character seeded into
+	// the practice world out of a snapshot taken on the server's, see CLocalPractice::SeedCharacter
+	void RebaseTicks(int Delta);
 	bool GetWeaponGot(int Type) { return m_Core.m_aWeapons[Type].m_Got; }
 	void SetWeaponGot(int Type, bool Value) { m_Core.m_aWeapons[Type].m_Got = Value; }
 	int GetWeaponAmmo(int Type) { return m_Core.m_aWeapons[Type].m_Ammo; }
@@ -139,6 +151,10 @@ public:
 	// TClient
 	CNetObj_PlayerInput *LatestInput() { return &m_LatestInput; }
 
+	// antiping
+	void AntiPingInterference(int ClientId, bool DisallowReset = false, bool HasToBeUnfrozen = false);
+	bool IsInterfering() const { return m_Interfering; }
+
 private:
 	// weapon info
 	int m_aHitObjects[MAX_CLIENTS];
@@ -174,17 +190,23 @@ private:
 
 	// DDRace
 
-	static bool IsSwitchActiveCb(int Number, void *pUser);
+	static bool IsSwitchActiveCb(unsigned char Number, void *pUser);
 	void HandleTiles(int Index);
 	void HandleSkippableTiles(int Index);
 	void DDRaceTick();
 	void DDRacePostCoreTick();
+	// <FoxNet
+	void QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj);
+	void QuadZoneTick();
+	// FoxNet>
 	void HandleTuneLayer();
 
 	int m_StrongWeakId;
 
 	int m_LastWeaponSwitchTick;
 	int m_LastTuneZoneTick;
+
+	bool m_Interfering;
 };
 
 #endif

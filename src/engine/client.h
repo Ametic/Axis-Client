@@ -21,6 +21,8 @@
 #define CONNECTLINK_DOUBLE_SLASH "ddnet://"
 #define CONNECTLINK_NO_SLASH "ddnet:"
 
+class CSnapshot;
+class CSnapshotBuffer;
 class IMap;
 struct SWarning;
 
@@ -64,19 +66,19 @@ public:
 	 * More precise state for @see STATE_LOADING
 	 * Sets what is actually happening in the client right now
 	 */
-	enum ELoadingStateDetail
+	enum class ELoadingStateDetail
 	{
-		LOADING_STATE_DETAIL_INITIAL,
-		LOADING_STATE_DETAIL_LOADING_MAP,
-		LOADING_STATE_DETAIL_LOADING_DEMO,
-		LOADING_STATE_DETAIL_SENDING_READY,
-		LOADING_STATE_DETAIL_GETTING_READY,
+		INITIAL,
+		LOADING_MAP,
+		LOADING_DEMO,
+		SENDING_READY,
+		GETTING_READY,
 	};
 
-	enum ELoadingCallbackDetail
+	enum class ELoadingCallbackDetail
 	{
-		LOADING_CALLBACK_DETAIL_MAP,
-		LOADING_CALLBACK_DETAIL_DEMO,
+		MAP,
+		DEMO,
 	};
 	typedef std::function<void(ELoadingCallbackDetail Detail)> TLoadingCallback;
 	CTranslationContext m_TranslationContext;
@@ -84,7 +86,7 @@ public:
 protected:
 	// quick access to state of the client
 	EClientState m_State = IClient::STATE_OFFLINE;
-	ELoadingStateDetail m_LoadingStateDetail = LOADING_STATE_DETAIL_INITIAL;
+	ELoadingStateDetail m_LoadingStateDetail = ELoadingStateDetail::INITIAL;
 	int64_t m_StateStartTime;
 
 	// quick access to time variables
@@ -126,15 +128,15 @@ public:
 		NUM_CONNS,
 	};
 
-	enum
+	enum class EConnectivity
 	{
-		CONNECTIVITY_UNKNOWN,
-		CONNECTIVITY_CHECKING,
-		CONNECTIVITY_UNREACHABLE,
-		CONNECTIVITY_REACHABLE,
+		UNKNOWN,
+		CHECKING,
+		UNREACHABLE,
+		REACHABLE,
 		// Different global IP address has been detected for UDP and
 		// TCP connections.
-		CONNECTIVITY_DIFFERING_UDP_TCP_IP_ADDRESSES,
+		DIFFERING_UDP_TCP_IP_ADDRESSES,
 	};
 
 	//
@@ -150,40 +152,64 @@ public:
 	// There are 50 ticks per second, by default we only send snapshot on
 	// every second tick.
 
-	// Tick of the second to most recently received snapshot (usually 2
-	// less than `GameTick`).
+	/**
+	 * Tick of the second to most recently received snapshot (usually 2
+	 * less than `GameTick`).
+	 */
 	int PrevGameTick(int Conn) const { return m_aPrevGameTick[Conn]; }
-	// Tick of most recently received snapshot.
+	/**
+	 * Tick of most recently received snapshot.
+	 */
 	int GameTick(int Conn) const { return m_aCurGameTick[Conn]; }
-	// The tick we should predict to. Comes from a magic black box called
-	// "smooth time".
+	/**
+	 * The tick we should predict to. Comes from a magic black box called
+	 * "smooth time".
+	 */
 	int PredGameTick(int Conn) const { return m_aPredTick[Conn]; }
-	// Linear interpolation parameter between `PrevGameTick` (0) and
-	// `GameTick` (1). Can be outside the interval [0, 1].
+	/**
+	 * Linear interpolation parameter between `PrevGameTick` (0) and
+	 * `GameTick` (1). Can be outside the interval [0, 1].
+	 */
 	float IntraGameTick(int Conn) const { return m_aGameIntraTick[Conn]; }
-	// Linear interpolation parameter between `PredGameTick - 1` (0) and
-	// `PredGameTick` (1). Can be outside the interval [0, 1].
+	/**
+	 * Linear interpolation parameter between `PredGameTick - 1` (0) and
+	 * `PredGameTick` (1). Can be outside the interval [0, 1].
+	 */
 	float PredIntraGameTick(int Conn) const { return m_aPredIntraTick[Conn]; }
-	// (Fractional) ticks since `PrevGameTick`.
+	/**
+	 * (Fractional) ticks since `PrevGameTick`.
+	 */
 	float IntraGameTickSincePrev(int Conn) const { return m_aGameIntraTickSincePrev[Conn]; }
-	// Time in seconds since the second to most recently received snapshot.
+	/**
+	 * Time in seconds since the second to most recently received snapshot.
+	 */
 	float GameTickTime(int Conn) const { return m_aGameTickTime[Conn]; }
-	// 50
+	/**
+	 * 50
+	 */
 	int GameTickSpeed() const { return SERVER_TICK_SPEED; }
 
 	// Other time.
 
-	// Time in seconds since a map was joined, or `GlobalTime` if that
-	// hasn't happened yet.
+	/**
+	 * Time in seconds since a map was joined, or `GlobalTime` if that
+	 * hasn't happened yet.
+	 */
 	float LocalTime() const { return m_LocalTime; }
-	// Time in seconds since the client was opened.
+	/**
+	 * Time in seconds since the client was opened.
+	 */
 	float GlobalTime() const { return m_GlobalTime; }
 
 	// Render statistics.
 
-	// Duration in seconds of the previous render cycle.
+	/**
+	 * Duration in seconds of the previous render cycle.
+	 */
 	float RenderFrameTime() const { return m_RenderFrameTime; }
-	// Exponentially weighted average of frame times.
+	/**
+	 * Exponentially weighted average of frame times.
+	 */
 	float FrameTimeAverage() const { return m_FrameTimeAverage; }
 
 	// actions
@@ -245,7 +271,7 @@ public:
 	virtual const std::vector<std::string> &MaplistEntries() const = 0;
 
 	// server info
-	virtual void GetServerInfo(class CServerInfo *pServerInfo) const = 0;
+	virtual const class CServerInfo &ServerInfo() const = 0;
 	virtual bool ServerCapAnyPlayerFlag() const = 0;
 
 	virtual int GetPredictionTime() = 0;
@@ -263,6 +289,10 @@ public:
 	// TODO: Refactor: should redo this a bit i think, too many virtual calls
 	virtual int SnapNumItems(int SnapId) const = 0;
 	virtual const void *SnapFindItem(int SnapId, int Type, int Id) const = 0;
+	// Same as above, but for a specific connection (CONN_MAIN/CONN_DUMMY) instead of the active one.
+	// Only the active connection is unpacked into CGameClient::m_Snap, so this is the only way to
+	// look at the state the server reports to the connection we are currently not playing on.
+	virtual const void *SnapFindItem(int Conn, int SnapId, int Type, int Id) const = 0;
 	virtual CSnapItem SnapGetItem(int SnapId, int Index) const = 0;
 
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
@@ -336,7 +366,7 @@ public:
 	virtual std::optional<SWarning> CurrentWarning() = 0;
 
 	virtual CChecksumData *ChecksumData() = 0;
-	virtual int UdpConnectivity(int NetType) = 0;
+	virtual EConnectivity UdpConnectivity(int NetType) = 0;
 
 	/**
 	 * Opens a link in the browser.
@@ -356,6 +386,8 @@ public:
 	 * @return `true` on success, `false` on failure.
 	 *
 	 * @remark This may not be called with untrusted input or it'll result in arbitrary code execution, especially on Windows.
+	 *
+	 * @remark On iOS the file or directory is shown in the Files app.
 	 */
 	virtual bool ViewFile(const char *pFilename) = 0;
 
@@ -371,9 +403,14 @@ public:
 	bool m_IsLocalFrozen = false;
 
 	// EClient
-	virtual void DiscordRPCchange() = 0;
+	virtual void DiscordRPCUpdate() = 0;
 	virtual void SendFastInputsInfo(int Conn) = 0;
+	// Like DummyConnect, but the dummy does not become the active connection once it is
+	// ready. Used to connect a dummy in the background without moving the camera onto it.
+	virtual void DummyConnectInBackground() = 0;
 	int m_FoxNetVersion = 0;
+	// 0 = server did not send one
+	int m_FoxNetMovingTilesVersion = 0;
 };
 
 class IGameClient : public IInterface
@@ -387,7 +424,7 @@ public:
 	virtual void OnRconLine(const char *pLine) = 0;
 	virtual void OnInit() = 0;
 	virtual void InvalidateSnapshot() = 0;
-	virtual void OnNewSnapshot() = 0;
+	virtual void OnNewSnapshot(bool DummySwapped) = 0;
 	virtual void OnEnterGame() = 0;
 	virtual void OnShutdown() = 0;
 	virtual void OnRender() = 0;
@@ -425,9 +462,9 @@ public:
 	virtual int ClientVersion7() const = 0;
 
 	virtual void ApplySkin7InfoFromSnapObj(const protocol7::CNetObj_De_ClientInfo *pObj, int ClientId) = 0;
-	virtual int OnDemoRecSnap7(class CSnapshot *pFrom, class CSnapshot *pTo, int Conn) = 0;
-	virtual int TranslateSnap(class CSnapshot *pSnapDstSix, class CSnapshot *pSnapSrcSeven, int Conn, bool Dummy) = 0;
-	virtual void ProcessDemoSnapshot(class CSnapshot *pSnap) = 0;
+	virtual int OnDemoRecSnap7(CSnapshot *pFrom, CSnapshotBuffer *pTo, int Conn) = 0;
+	virtual int TranslateSnap(CSnapshotBuffer *pSnapDstSix, CSnapshot *pSnapSrcSeven, int Conn, bool Dummy) = 0;
+	virtual void ProcessDemoSnapshot(CSnapshot *pSnap) = 0;
 
 	virtual void InitializeLanguage() = 0;
 
@@ -437,11 +474,13 @@ public:
 	virtual bool CheckNewInput() = 0;
 	virtual void SetConnectInfo(const NETADDR *pAddress) = 0;
 
-	virtual void OnSelfDeath() = 0;
+	// Dummy tells which of our own tees died (CONN_MAIN/CONN_DUMMY)
+	virtual void OnSelfDeath(bool Dummy) = 0;
 
 	virtual void OnServerBrowserRefresh() = 0;
+	virtual bool HasMapFinish(const char *pPlayerName, const char *pMapName, const char *pCommunity) const = 0;
 	virtual void ClientMessage(const char *pString) = 0;
-	virtual void OnJoinInfo() = 0;
+	virtual void OnConnect(int Conn) = 0;
 	virtual void SetLastMovementTime() = 0;
 	virtual void RequestEClientInfo() = 0;
 	virtual int GetClientId(const char *pName) = 0;

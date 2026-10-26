@@ -1,8 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/dbg.h>
 #include <base/log.h>
 #include <base/math.h>
-#include <base/system.h>
+#include <base/mem.h>
+#include <base/str.h>
+#include <base/time.h>
 
 #include <engine/console.h>
 #include <engine/graphics.h>
@@ -14,9 +17,11 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <limits>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -40,6 +45,24 @@ enum
 {
 	FONT_NAME_SIZE = 128,
 };
+
+// EClient: chat color codes, "&NN" picks a hue, "&NNS" also picks a saturation
+// and "&x" resets to the color the text started with.
+static bool IsColorCodeDigit(char Char)
+{
+	return Char >= '0' && Char <= '9';
+}
+
+// Length of the code following the '&', or 0 when there is no valid code.
+static int ColorCodeLength(const char *pCode)
+{
+	if(pCode[0] == 'x')
+		return 1;
+	// The short circuits keep this from reading past the terminator
+	if(!IsColorCodeDigit(pCode[0]) || !IsColorCodeDigit(pCode[1]))
+		return 0;
+	return IsColorCodeDigit(pCode[2]) ? 3 : 2;
+}
 
 struct SGlyph
 {
@@ -425,8 +448,9 @@ private:
 
 	FT_UInt GetCharGlyph(int Chr, FT_Face *pFace, bool AllowReplacementCharacter)
 	{
-		// EClient: 0xE0073 is '󠁳', which doesn't get rendered if Noto Emoji is used as fallback font
-		if(Chr == 0xe0073)
+		// EClient: Unicode tag characters can have empty glyphs in Noto Emoji.
+		// Show the missing-glyph square instead of allowing invisible player names.
+		if(Chr == 0xe0001 || (Chr >= 0xe0020 && Chr <= 0xe007f))
 			Chr = REPLACEMENT_CHARACTER;
 
 		for(FT_Face Face : {m_SelectedFace, m_DefaultFace, m_VariantFace})
@@ -474,31 +498,67 @@ private:
 
 	void Grow(const unsigned char *pIn, unsigned char *pOut, int w, int h, int OutlineCount) const
 	{
+		struct SSample
+		{
+			int m_OffsetX;
+			int m_OffsetY;
+			unsigned char m_Mask;
+		};
+
+		// The kernel is the same for every pixel, so its weights are worked out once here rather
+		// than a square root and a clamp per pixel per tap.
+		dbg_assert(OutlineCount <= MAX_OUTLINE_THICKNESS, "Outline thickness out of range");
+		constexpr int MaxDiameter = MAX_OUTLINE_THICKNESS * 2 + 1;
+		SSample aSamples[MaxDiameter * MaxDiameter];
+		int NumSamples = 0;
+
+		for(int sy = -OutlineCount; sy <= OutlineCount; sy++)
+		{
+			for(int sx = -OutlineCount; sx <= OutlineCount; sx++)
+			{
+				const int DistanceSquared = sx * sx + sy * sy;
+
+				// Nothing past the one pixel falloff contributes anything, so the corners of the
+				// square kernel are dropped instead of being sampled for a zero weight
+				if(DistanceSquared > (OutlineCount + 1) * (OutlineCount + 1))
+					continue;
+
+				const float Distance = std::sqrt(static_cast<float>(DistanceSquared));
+				const float Mask = 1.0f - std::clamp(Distance - OutlineCount, 0.0f, 1.0f);
+				if(Mask <= 0.0f)
+					continue;
+
+				aSamples[NumSamples] = {sx, sy, static_cast<unsigned char>(Mask * 255.0f + 0.5f)};
+				NumSamples++;
+			}
+		}
+
 		for(int y = 0; y < h; y++)
 		{
 			for(int x = 0; x < w; x++)
 			{
 				int c = pIn[y * w + x];
 
-				for(int sy = -OutlineCount; sy <= OutlineCount; sy++)
+				for(int i = 0; i < NumSamples; i++)
 				{
-					for(int sx = -OutlineCount; sx <= OutlineCount; sx++)
-					{
-						int GetX = x + sx;
-						int GetY = y + sy;
-						if(GetX >= 0 && GetY >= 0 && GetX < w && GetY < h)
-						{
-							int Index = GetY * w + GetX;
-							float Mask = 1.f - std::clamp(length(vec2(sx, sy)) - OutlineCount, 0.f, 1.f);
-							c = maximum(c, int(pIn[Index] * Mask));
-						}
-					}
+					const SSample &Sample = aSamples[i];
+					const int GetX = x + Sample.m_OffsetX;
+					const int GetY = y + Sample.m_OffsetY;
+
+					if(GetX < 0 || GetY < 0 || GetX >= w || GetY >= h)
+						continue;
+
+					const int Value = (pIn[GetY * w + GetX] * Sample.m_Mask) / 255;
+					c = std::max(c, Value);
 				}
 
 				pOut[y * w + x] = c;
 			}
 		}
 	}
+
+	// The largest AdjustOutlineThicknessToFontSize can return, which bounds the Grow kernel
+	static constexpr int MAX_OUTLINE_THICKNESS = 4;
 
 	int AdjustOutlineThicknessToFontSize(int OutlineThickness, int FontSize) const
 	{
@@ -1071,25 +1131,25 @@ class CTextRender : public IEngineTextRender
 
 	bool LoadFontCollection(const char *pFontName, const FT_Byte *pFontData, FT_Long FontDataSize)
 	{
-		FT_Face FtFace;
-		FT_Error CollectionLoadError = FT_New_Memory_Face(m_FTLibrary, pFontData, FontDataSize, -1, &FtFace);
+		FT_Face FtFaceCollection;
+		FT_Error CollectionLoadError = FT_New_Memory_Face(m_FTLibrary, pFontData, FontDataSize, -1, &FtFaceCollection);
 		if(CollectionLoadError)
 		{
 			log_error("textrender", "Failed to load font file '%s': %s", pFontName, FT_Error_String(CollectionLoadError));
 			return false;
 		}
 
-		const FT_Long NumFaces = FtFace->num_faces;
-		FT_Done_Face(FtFace);
+		const FT_Long NumFaces = FtFaceCollection->num_faces;
+		FT_Done_Face(FtFaceCollection);
 
 		bool LoadedAny = false;
 		for(FT_Long FaceIndex = 0; FaceIndex < NumFaces; ++FaceIndex)
 		{
+			FT_Face FtFace;
 			FT_Error FaceLoadError = FT_New_Memory_Face(m_FTLibrary, pFontData, FontDataSize, FaceIndex, &FtFace);
 			if(FaceLoadError)
 			{
 				log_error("textrender", "Failed to load font face %ld from font file '%s': %s", FaceIndex, pFontName, FT_Error_String(FaceLoadError));
-				FT_Done_Face(FtFace);
 				continue;
 			}
 
@@ -1300,7 +1360,7 @@ public:
 		// parse json data
 		json_settings JsonSettings{};
 		char aError[256];
-		json_value *pJsonData = json_parse_ex(&JsonSettings, static_cast<const json_char *>(pFileData), JsonFileSize, aError);
+		json_value *pJsonData = JsonParseEx(&JsonSettings, static_cast<const json_char *>(pFileData), JsonFileSize, aError);
 		free(pFileData);
 		if(pJsonData == nullptr)
 		{
@@ -1565,9 +1625,11 @@ public:
 		{
 			if((pCursor->m_Flags & TEXTFLAG_RENDER) != 0)
 			{
-				ColorRGBA TextColor = DefaultTextColor();
-				ColorRGBA TextColorOutline = DefaultTextOutlineColor();
-				RenderTextContainer(TextCont, TextColor, TextColorOutline);
+				// The fill colour is already baked into the glyph vertices from m_Color, and
+				// RenderTextContainer multiplies by what it is handed, so it is passed the
+				// identity here. The outline has no such path and has to be handed over, which is
+				// what makes TextOutlineColor apply to Text and TextEx at all.
+				RenderTextContainer(TextCont, DefaultTextColor(), m_OutlineColor);
 			}
 			DeleteTextContainer(TextCont);
 		}
@@ -1580,12 +1642,11 @@ public:
 		TextContainerIndex.Reset();
 		TextContainerIndex.m_Index = GetFreeTextContainerIndex();
 
-		float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-		Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+		CScreenRect ScreenRect = Graphics()->GetScreen();
 
 		STextContainer &TextContainer = GetTextContainer(TextContainerIndex);
 		TextContainer.m_SingleTimeUse = (m_RenderFlags & TEXT_RENDER_FLAG_ONE_TIME_USE) != 0;
-		const vec2 FakeToScreen = vec2(Graphics()->ScreenWidth() / (ScreenX1 - ScreenX0), Graphics()->ScreenHeight() / (ScreenY1 - ScreenY0));
+		const vec2 FakeToScreen = Graphics()->ScreenSize() / ScreenRect.Size();
 		TextContainer.m_AlignedStartX = round_to_int(pCursor->m_X * FakeToScreen.x) / FakeToScreen.x;
 		TextContainer.m_AlignedStartY = round_to_int(pCursor->m_Y * FakeToScreen.y) / FakeToScreen.y;
 		TextContainer.m_X = pCursor->m_X;
@@ -1630,10 +1691,9 @@ public:
 		STextContainer &TextContainer = GetTextContainer(TextContainerIndex);
 		str_append(TextContainer.m_aDebugText, pText);
 
-		float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-		Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+		CScreenRect ScreenRect = Graphics()->GetScreen();
 
-		const vec2 FakeToScreen = vec2(Graphics()->ScreenWidth() / (ScreenX1 - ScreenX0), Graphics()->ScreenHeight() / (ScreenY1 - ScreenY0));
+		const vec2 FakeToScreen = Graphics()->ScreenSize() / ScreenRect.Size();
 		const float CursorX = round_to_int(pCursor->m_X * FakeToScreen.x) / FakeToScreen.x;
 		const float CursorY = round_to_int(pCursor->m_Y * FakeToScreen.y) / FakeToScreen.y;
 		const int ActualSize = round_truncate(pCursor->m_FontSize * FakeToScreen.y);
@@ -1644,26 +1704,18 @@ public:
 		if(Length < 0)
 			Length = str_length(pText);
 		else
-			Length = minimum(Length, str_length(pText));
+			Length = std::min(Length, str_length(pText));
 
 		const char *pCurrent = pText;
 		const char *pEnd = pCurrent + Length;
 		const char *pPrevBatchEnd = nullptr;
 		const char *pEllipsis = "…";
 		const SGlyph *pEllipsisGlyph = nullptr;
-		if(pCursor->m_Flags & TEXTFLAG_ELLIPSIS_AT_END)
-		{
-			if(pCursor->m_LineWidth > 0.0f && pCursor->m_LineWidth < TextWidth(pCursor->m_FontSize, pText))
-			{
-				pEllipsisGlyph = m_pGlyphMap->GetGlyph(0x2026, ActualSize); // …
-				if(pEllipsisGlyph == nullptr)
-				{
-					// no ellipsis char in font, just stop at end instead
-					pCursor->m_Flags &= ~TEXTFLAG_ELLIPSIS_AT_END;
-					pCursor->m_Flags |= TEXTFLAG_STOP_AT_END;
-				}
-			}
-		}
+		// Only text that does not fit as a whole is ellipsized. Both the ellipsis glyph and
+		// the width of the whole text are only determined once the line width is nearly
+		// exhausted, so text that stays well within it is never measured a second time.
+		bool EllipsisGlyphResolved = false;
+		bool EllipsisFitResolved = false;
 
 		const unsigned RenderFlags = TextContainer.m_RenderFlags;
 
@@ -1683,7 +1735,7 @@ public:
 
 		const bool IsRendered = (pCursor->m_Flags & TEXTFLAG_RENDER) != 0;
 
-		const float CursorInnerWidth = (((ScreenX1 - ScreenX0) / Graphics()->ScreenWidth())) * 2;
+		const float CursorInnerWidth = (ScreenRect.Width() / Graphics()->ScreenWidth()) * 2;
 		const float CursorOuterWidth = CursorInnerWidth * 2;
 		const float CursorOuterInnerDiff = (CursorOuterWidth - CursorInnerWidth) / 2;
 
@@ -1695,27 +1747,36 @@ public:
 		int SelectionStartChar = -1;
 		int SelectionEndChar = -1;
 
-		const auto &&CheckInsideChar = [&](bool CheckOuter, vec2 CursorPos, float LastCharX, float LastCharWidth, float CharX, float CharWidth, float CharY) -> bool {
-			return (LastCharX - LastCharWidth / 2 <= CursorPos.x &&
-				       CharX + CharWidth / 2 > CursorPos.x &&
-				       CursorPos.y >= CharY - pCursor->m_AlignedFontSize &&
-				       CursorPos.y < CharY + pCursor->m_AlignedLineSpacing) ||
+		const auto &&CheckChar = [&](vec2 CursorPos, float CharX, float CharWidth, float CharY) -> bool {
+			float AlignedCharTop = CharY - pCursor->m_AlignedFontSize;
+			float AlignedCharBottom = CharY + pCursor->m_AlignedLineSpacing;
+			if((RenderFlags & TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT) == 0)
+			{
+				AlignedCharTop = round_to_int(AlignedCharTop * FakeToScreen.y) / FakeToScreen.y;
+				AlignedCharBottom = round_to_int(AlignedCharBottom * FakeToScreen.y) / FakeToScreen.y;
+			}
+			return (CharX + CharWidth / 2.0f > CursorPos.x &&
+				       CursorPos.y >= AlignedCharTop &&
+				       CursorPos.y < AlignedCharBottom) ||
+			       (CursorPos.x >= pCursor->m_X &&
+				       CursorPos.y < AlignedCharTop);
+		};
+		const auto &&CheckInsideChar = [&](bool CheckOuter, vec2 CursorPos, float CharX, float CharWidth, float CharY) -> bool {
+			return CheckChar(CursorPos, CharX, CharWidth, CharY) ||
 			       (CheckOuter &&
 				       CursorPos.y <= CharY - pCursor->m_AlignedFontSize);
 		};
-		const auto &&CheckSelectionStart = [&](bool CheckOuter, vec2 CursorPos, int &SelectionChar, bool &SelectionUsedCase, float LastCharX, float LastCharWidth, float CharX, float CharWidth, float CharY) {
+		const auto &&CheckSelectionStart = [&](bool CheckOuter, vec2 CursorPos, int &SelectionChar, bool &SelectionUsedCase, float CharX, float CharWidth, float CharY) {
 			if(!SelectionStarted && !SelectionUsedCase &&
-				CheckInsideChar(CheckOuter, CursorPos, LastCharX, LastCharWidth, CharX, CharWidth, CharY))
+				CheckInsideChar(CheckOuter, CursorPos, CharX, CharWidth, CharY))
 			{
 				SelectionChar = pCursor->m_GlyphCount;
-				SelectionStarted = !SelectionStarted;
+				SelectionStarted = true;
 				SelectionUsedCase = true;
 			}
 		};
 		const auto &&CheckOutsideChar = [&](bool CheckOuter, vec2 CursorPos, float CharX, float CharWidth, float CharY) -> bool {
-			return (CharX + CharWidth / 2 > CursorPos.x &&
-				       CursorPos.y >= CharY - pCursor->m_AlignedFontSize &&
-				       CursorPos.y < CharY + pCursor->m_AlignedLineSpacing) ||
+			return CheckChar(CursorPos, CharX, CharWidth, CharY) ||
 			       (CheckOuter &&
 				       CursorPos.y >= CharY + pCursor->m_AlignedLineSpacing);
 		};
@@ -1724,7 +1785,7 @@ public:
 				CheckOutsideChar(CheckOuter, CursorPos, CharX, CharWidth, CharY))
 			{
 				SelectionChar = pCursor->m_GlyphCount;
-				SelectionStarted = !SelectionStarted;
+				SelectionStarted = false;
 				SelectionUsedCase = true;
 			}
 		};
@@ -1778,7 +1839,7 @@ public:
 			const char *pBatchEnd = pEnd;
 			if(pCursor->m_LineWidth > 0.0f && !(pCursor->m_Flags & TEXTFLAG_STOP_AT_END) && !(pCursor->m_Flags & TEXTFLAG_ELLIPSIS_AT_END))
 			{
-				int Wlen = minimum(WordLength(pCurrent), (int)(pEnd - pCurrent));
+				int Wlen = std::min(WordLength(pCurrent), (int)(pEnd - pCurrent));
 				CTextCursor Compare = *pCursor;
 				Compare.m_CalculateSelectionMode = TEXT_CURSOR_SELECTION_MODE_NONE;
 				Compare.m_CursorMode = TEXT_CURSOR_CURSOR_MODE_NONE;
@@ -1835,6 +1896,9 @@ public:
 					{
 						if(StartNewLine())
 						{
+							// Count the newline as a decoded character, so that m_GlyphCount stays
+							// in sync with the decoded character offsets used for text selection
+							pCursor->m_GlyphCount++;
 							pLastGlyph = nullptr;
 							continue;
 						}
@@ -1857,7 +1921,7 @@ public:
 					const float Scale = 1.0f / pGlyph->m_FontSize;
 
 					const bool ApplyBearingX = !(((RenderFlags & TEXT_RENDER_FLAG_NO_X_BEARING) != 0) || (pCursor->m_GlyphCount == 0 && (RenderFlags & TEXT_RENDER_FLAG_NO_FIRST_CHARACTER_X_BEARING) != 0));
-					const float Advance = ((((RenderFlags & TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH) != 0) ? (pGlyph->m_Width) : (pGlyph->m_AdvanceX + ((!ApplyBearingX) ? (-pGlyph->m_OffsetX) : 0.f)))) * Scale * pCursor->m_AlignedFontSize;
+					const float Advance = (((RenderFlags & TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH) != 0) ? (pGlyph->m_Width) : (pGlyph->m_AdvanceX + ((!ApplyBearingX) ? (-pGlyph->m_OffsetX) : 0.f))) * Scale * pCursor->m_AlignedFontSize;
 
 					const float OutLineRealDiff = (pGlyph->m_Width - pGlyph->m_CharWidth) * Scale * pCursor->m_AlignedFontSize;
 
@@ -1866,22 +1930,44 @@ public:
 						CharKerning = m_pGlyphMap->Kerning(pLastGlyph, pGlyph).x * Scale * pCursor->m_AlignedFontSize;
 					pLastGlyph = pGlyph;
 
-					if(pEllipsisGlyph != nullptr && pCursor->m_Flags & TEXTFLAG_ELLIPSIS_AT_END && pCurrent < pBatchEnd && pCurrent != pEllipsis)
+					if((pCursor->m_Flags & TEXTFLAG_ELLIPSIS_AT_END) != 0 && pCursor->m_LineWidth > 0.0f && pCurrent < pBatchEnd && pCurrent != pEllipsis)
 					{
-						float AdvanceEllipsis = ((((RenderFlags & TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH) != 0) ? (pEllipsisGlyph->m_Width) : (pEllipsisGlyph->m_AdvanceX + ((!ApplyBearingX) ? (-pEllipsisGlyph->m_OffsetX) : 0.f)))) * Scale * pCursor->m_AlignedFontSize;
-						float CharKerningEllipsis = 0.0f;
-						if((RenderFlags & TEXT_RENDER_FLAG_KERNING) != 0)
+						if(!EllipsisGlyphResolved)
 						{
-							CharKerningEllipsis = m_pGlyphMap->Kerning(pGlyph, pEllipsisGlyph).x * Scale * pCursor->m_AlignedFontSize;
+							EllipsisGlyphResolved = true;
+							pEllipsisGlyph = m_pGlyphMap->GetGlyph(0x2026, ActualSize); // …
+							if(pEllipsisGlyph == nullptr)
+							{
+								// no ellipsis char in font, just stop at end instead
+								pCursor->m_Flags &= ~TEXTFLAG_ELLIPSIS_AT_END;
+								pCursor->m_Flags |= TEXTFLAG_STOP_AT_END;
+							}
 						}
-						if(pCursor->m_LineWidth > 0.0f &&
-							DrawX + CharKerning + Advance + CharKerningEllipsis + AdvanceEllipsis - pCursor->m_StartX > pCursor->m_LineWidth)
+						if(pEllipsisGlyph != nullptr)
 						{
-							// we hit the end, only render ellipsis and finish
-							pTmp = pEllipsis;
-							NextCharacter = 0x2026;
-							pCursor->m_Truncated = true;
-							continue;
+							float AdvanceEllipsis = (((RenderFlags & TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH) != 0) ? (pEllipsisGlyph->m_Width) : (pEllipsisGlyph->m_AdvanceX + ((!ApplyBearingX) ? (-pEllipsisGlyph->m_OffsetX) : 0.f))) * Scale * pCursor->m_AlignedFontSize;
+							float CharKerningEllipsis = 0.0f;
+							if((RenderFlags & TEXT_RENDER_FLAG_KERNING) != 0)
+							{
+								CharKerningEllipsis = m_pGlyphMap->Kerning(pGlyph, pEllipsisGlyph).x * Scale * pCursor->m_AlignedFontSize;
+							}
+							if(DrawX + CharKerning + Advance + CharKerningEllipsis + AdvanceEllipsis - pCursor->m_StartX > pCursor->m_LineWidth)
+							{
+								if(!EllipsisFitResolved)
+								{
+									EllipsisFitResolved = true;
+									if(pCursor->m_LineWidth >= TextWidth(pCursor->m_FontSize, pText))
+										pEllipsisGlyph = nullptr;
+								}
+								if(pEllipsisGlyph != nullptr)
+								{
+									// we hit the end, only render ellipsis and finish
+									pTmp = pEllipsis;
+									NextCharacter = 0x2026;
+									pCursor->m_Truncated = true;
+									continue;
+								}
+							}
 						}
 					}
 
@@ -1916,23 +2002,21 @@ public:
 					const float CharX = (DrawX + CharKerning) + BearingX;
 					const float CharY = TmpY - BearingY;
 
-					// Check if we have any color split
+					// Check if we have any color split. Appending to a container keeps
+					// counting characters where the previous append left off, so skip over
+					// every split that already ended instead of advancing one per glyph.
 					ColorRGBA Color = m_Color;
-					if(ColorOption < (int)pCursor->m_vColorSplits.size())
+					while(ColorOption < (int)pCursor->m_vColorSplits.size())
 					{
-						STextColorSplit &Split = pCursor->m_vColorSplits.at(ColorOption);
-						if(PrevCharCount >= Split.m_CharIndex && (Split.m_Length == -1 || PrevCharCount < Split.m_CharIndex + Split.m_Length))
-							Color = Split.m_Color;
-						if(Split.m_Length != -1 && PrevCharCount >= (Split.m_CharIndex + Split.m_Length - 1))
+						const STextColorSplit &Split = pCursor->m_vColorSplits[ColorOption];
+						if(Split.m_Length != -1 && PrevCharCount >= Split.m_CharIndex + Split.m_Length)
 						{
 							ColorOption++;
-							if(ColorOption < (int)pCursor->m_vColorSplits.size())
-							{ // Handle splits that are
-								Split = pCursor->m_vColorSplits.at(ColorOption);
-								if(PrevCharCount >= Split.m_CharIndex)
-									Color = Split.m_Color;
-							}
+							continue;
 						}
+						if(PrevCharCount >= Split.m_CharIndex)
+							Color = Split.m_Color;
+						break;
 					}
 
 					// don't add text that isn't drawn, the color overwrite is used for that
@@ -1979,12 +2063,12 @@ public:
 					}
 
 					// calculate the full width from the last selection point to the end of this selection draw on screen
-					const float SelWidth = (CharX + maximum(Advance, CharWidth - OutLineRealDiff / 2)) - (LastSelX + LastSelWidth);
+					const float SelWidth = (CharX + std::max(Advance, CharWidth - OutLineRealDiff / 2)) - (LastSelX + LastSelWidth);
 					const float SelX = (LastSelX + LastSelWidth);
 
 					if(pCursor->m_CursorMode == TEXT_CURSOR_CURSOR_MODE_CALCULATE)
 					{
-						if(pCursor->m_CursorCharacter == -1 && CheckInsideChar(pCursor->m_GlyphCount == 0, pCursor->m_ReleaseMouse, pCursor->m_GlyphCount == 0 ? std::numeric_limits<float>::lowest() : LastCharX, LastCharWidth, CharX, CharWidth, TmpY))
+						if(pCursor->m_CursorCharacter == -1 && CheckInsideChar(pCursor->m_GlyphCount == 0, pCursor->m_ReleaseMouse, CharX, CharWidth, TmpY))
 						{
 							pCursor->m_CursorCharacter = pCursor->m_GlyphCount;
 						}
@@ -1992,15 +2076,9 @@ public:
 
 					if(pCursor->m_CalculateSelectionMode == TEXT_CURSOR_SELECTION_MODE_CALCULATE)
 					{
-						if(pCursor->m_GlyphCount == 0)
-						{
-							CheckSelectionStart(true, pCursor->m_PressMouse, SelectionStartChar, SelectionUsedPress, std::numeric_limits<float>::lowest(), 0, CharX, CharWidth, TmpY);
-							CheckSelectionStart(true, pCursor->m_ReleaseMouse, SelectionEndChar, SelectionUsedRelease, std::numeric_limits<float>::lowest(), 0, CharX, CharWidth, TmpY);
-						}
-
 						// if selection didn't start and the mouse pos is at least on 50% of the right side of the character start
-						CheckSelectionStart(false, pCursor->m_PressMouse, SelectionStartChar, SelectionUsedPress, LastCharX, LastCharWidth, CharX, CharWidth, TmpY);
-						CheckSelectionStart(false, pCursor->m_ReleaseMouse, SelectionEndChar, SelectionUsedRelease, LastCharX, LastCharWidth, CharX, CharWidth, TmpY);
+						CheckSelectionStart(pCursor->m_GlyphCount == 0, pCursor->m_PressMouse, SelectionStartChar, SelectionUsedPress, CharX, CharWidth, TmpY);
+						CheckSelectionStart(pCursor->m_GlyphCount == 0, pCursor->m_ReleaseMouse, SelectionEndChar, SelectionUsedRelease, CharX, CharWidth, TmpY);
 						CheckSelectionEnd(false, pCursor->m_ReleaseMouse, SelectionEndChar, SelectionUsedRelease, CharX, CharWidth, TmpY);
 						CheckSelectionEnd(false, pCursor->m_PressMouse, SelectionStartChar, SelectionUsedPress, CharX, CharWidth, TmpY);
 					}
@@ -2031,7 +2109,7 @@ public:
 						}
 					}
 
-					pCursor->m_MaxCharacterHeight = maximum(pCursor->m_MaxCharacterHeight, CharHeight + BearingY);
+					pCursor->m_MaxCharacterHeight = std::max(pCursor->m_MaxCharacterHeight, CharHeight + BearingY);
 
 					if(NextCharacter == 0 && (RenderFlags & TEXT_RENDER_FLAG_NO_LAST_CHARACTER_ADVANCE) != 0 && Character != ' ')
 						DrawX += BearingX + CharKerning + CharWidth;
@@ -2062,7 +2140,7 @@ public:
 					LastCharWidth = CharWidth;
 				}
 
-				pCursor->m_LongestLineWidth = maximum(pCursor->m_LongestLineWidth, DrawX - pCursor->m_StartX);
+				pCursor->m_LongestLineWidth = std::max(pCursor->m_LongestLineWidth, DrawX - pCursor->m_StartX);
 			}
 
 			if(NewLine)
@@ -2075,7 +2153,9 @@ public:
 				GotNewLineLast = true;
 			}
 			else
+			{
 				GotNewLineLast = false;
+			}
 		}
 
 		if(!TextContainer.m_StringInfo.m_vCharacterQuads.empty() && IsRendered)
@@ -2197,6 +2277,7 @@ public:
 	{
 		STextContainer &TextContainer = GetTextContainer(TextContainerIndex);
 		TextContainer.m_StringInfo.m_vCharacterQuads.clear();
+		TextContainer.m_aDebugText[0] = '\0';
 		// the text buffer gets then recreated by the appended quads
 		AppendTextContainer(TextContainerIndex, pCursor, pText, Length);
 	}
@@ -2279,7 +2360,9 @@ public:
 					Graphics()->QuadsDrawCurrentVertices(false);
 				}
 				else
+				{
 					Graphics()->QuadsEnd();
+				}
 
 				// reset
 				Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
@@ -2322,12 +2405,11 @@ public:
 		STextContainer &TextContainer = GetTextContainer(TextContainerIndex);
 
 		// remap the current screen, after render revert the change again
-		float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-		Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+		CScreenRect ScreenRect = Graphics()->GetScreen();
 
 		if((TextContainer.m_RenderFlags & TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT) == 0)
 		{
-			const vec2 FakeToScreen = vec2(Graphics()->ScreenWidth() / (ScreenX1 - ScreenX0), Graphics()->ScreenHeight() / (ScreenY1 - ScreenY0));
+			const vec2 FakeToScreen = Graphics()->ScreenSize() / ScreenRect.Size();
 			const float AlignedX = round_to_int((TextContainer.m_X + X) * FakeToScreen.x) / FakeToScreen.x;
 			const float AlignedY = round_to_int((TextContainer.m_Y + Y) * FakeToScreen.y) / FakeToScreen.y;
 			X = AlignedX - TextContainer.m_AlignedStartX;
@@ -2337,9 +2419,9 @@ public:
 		TextContainer.m_BoundingBox.m_X = X;
 		TextContainer.m_BoundingBox.m_Y = Y;
 
-		Graphics()->MapScreen(ScreenX0 - X, ScreenY0 - Y, ScreenX1 - X, ScreenY1 - Y);
+		Graphics()->MapScreen(ScreenRect.Move(vec2(-X, -Y)));
 		RenderTextContainer(TextContainerIndex, TextColor, TextOutlineColor);
-		Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+		Graphics()->MapScreen(ScreenRect);
 	}
 
 	STextBoundingBox GetBoundingBoxTextContainer(STextContainerIndex TextContainerIndex) override
@@ -2474,137 +2556,117 @@ public:
 		}
 		return ColorRGBA(r, g, b, 1.0f);
 	}
-	void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex) override
+	// EClient: turns the "&NN"/"&NNS"/"&x" codes in pText into color splits on pCursor and
+	// draws the text in a single pass. Doing it in one pass instead of one draw call per
+	// color segment keeps word wrapping, caret placement and text selection working across
+	// a color change, and composes with color splits the caller already put on the cursor.
+	void ColorParsing(const char *pText, CTextCursor *pCursor, STextContainerIndex *pTextContainerIndex) override
 	{
-		if(!pText[0])
+		if(pText == nullptr)
 			return;
 
-		bool RemoveCodes = pTextContainerIndex == nullptr ? false : true;
+		// Codes are only stripped when building a text container. The line input keeps them
+		// visible so they can still be edited while typing.
+		const bool StripCodes = pTextContainerIndex != nullptr;
 
-		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>> {
-			if(isdigit(p[0]) && isdigit(p[1]))
-			{
-				int Code = (p[0] - '0') * 10 + (p[1] - '0');
-				float Sat = 1.0f;
-				int Length = 2;
-				if(isdigit(p[2]))
-				{
-					Sat = (p[2] - '0') / 10.0f;
-					Length = 3;
-				}
-
-				if(Code >= 0 && Code <= 99)
-				{
-					float Hue = Code / 100.0f;
-					return std::make_pair(HSVtoRGB(Hue, Sat, 1.0f), Length);
-				}
-			}
-			return std::nullopt;
+		auto DrawText = [&](const char *pDraw, int Length) {
+			if(StripCodes)
+				CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, pDraw, Length);
+			else
+				TextEx(pCursor, pDraw, Length);
 		};
 
-		const char *p = pText;
-		ColorRGBA CurColor = OriginalCol;
-		const char *SegStart = p;
-
-		while(*p)
+		const char *pFirstCode = pText;
+		while(*pFirstCode != '\0' && !(*pFirstCode == '&' && ColorCodeLength(pFirstCode + 1) != 0))
+			pFirstCode++;
+		if(*pFirstCode == '\0')
 		{
-			if(*p == '&' && *(p + 1))
+			// No codes at all, which is the common case, so don't touch the color splits
+			DrawText(pText, -1);
+			return;
+		}
+
+		// Color splits are indexed by the byte offset within the whole cursor
+		const int BaseIndex = pCursor->m_CharCount;
+		const std::vector<STextColorSplit> vOriginalSplits = pCursor->m_vColorSplits;
+		std::string Text;
+		Text.reserve(str_length(pText));
+
+		ColorRGBA CurrentColor = m_Color;
+		bool Colored = false;
+		int SegmentStart = 0;
+		auto FlushSegment = [&]() {
+			const int SegmentEnd = (int)Text.size();
+			// Uncolored text needs no split, it is drawn with the current text color
+			if(SegmentEnd > SegmentStart && Colored)
+				pCursor->m_vColorSplits.emplace_back(BaseIndex + SegmentStart, SegmentEnd - SegmentStart, CurrentColor);
+			SegmentStart = SegmentEnd;
+		};
+
+		const char *pCurrent = pText;
+		while(*pCurrent != '\0')
+		{
+			const int CodeLength = *pCurrent == '&' ? ColorCodeLength(pCurrent + 1) : 0;
+			if(CodeLength == 0)
 			{
-				// Check for reset code
-				if(*(p + 1) == 'x')
-				{
-					if(p > SegStart)
-					{
-						TextColor(CurColor);
-						if(RemoveCodes)
-							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
-						else
-							TextEx(pCursor, SegStart, p - SegStart);
-					}
-					if(RemoveCodes)
-						p += 2;
-					else
-						p += 0;
+				Text.push_back(*pCurrent);
+				pCurrent++;
+				continue;
+			}
 
-					CurColor = OriginalCol;
-					SegStart = p;
-					if(!RemoveCodes)
-						p++;
-					continue;
-				}
-
-				auto ColorResult = GetColorFromCode(p + 1);
-				if(ColorResult && *(p + 2))
-				{
-					if(p > SegStart)
-					{
-						TextColor(CurColor);
-						if(RemoveCodes)
-							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
-						else
-							TextEx(pCursor, SegStart, p - SegStart);
-					}
-					if(RemoveCodes)
-						p += 1 + ColorResult->second; // & + code length
-					else
-						p += 0;
-					CurColor = ColorResult->first;
-					SegStart = p;
-					if(!RemoveCodes)
-						p++;
-				}
-				else
-				{
-					++p;
-				}
+			FlushSegment();
+			if(!StripCodes)
+			{
+				// The code stays visible and is drawn in the color it introduces
+				Text.append(pCurrent, CodeLength + 1);
+			}
+			if(CodeLength == 1)
+			{
+				Colored = false;
 			}
 			else
 			{
-				++p;
+				const float Hue = ((pCurrent[1] - '0') * 10 + (pCurrent[2] - '0')) / 100.0f;
+				const float Saturation = CodeLength == 3 ? (pCurrent[3] - '0') / 10.0f : 1.0f;
+				CurrentColor = HSVtoRGB(Hue, Saturation, 1.0f);
+				Colored = true;
 			}
+			pCurrent += CodeLength + 1;
 		}
-		if(p > SegStart)
+		FlushSegment();
+
+		// Splits the caller added are not necessarily in front of ours
+		if(!vOriginalSplits.empty())
 		{
-			TextColor(CurColor);
-			if(RemoveCodes)
-				CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
-			else
-				TextEx(pCursor, SegStart, p - SegStart);
+			std::stable_sort(pCursor->m_vColorSplits.begin(), pCursor->m_vColorSplits.end(), [](const STextColorSplit &Left, const STextColorSplit &Right) {
+				return Left.m_CharIndex < Right.m_CharIndex;
+			});
 		}
+
+		DrawText(Text.c_str(), (int)Text.size());
+
+		// Leave the cursor as we found it, the splits are baked into the container by now
+		pCursor->m_vColorSplits = vOriginalSplits;
 	}
 
 	std::string RemoveColorCodes(const char *pText) override
 	{
 		std::string Result;
-		if(!pText)
+		if(pText == nullptr)
 			return Result;
 
-		const char *p = pText;
-		while(*p)
+		const char *pCurrent = pText;
+		while(*pCurrent != '\0')
 		{
-			if(*p == '&' && *(p + 1))
+			const int CodeLength = *pCurrent == '&' ? ColorCodeLength(pCurrent + 1) : 0;
+			if(CodeLength == 0)
 			{
-				if(*(p + 1) == 'x')
-				{
-					p += 2;
-				}
-				else if(isdigit(p[1]) && isdigit(p[2]))
-				{
-					int CodeLength = 2;
-					if(isdigit(p[3]))
-						CodeLength = 3;
-					p += 1 + CodeLength; // & + code length
-				}
-				else
-				{
-					Result += *p;
-					++p;
-				}
+				Result.push_back(*pCurrent);
+				pCurrent++;
 			}
 			else
 			{
-				Result += *p;
-				++p;
+				pCurrent += CodeLength + 1;
 			}
 		}
 		return Result;

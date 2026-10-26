@@ -1,6 +1,6 @@
 #include "envelope.h"
 
-#include <base/system.h>
+#include <base/dbg.h>
 
 #include <algorithm>
 #include <chrono>
@@ -61,6 +61,10 @@ void CEnvelope::Resort()
 
 std::pair<float, float> CEnvelope::GetValueRange(int ChannelMask)
 {
+	if(m_vPoints.empty() || (ChannelMask & ((1 << GetChannels()) - 1)) == 0)
+	{
+		return {0.0f, 1.0f};
+	}
 	float Top = -std::numeric_limits<float>::infinity();
 	float Bottom = std::numeric_limits<float>::infinity();
 	for(size_t PointIndex = 0; PointIndex < m_vPoints.size(); ++PointIndex)
@@ -73,24 +77,24 @@ std::pair<float, float> CEnvelope::GetValueRange(int ChannelMask)
 				{
 					// value handle
 					const float v = fx2f(Point.m_aValues[c]);
-					Top = maximum(Top, v);
-					Bottom = minimum(Bottom, v);
+					Top = std::max(Top, v);
+					Bottom = std::min(Bottom, v);
 				}
 
 				if(PointIndex < m_vPoints.size() - 1 && Point.m_Curvetype == CURVETYPE_BEZIER)
 				{
 					// out-tangent handle
 					const float v = fx2f(Point.m_aValues[c] + Point.m_Bezier.m_aOutTangentDeltaY[c]);
-					Top = maximum(Top, v);
-					Bottom = minimum(Bottom, v);
+					Top = std::max(Top, v);
+					Bottom = std::min(Bottom, v);
 				}
 
 				if(PointIndex > 0 && m_vPoints[PointIndex - 1].m_Curvetype == CURVETYPE_BEZIER)
 				{
 					// in-tangent handle
 					const float v = fx2f(Point.m_aValues[c] + Point.m_Bezier.m_aInTangentDeltaY[c]);
-					Top = maximum(Top, v);
-					Bottom = minimum(Bottom, v);
+					Top = std::max(Top, v);
+					Bottom = std::min(Bottom, v);
 				}
 			}
 		}
@@ -98,9 +102,9 @@ std::pair<float, float> CEnvelope::GetValueRange(int ChannelMask)
 	return {Bottom, Top};
 }
 
-void CEnvelope::Eval(float Time, ColorRGBA &Result, size_t Channels)
+void CEnvelope::Eval(float Time, ColorRGBA &Result, size_t Channels) const
 {
-	Channels = minimum<size_t>(Channels, GetChannels(), CEnvPoint::MAX_CHANNELS);
+	Channels = std::min({Channels, (size_t)GetChannels(), (size_t)CEnvPoint::MAX_CHANNELS});
 	CRenderMap::RenderEvalEnvelope(&m_PointsAccess, std::chrono::nanoseconds((int64_t)((double)Time * (double)std::chrono::nanoseconds(1s).count())), Result, Channels);
 }
 

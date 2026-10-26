@@ -18,7 +18,12 @@
 #ifndef BACKEND_AS_OPENGL_ES
 #include <GL/glew.h>
 #else
+#if defined(CONF_PLATFORM_IOS)
+#include <OpenGLES/ES3/gl.h>
+#include <OpenGLES/ES3/glext.h>
+#else
 #include <GLES3/gl3.h>
+#endif
 #endif
 
 bool CGLSL::LoadShader(CGLSLCompiler *pCompiler, IStorage *pStorage, const char *pFile, int Type)
@@ -40,7 +45,9 @@ bool CGLSL::LoadShader(CGLSLCompiler *pCompiler, IStorage *pStorage, const char 
 		GLShaderStringPostfix = std::string(" es\r\n");
 	//add compiler specific values
 	if(IsNewOpenGL)
+	{
 		vLines.push_back(std::string("#version ") + std::string(std::to_string(pCompiler->m_OpenGLVersionMajor)) + std::string(std::to_string(pCompiler->m_OpenGLVersionMinor)) + std::string(std::to_string(pCompiler->m_OpenGLVersionPatch)) + GLShaderStringPostfix);
+	}
 	else
 	{
 		if(pCompiler->m_OpenGLVersionMajor == 3)
@@ -76,7 +83,7 @@ bool CGLSL::LoadShader(CGLSLCompiler *pCompiler, IStorage *pStorage, const char 
 		}
 	}
 
-	for(const CGLSLCompiler::SGLSLCompilerDefine &Define : pCompiler->m_vDefines)
+	for(const CGLSLCompiler::CDefine &Define : pCompiler->m_vDefines)
 	{
 		vLines.push_back(std::string("#define ") + Define.m_DefineName + std::string(" ") + Define.m_DefineValue + std::string("\r\n"));
 	}
@@ -89,24 +96,22 @@ bool CGLSL::LoadShader(CGLSLCompiler *pCompiler, IStorage *pStorage, const char 
 	while(const char *pReadLine = LineReader.Get())
 	{
 		std::string Line;
-		pCompiler->ParseLine(Line, pReadLine, Type == GL_FRAGMENT_SHADER ? GLSL_SHADER_COMPILER_TYPE_FRAGMENT : GLSL_SHADER_COMPILER_TYPE_VERTEX);
+		pCompiler->ParseLine(Line, pReadLine, Type == GL_FRAGMENT_SHADER ? CGLSLCompiler::EShaderType::FRAGMENT : CGLSLCompiler::EShaderType::VERTEX);
 		Line.append("\r\n");
 		vLines.push_back(Line);
 	}
 
-	const char **ShaderCode = new const char *[vLines.size()];
-
-	for(size_t i = 0; i < vLines.size(); ++i)
+	std::vector<const char *> vpShaderCode;
+	vpShaderCode.reserve(vLines.size());
+	for(const auto &Line : vLines)
 	{
-		ShaderCode[i] = vLines[i].c_str();
+		vpShaderCode.push_back(Line.c_str());
 	}
 
 	const TWGLuint ShaderId = glCreateShader(Type);
 
-	glShaderSource(ShaderId, vLines.size(), ShaderCode, NULL);
+	glShaderSource(ShaderId, vpShaderCode.size(), vpShaderCode.data(), nullptr);
 	glCompileShader(ShaderId);
-
-	delete[] ShaderCode;
 
 	TWGLint CompilationStatus;
 	glGetShaderiv(ShaderId, GL_COMPILE_STATUS, &CompilationStatus);
@@ -119,7 +124,7 @@ bool CGLSL::LoadShader(CGLSLCompiler *pCompiler, IStorage *pStorage, const char 
 		{
 			std::string Log(LogLength, '\0');
 			glGetShaderInfoLog(ShaderId, Log.size(), nullptr, &Log.front());
-			if(Log[Log.size() - 2] == '\n')
+			if(Log.size() >= 2 && Log[Log.size() - 2] == '\n')
 			{
 				Log[Log.size() - 2] = '\0';
 			}

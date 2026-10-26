@@ -1,7 +1,10 @@
 #include "menus.h"
 
-#include <base/system.h>
+#include <base/dbg.h>
 #include <base/log.h>
+#include <base/str.h>
+#include <base/system.h>
+#include <base/time.h>
 
 #include <engine/font_icons.h>
 #include <engine/shared/config.h>
@@ -713,7 +716,7 @@ static int InitSearchList(std::vector<const TName *> &vpSearchList, std::vector<
 	return vAssetList.size();
 }
 
-void CMenus::RenderSettingsCustom(CUIRect MainView)
+void CMenus::RenderSettingsAssets(CUIRect MainView)
 {
 	CUIRect TabBar, CustomList, QuickSearch, DirectoryButton, ReloadButton;
 	static bool s_EntityGamePreview = true;
@@ -963,7 +966,7 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 
 	static CListBox s_ListBox;
 	const float ItemHeight = s_CurCustomTab == ASSETS_TAB_AUDIO ? 28.0f : (TextureHeight + 15.0f + 10.0f + Margin);
-	const int ItemsPerRow = s_CurCustomTab == ASSETS_TAB_AUDIO ? 1 : maximum(1, (int)(CustomList.w / (Margin + TextureWidth)));
+	const int ItemsPerRow = s_CurCustomTab == ASSETS_TAB_AUDIO ? 1 : std::max(1, (int)(CustomList.w / (Margin + TextureWidth)));
 	s_ListBox.DoStart(ItemHeight, SearchListSize, ItemsPerRow, 1, OldSelected, &CustomList, false);
 	for(size_t i = 0; i < SearchListSize; ++i)
 	{
@@ -1121,7 +1124,7 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 				AddFavoriteAsset(s_CurCustomTab, pItem->m_aName);
 			}
 		}
-		GameClient()->m_Tooltips.DoToolTip(&pItem->m_FavoriteButtonId, &FavoriteButton,
+		Ui()->DoToolTip(&pItem->m_FavoriteButtonId, &FavoriteButton,
 			Favorite ? Localize("Click to remove this item from your favorites.") : Localize("Click to add this item to your favorites."));
 	}
 
@@ -1220,7 +1223,7 @@ void CMenus::RenderSettingsCustom(CUIRect MainView)
 		Storage()->CreateFolder(aBufFull, IStorage::TYPE_SAVE);
 		Client()->ViewFile(aBuf);
 	}
-	GameClient()->m_Tooltips.DoToolTip(&s_AssetsDirId, &DirectoryButton, Localize("Open the directory to add custom assets"));
+	Ui()->DoToolTip(&s_AssetsDirId, &DirectoryButton, Localize("Open the directory to add custom assets"));
 
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);

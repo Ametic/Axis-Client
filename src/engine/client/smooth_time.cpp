@@ -6,7 +6,7 @@
 #include "graph.h"
 
 #include <base/math.h>
-#include <base/system.h>
+#include <base/time.h>
 
 #include <engine/shared/config.h>
 
@@ -46,14 +46,14 @@ int64_t CSmoothTime::Get(int64_t Now) const
 		a = 1.0f;
 
 	int64_t r = c + (int64_t)((t - c) * a);
-	if(g_Config.m_TcSmoothPredictionMargin)
+	if(g_Config.m_EcSmoothPredictionMargin)
 		return r + GetMargin(Now);
 	return r + m_Margin;
 }
 
 void CSmoothTime::UpdateInt(int64_t Target)
 {
-	if(g_Config.m_TcSmoothPredictionMargin)
+	if(g_Config.m_EcSmoothPredictionMargin)
 	{
 		int64_t Now = time_get();
 		m_Current = Get(Now) - GetMargin(Now);
@@ -114,7 +114,7 @@ void CSmoothTime::Update(CGraph *pGraph, int64_t Target, int TimeLeft, EAdjustDi
 
 void CSmoothTime::UpdateMargin(int64_t Margin)
 {
-	if(g_Config.m_TcSmoothPredictionMargin)
+	if(g_Config.m_EcSmoothPredictionMargin)
 	{
 		int64_t Now = time_get();
 		m_CurrentMargin = GetMargin(Now);
@@ -131,6 +131,6 @@ int64_t CSmoothTime::GetMargin(int64_t Now) const
 	int64_t Diff = m_TargetMargin - m_CurrentMargin;
 
 	float a = std::clamp(TimePassed / (float)time_freq(), -1.f, 1.f);
-	int64_t Lim = maximum((int64_t)(a * absolute(Diff)), 1 + TimePassed / 100);
+	int64_t Lim = std::max((int64_t)(a * absolute(Diff)), 1 + TimePassed / 100);
 	return m_CurrentMargin + (int64_t)std::clamp(Diff, -Lim, Lim);
 }

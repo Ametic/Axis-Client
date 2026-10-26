@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "ui_listbox.h"
 
-#include <base/system.h>
 #include <base/vmath.h>
 
 #include <engine/config.h>
@@ -104,10 +103,10 @@ void CListBox::DoStart(float RowHeight, int NumItems, int ItemsPerRow, int RowsP
 
 	// setup the scrollbar
 	CScrollRegionParams ScrollParams;
-	ScrollParams.m_ScrollbarWidth = ScrollbarWidthMax();
+	ScrollParams.m_ScrollbarThickness = ScrollbarWidthMax();
 	ScrollParams.m_ScrollbarMargin = ScrollbarMargin();
 	ScrollParams.m_ScrollUnit = (m_ListBoxRowHeight + m_AutoSpacing) * RowsPerScroll;
-	ScrollParams.m_Flags = ForceShowScrollbar ? CScrollRegionParams::FLAG_CONTENT_STATIC_WIDTH : 0;
+	ScrollParams.m_ForceShowScrollbar = ForceShowScrollbar;
 	m_ScrollRegion.Begin(&m_ListBoxView, &ScrollParams);
 }
 
@@ -133,7 +132,7 @@ CListboxItem CListBox::DoNextRow()
 	return Item;
 }
 
-CListboxItem CListBox::DoNextItem(const void *pId, bool Selected, float CornerRadius)
+CListboxItem CListBox::DoNextItem(const void *pId, bool Selected, float CornerRadius, unsigned ButtonFlags)
 {
 	if(m_AutoSpacing > 0.0f && m_ListBoxItemIndex > 0)
 		DoSpacing(m_AutoSpacing);
@@ -147,13 +146,17 @@ CListboxItem CListBox::DoNextItem(const void *pId, bool Selected, float CornerRa
 	}
 
 	CListboxItem Item = DoNextRow();
-	const int ItemClicked = Item.m_Visible ? Ui()->DoButtonLogic(pId, 0, &Item.m_Rect, BUTTONFLAG_LEFT) : 0;
-	if(ItemClicked)
+
+	// <EClient
+	const int ItemClicked = Item.m_Visible ? Ui()->DoButtonLogic(pId, 0, &Item.m_Rect, ButtonFlags) : 0;
+	Item.m_ButtonResult = ItemClicked;
+	if(ItemClicked == 1)
 	{
 		m_ListBoxNewSelected = ThisItemIndex;
 		m_ListBoxItemSelected = true;
 		m_Active = true;
 	}
+	// EClient>
 
 	// process input, regard selected index
 	if(m_ListBoxNewSelected == ThisItemIndex)

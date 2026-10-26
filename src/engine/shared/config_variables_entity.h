@@ -17,21 +17,21 @@ MACRO_CONFIG_COL(ClECMessageColor, ec_message_color, 9633471, CFGFLAG_CLIENT | C
 MACRO_CONFIG_INT(ClMutedConsoleColor, ec_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
 // Anti Latency Tools
-MACRO_CONFIG_INT(TcRemoveAnti, ec_remove_anti, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Removes some amount of antiping & player prediction in freeze")
-MACRO_CONFIG_INT(TcUnfreezeLagTicks, ec_remove_anti_ticks, 5, 0, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The biggest amount of prediction ticks that are removed")
-MACRO_CONFIG_INT(TcUnfreezeLagDelayTicks, ec_remove_anti_delay_ticks, 25, 5, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many ticks it takes to remove the maximum prediction after being frozen")
+MACRO_CONFIG_INT(EcRemoveAnti, ec_remove_anti, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Removes some amount of antiping & player prediction in freeze")
+MACRO_CONFIG_INT(EcUnfreezeLagTicks, ec_remove_anti_ticks, 5, 0, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The biggest amount of prediction ticks that are removed")
+MACRO_CONFIG_INT(EcUnfreezeLagDelayTicks, ec_remove_anti_delay_ticks, 25, 5, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many ticks it takes to remove the maximum prediction after being frozen")
 
-MACRO_CONFIG_INT(TcUnpredOthersInFreeze, ec_unpred_others_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont predict other players if you are frozen")
-MACRO_CONFIG_INT(TcPredMarginInFreeze, ec_pred_margin_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable changing prediction margin while frozen")
-MACRO_CONFIG_INT(TcPredMarginInFreezeAmount, ec_pred_margin_in_freeze_amount, 15, 0, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set what your prediction margin while frozen should be")
+MACRO_CONFIG_INT(EcUnpredOthersInFreeze, ec_unpred_others_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont predict other players if you are frozen")
+MACRO_CONFIG_INT(EcPredMarginInFreeze, ec_pred_margin_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable changing prediction margin while frozen")
+MACRO_CONFIG_INT(EcPredMarginInFreezeAmount, ec_pred_margin_in_freeze_amount, 15, 0, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set what your prediction margin while frozen should be")
 
-MACRO_CONFIG_INT(TcShowOthersGhosts, ec_show_others_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ghosts for other players in their unpredicted position")
-MACRO_CONFIG_INT(TcSwapGhosts, ec_swap_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show predicted players as ghost and normal players as unpredicted")
-MACRO_CONFIG_INT(TcHideFrozenGhosts, ec_hide_frozen_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Ghosts of other players if they are frozen")
+MACRO_CONFIG_INT(EcShowOthersGhosts, ec_show_others_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ghosts for other players in their unpredicted position")
+MACRO_CONFIG_INT(EcSwapGhosts, ec_swap_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show predicted players as ghost and normal players as unpredicted")
+MACRO_CONFIG_INT(EcHideFrozenGhosts, ec_hide_frozen_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Ghosts of other players if they are frozen")
 
-MACRO_CONFIG_INT(TcPredGhostsAlpha, ec_pred_ghosts_alpha, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of predicted ghosts (0-100)")
-MACRO_CONFIG_INT(TcUnpredGhostsAlpha, ec_unpred_ghosts_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of unpredicted ghosts (0-100)")
-MACRO_CONFIG_INT(TcRenderGhostAsCircle, ec_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
+MACRO_CONFIG_INT(EcPredGhostsAlpha, ec_pred_ghosts_alpha, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of predicted ghosts (0-100)")
+MACRO_CONFIG_INT(EcUnpredGhostsAlpha, ec_unpred_ghosts_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of unpredicted ghosts (0-100)")
+MACRO_CONFIG_INT(EcRenderGhostAsCircle, ec_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
 
 // Outline Variables
 MACRO_CONFIG_INT(ClOutline, ec_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
@@ -53,19 +53,22 @@ MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 2113893167, CFGFLAG_
 MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 2097217461, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
 
 // Fast Input
-MACRO_CONFIG_INT(TcFastInput, ec_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction before the next tick")
-MACRO_CONFIG_INT(TcFastInputAmount, ec_fast_input_amount, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many milliseconds fast input will apply")
-MACRO_CONFIG_INT(TcFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply fast input to other tees")
+MACRO_CONFIG_INT(EcFastInput, ec_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction before the next tick")
+MACRO_CONFIG_INT(EcFastInputAmount, ec_fast_input_amount, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many milliseconds fast input will apply")
+MACRO_CONFIG_INT(EcFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply fast input to other tees")
+MACRO_CONFIG_INT(EcFastInputMode, ec_fast_input_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fast input algorithm: 0 = classic, 1 = flux (normally caps other tees to one tick and waits for server pre-input)")
+MACRO_CONFIG_INT(EcFluxInputAmount, ec_flux_input_amount, 100, 0, 500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Flux prediction offset, in hundredths of a tick (100 = 1.00 ticks). Only used when ec_fast_input_mode is set to flux")
+MACRO_CONFIG_INT(EcFluxInputOthersUncapped, ec_flux_input_others_uncapped, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply the full Flux offset to other tees immediately, without waiting for server pre-input")
 
 // Anti Ping Smoothing
-MACRO_CONFIG_INT(TcAntiPingImproved, ec_antiping_improved, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Different antiping smoothing algorithm, not compatible with cl_antiping_smooth")
-MACRO_CONFIG_INT(TcAntiPingNegativeBuffer, ec_antiping_negative_buffer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Helps in Gores. Allows internal certainty value to be negative which causes more conservative prediction")
-MACRO_CONFIG_INT(TcAntiPingStableDirection, ec_antiping_stable_direction, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predicts optimistically along the tees stable axis to reduce delay in gaining overall stability")
-MACRO_CONFIG_INT(TcAntiPingUncertaintyScale, ec_antiping_uncertainty_scale, 150, 25, 400, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Determines uncertainty duration as a factor of ping, 100 = 1.0")
+MACRO_CONFIG_INT(EcAntiPingImproved, ec_antiping_improved, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Different antiping smoothing algorithm, not compatible with cl_antiping_smooth")
+MACRO_CONFIG_INT(EcAntiPingNegativeBuffer, ec_antiping_negative_buffer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Helps in Gores. Allows internal certainty value to be negative which causes more conservative prediction")
+MACRO_CONFIG_INT(EcAntiPingStableDirection, ec_antiping_stable_direction, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predicts optimistically along the tees stable axis to reduce delay in gaining overall stability")
+MACRO_CONFIG_INT(EcAntiPingUncertaintyScale, ec_antiping_uncertainty_scale, 150, 25, 400, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Determines uncertainty duration as a factor of ping, 100 = 1.0")
 
 // Revert Variables
-MACRO_CONFIG_INT(TcSmoothPredictionMargin, ec_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
-MACRO_CONFIG_INT(TcFrozenKatana, ec_frozen_katana, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show katana on frozen players (reverts a DDNet change)")
+MACRO_CONFIG_INT(EcSmoothPredictionMargin, ec_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
+MACRO_CONFIG_INT(EcFrozenKatana, ec_frozen_katana, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show katana on frozen players (reverts a DDNet change)")
 
 // War List
 MACRO_CONFIG_INT(ClWarList, ec_warlist, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles war list visuals")
@@ -84,6 +87,7 @@ MACRO_CONFIG_INT(ClWarListIndicatorEnemy, ec_warlist_indicator_enemy, 1, 0, 1, C
 MACRO_CONFIG_INT(ClWarListIndicatorTeam, ec_warlist_indicator_team, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from second group")
 
 MACRO_CONFIG_INT(ClWarListSwapNameReason, ec_warlist_swap_name_reason, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If a Player has a Reason, their Name will be switched with the Reason")
+MACRO_CONFIG_INT(ClWarListColorJoinLeave, ec_warlist_color_join_leave, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color a players name in the join/leave message")
 
 // Server Browser
 MACRO_CONFIG_INT(ClWarlistBrowser, ec_warlist_browser, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show online warlist players in the server browser or not")
@@ -97,7 +101,7 @@ MACRO_CONFIG_INT(ClWarlistPrefixesServerInfo, ec_warlist_prefixes_server_info, 1
 // Run on Join
 MACRO_CONFIG_STR(ClExecuteOnConnect, ec_execute_on_connect, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Run a console command before connect")
 MACRO_CONFIG_STR(ClRunOnJoinConsole, ec_run_on_join_console, 128, "onlineinfo", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
-MACRO_CONFIG_INT(ClRunOnJoinConsoleDelay, ec_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
+MACRO_CONFIG_INT(ClRunOnJoinConsoleDelay, ec_run_on_join_delay, 2, 1, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 
 // Limit Mouse
 MACRO_CONFIG_INT(ClLimitMouseToScreen, ec_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundaries")
@@ -138,20 +142,21 @@ MACRO_CONFIG_INT(ClPlayerIndicator, ec_player_indicator, 0, 0, 1, CFGFLAG_CLIENT
 MACRO_CONFIG_INT(ClPlayerIndicatorFreeze, ec_player_indicator_freeze, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show frozen tees in indicator")
 MACRO_CONFIG_INT(ClIndicatorHideOnScreen, ec_indicator_hide_on_screen, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides the Indicator if Tee is on Screen (might be a lil buggy on bigger/smaller monitors")
 MACRO_CONFIG_INT(ClIndicatorOnlyTeammates, ec_indicator_only_teammates, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only shows teammates on the indicator")
+MACRO_CONFIG_INT(ClIndicatorHideAfk, ec_indicator_hide_afk, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides AFK players on the indicator")
 
 MACRO_CONFIG_INT(ClIndicatorTeamOnly, ec_indicator_inteam, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show indicator while in team")
 MACRO_CONFIG_INT(ClIndicatorTees, ec_indicator_tees, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show tees instead of circles")
 
 // Translate
-MACRO_CONFIG_STR(EcTranslateBackend, ec_translate_backend, 32, "google", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Translate backends (ftapi, libretranslate, deeplfree/deepl, google)")
+MACRO_CONFIG_INT(EcTranslateBackend, ec_translate_backend, 3, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Translate backend (1 = LibreTranslate, 2 = DeepL, 3 = Google Translate, 0 = default)")
 MACRO_CONFIG_STR(EcTranslateTarget, ec_translate_target, 16, "en", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Translate target language (must be 2 character ISO 639 code)")
-MACRO_CONFIG_STR(EcTranslateEndpoint, ec_translate_endpoint, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "For backends which need it, endpoint to use (must be https)")
+MACRO_CONFIG_STR(EcTranslateEndpoint, ec_translate_endpoint, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "For backends which need it, endpoint to use (must be https, DeepL Pro is https://api.deepl.com/v2/translate)")
 MACRO_CONFIG_STR(EcTranslateKey, ec_translate_key, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "For backends which need it, api key to use")
-MACRO_CONFIG_INT(EcTranslateAuto, ec_translate_auto, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically translate messages, only some backends support this (FTApi does not, DeepL Free requires api key)")
+MACRO_CONFIG_INT(EcTranslateAuto, ec_translate_auto, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically translate messages, only some backends support this (DeepL requires an api key)")
 MACRO_CONFIG_STR(EcTranslateLanguageBlacklist, ec_translate_language_blacklist, 256, "en", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get ignored while translating (e.g. 'en,de,ru'")
-MACRO_CONFIG_STR(EcTranslateLanguageWhitelist, ec_translate_language_whitelist, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get translated, if not in this list, ignored (e.g. 'en,de,ru')")
-MACRO_CONFIG_INT(EcTranslateAutoShowLanguage, ec_translate_auto_show_language, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get translated automatically, if not in this list, ignored (e.g. 'en,de,ru')")
+MACRO_CONFIG_STR(EcTranslateLanguageWhitelist, ec_translate_language_whitelist, 256, "ru,uk,tr,es,pl,mk,lt,bg,zh-CN", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get translated, if not in this list, ignored (e.g. 'en,de,ru')")
 MACRO_CONFIG_INT(EcTranslateLogErrors, ec_translate_log_errors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Log translation errors")
+MACRO_CONFIG_INT(EcTranslateMinInterval, ec_translate_min_interval, -1, -1, 60000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Minimum time in milliseconds between translate requests, -1 uses the default of the backend (Google 1500)")
 
 // Animations
 MACRO_CONFIG_INT(ClAnimateWheelTime, ec_animate_wheel_time, 0, 0, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Duration of wheel animations, in milliseconds (0 == no animation, 1000 = 1 second)")
@@ -257,7 +262,9 @@ MACRO_CONFIG_INT(ClAutoAddOnNameChange, ec_auto_add_on_name_change, 2, 0, 2, CFG
 MACRO_CONFIG_INT(ClAutoJoinTest, ec_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
 
 // Anti Spawn Block
-MACRO_CONFIG_INT(ClAntiSpawnBlock, ec_anti_spawn_block, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Puts you in a Team before enter Play Ground on Multeasymap")
+MACRO_CONFIG_INT(ClAntiSpawnBlock, ec_anti_spawn_block, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Puts you in a team when you die and in team 0 when youre about to cross the start line")
+
+MACRO_CONFIG_INT(ClAutoDummyConnect, ec_auto_dummy_connect, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically connect your dummy on join | 1 = switch to dummy on connect | 2 = dont switch to dummy on connect")
 
 // Freeze Kill
 MACRO_CONFIG_INT(ClFreezeKill, ec_freeze_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
@@ -316,8 +323,9 @@ MACRO_CONFIG_INT(ClRainbowOthers, ec_rainbow_others, 0, 0, 1, CFGFLAG_CLIENT | C
 MACRO_CONFIG_INT(ClRainbowMode, ec_rainbow_mode, 1, 1, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: rainbow, 2: pulse, 3: darkness, 4: random)")
 MACRO_CONFIG_INT(ClRainbowSpeed, ec_rainbow_speed, 25, 0, 10000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow speed as a percentage (50 = half speed, 200 = double speed)")
 
-// Kill Counter
-MACRO_CONFIG_INT(ClKillCounter, ec_self_murder_count, 0, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If you wish to fake the amount of deaths then this is the config to edit")
+// Flags
+MACRO_CONFIG_INT(ClHideSettingsTabs, ec_hide_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
+
 // Silent Messages
 MACRO_CONFIG_INT(ClSilentMessages, ec_silent_messages, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When sending a Silent Message to the chat it will still show what you typed")
 MACRO_CONFIG_COL(ClSilentColor, ec_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
@@ -332,6 +340,7 @@ MACRO_CONFIG_INT(EcUnreadNews, ec_unread_news, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG
 
 // Chat
 MACRO_CONFIG_INT(ClChatColorParsing, ec_chat_color_parsing, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allows you to use &00-&99 to chang the color of your text, &x marks the end of the color")
+MACRO_CONFIG_INT(ClChatMath, ec_chat_math, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Suggest the result of a math expression ending with '=' in the chat, press Tab to insert it")
 
 // Chat Bubbles
 MACRO_CONFIG_INT(ClChatBubbles, ec_chat_bubbles, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Chatbubbles above players")
@@ -345,13 +354,13 @@ MACRO_CONFIG_INT(ClChatBubbleFadeIn, ec_chat_bubble_fadein, 15, 15, 100, CFGFLAG
 // MACRO_CONFIG_INT(ClChatBubblePushOut, ec_chat_bubble_push_out, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes sure chatbubbles dont overlap")
 
 // Quick Actions
-MACRO_CONFIG_INT(ClResetQuickActionMouse, ec_reset_quickaction_mouse, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reset position of mouse when opening the quickactions menu")
+MACRO_CONFIG_INT(ClResetPlayerActionMouse, ec_reset_playeraction_mouse, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reset position of mouse when opening the player actions menu")
 
 // Status Bar
 MACRO_CONFIG_INT(ClStatusBar, ec_statusbar, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable status bar")
 
 MACRO_CONFIG_INT(ClStatusBar12HourClock, ec_statusbar_12_hour_clock, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use 12 hour clock in local time")
-MACRO_CONFIG_INT(ClStatusBarLocalTimeSeocnds, ec_statusbar_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show seconds in local time")
+MACRO_CONFIG_INT(ClStatusBarLocalTimeSeconds, ec_statusbar_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show seconds in local time")
 MACRO_CONFIG_INT(ClStatusBarHeight, ec_statusbar_height, 8, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Height of the status bar")
 
 MACRO_CONFIG_COL(ClStatusBarColor, ec_statusbar_color, 3221225472, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Status bar background color")
@@ -365,17 +374,17 @@ MACRO_CONFIG_STR(ClStatusBarScheme, ec_statusbar_scheme, 16, "ac pf r", CFGFLAG_
 MACRO_CONFIG_INT(ClInfoUrlType, ec_info_url_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Url info.cpp should use (0 = Github, 1 = entity)")
 
 // Custom Communities
-MACRO_CONFIG_STR(ClCustomCommunitiesUrl, ec_custom_communities_url, 256, "https://raw.githubusercontent.com/SollyBunny/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https), empty to disable")
+MACRO_CONFIG_STR(ClCustomCommunitiesUrl, ec_custom_communities_url, 256, "https://raw.githubusercontent.com/TaterClient/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https), empty to disable")
 
 // Bg Draw
-MACRO_CONFIG_INT(TcBgDrawWidth, ec_bg_draw_width, 5, 1, 50, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Width of background draw strokes")
-MACRO_CONFIG_INT(TcBgDrawFadeTime, ec_bg_draw_fade_time, 0, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Time until strokes disappear (0 = never)")
-MACRO_CONFIG_INT(TcBgDrawMaxItems, ec_bg_draw_max_items, 128, 0, 2048, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Maximum number of strokes")
-MACRO_CONFIG_COL(TcBgDrawColor, ec_bg_draw_color, 11893936, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of background draw strokes")
-MACRO_CONFIG_INT(TcBgDrawAutoSaveLoad, ec_bg_draw_auto_save_load, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically save and load background drawings")
+MACRO_CONFIG_INT(EcBgDrawWidth, ec_bg_draw_width, 5, 1, 50, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Width of background draw strokes")
+MACRO_CONFIG_INT(EcBgDrawFadeTime, ec_bg_draw_fade_time, 0, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Time until strokes disappear (0 = never)")
+MACRO_CONFIG_INT(EcBgDrawMaxItems, ec_bg_draw_max_items, 128, 0, 2048, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Maximum number of strokes")
+MACRO_CONFIG_COL(EcBgDrawColor, ec_bg_draw_color, 11893936, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of background draw strokes")
+MACRO_CONFIG_INT(EcBgDrawAutoSaveLoad, ec_bg_draw_auto_save_load, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically save and load background drawings")
 
 // Timer
-MACRO_CONFIG_INT(TcShowLocalTimeSeconds, ec_show_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show local time in seconds")
+MACRO_CONFIG_INT(EcShowLocalTimeSeconds, ec_show_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show local time in seconds")
 
 // Weapon in Freeze
 MACRO_CONFIG_INT(ClRenderWeaponsInFreeze, ec_render_weapons_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders players' weapons while frozen")
@@ -406,6 +415,7 @@ MACRO_CONFIG_INT(ClScoreboardOutlineTeams, ec_scoreboard_outline_teams, 0, 0, 1,
 
 // Team Colors
 MACRO_CONFIG_INT(ClRevertTeamColors, ec_revert_team_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "revert team colors (github.com/ddnet/ddnet/pull/7129)") // https://github.com/ddnet/ddnet/pull/7129
+MACRO_CONFIG_INT(ClRevertDoorDesign, ec_revert_door_design, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "revert door design (github.com/ddnet/ddnet/pull/9901)") // https://github.com/ddnet/ddnet/pull/9901
 
 // Hookline
 // MACRO_CONFIG_INT(EcRevertHookLine, ec_revert_hook_line, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Revert hook line to default behavior | 1=Accurate to Tiles | 2=Accurate to Tees")
@@ -414,22 +424,76 @@ MACRO_CONFIG_INT(ClColorFrozenTeeBody, ec_color_frozen_tee_body, 0, 0, 1, CFGFLA
 MACRO_CONFIG_INT(ClColorFrozenTeeDarken, ec_color_frozen_tee_darken, 90, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes color of tees darker when in freeze (0-100)")
 MACRO_CONFIG_INT(ClColorFrozenTeeFeet, ec_color_frozen_tee_feet, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Also use color for frozen tee feet")
 
-MACRO_CONFIG_INT(ClWhiteFeet, ec_white_feet, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render all feet as ec_white_feet_skin and fully white")
+MACRO_CONFIG_INT(ClWhiteFeet, ec_white_feet, 0, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render feet as ec_white_feet_skin and fully white | 1 = own| 2 = others | 3 = all")
 MACRO_CONFIG_STR(ClWhiteFeetSkin, ec_white_feet_skin, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Base skin for white feet")
 
 // Balls
 MACRO_CONFIG_STR(ClPhysicBallsSkin, ec_physic_balls_skin, 24, "volleyball", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Base skin for physic balls")
+MACRO_CONFIG_INT(ClPhysicBallsKillBorder, ec_physic_balls_kill_border, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether the kill border kills balls")
 
 // Moving Tiles
 MACRO_CONFIG_INT(ClShowMovingTilesEntities, ec_show_moving_tiles_entities, 1, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show server-side moving tiles in entities | 1 = map design | 2 = use entities color | 3 = map design with entities color")
+MACRO_CONFIG_INT(ClPredictMovingTiles, ec_predict_moving_tiles, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predict the moving tiles that have a predictable outcome on FoxNet servers (freeze, unfreeze and stoppers)")
 
-MACRO_CONFIG_INT(ClHighProcessPriority, ec_high_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set DDNets process priority to High")
+MACRO_CONFIG_INT(ClHighProcessPriority, ec_high_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set DDNets process priority to high")
 MACRO_CONFIG_INT(ClDiscordNormalProcessPriority, ec_discord_normal_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set Discord process priority to normal")
 
-// Media Player
-MACRO_CONFIG_INT(ClShowMediaPlayer, ec_show_media_player, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media player")
-MACRO_CONFIG_INT(ClShowMediaPlayerVisualizer, ec_show_media_player_visualizer, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media player visualizer")
-MACRO_CONFIG_INT(ClShowMediaPlayerVisualizerAlignment, ec_show_media_player_visualizer_alignment, 2, 1, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "1 = Align Bottom | 2 = Align Center")
+// Media Island
+MACRO_CONFIG_INT(ClMediaIsland, ec_media_island, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media island")
+MACRO_CONFIG_COL(ClMediaIslandColor, ec_media_island_color, 2141323264 /* gray */, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Color of the media island background")
+MACRO_CONFIG_INT(ClMediaIslandAnimation, ec_media_island_animation, 100, 0, 300, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How fast the media island animation is (0 = disabled)")
+MACRO_CONFIG_INT(ClMediaIslandVisualizer, ec_media_island_visualizer, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media island visualizer")
+MACRO_CONFIG_INT(ClMediaIslandVisualizerAlignment, ec_media_island_visualizer_alignment, 2, 1, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "1 = align bottom | 2 = align center")
+MACRO_CONFIG_INT(ClMediaIslandVisualizerColorDynamic, ec_media_island_visualizer_color_dynamic, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable dynamic color for media island visualizer")
+MACRO_CONFIG_COL(ClMediaIslandVisualizerColor, ec_media_island_visualizer_color, 10485663 /* blue-ish */, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of the media island visualizer")
+
+// Force 0.7 Skin
+MACRO_CONFIG_INT(ClForceSevenSkin, ec_force_seven_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to force rendering the 0.7 skin on any server for yourself")
+
+// Decouple mouse sensitivity
+MACRO_CONFIG_INT(ClDecoupleMouseSens, ec_decouple_mouse_sens, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to decouple mouse sensitivity")
+MACRO_CONFIG_INT(ClMouseSensXIngame, ec_mouse_sens_x_ingame, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for X axis when decoupled")
+MACRO_CONFIG_INT(ClMouseSensYIngame, ec_mouse_sens_y_ingame, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for Y axis when decoupled")
+MACRO_CONFIG_INT(ClMouseSensXUi, ec_mouse_sens_x_ui, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for X axis when decoupled")
+MACRO_CONFIG_INT(ClMouseSensYUi, ec_mouse_sens_y_ui, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for Y axis when decoupled")
+
+// Client Indicator
+MACRO_CONFIG_INT(ClClientUsersBrowser, ec_client_users_browser, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show a list of people using EClient in the server browser")
+MACRO_CONFIG_INT(ClClientUsersOnlineInfo, ec_client_users_online_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "list entity client users in the 'onlineinfo' command")
+MACRO_CONFIG_INT(ClClientUsersScoreboard, ec_client_users_scoreboard, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show entity client users in the scoreboard")
+
+MACRO_CONFIG_INT(ClUseUiColorOffline, ec_use_ui_color_offline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use the ui_color while not ingame")
+
+// Statistics
+MACRO_CONFIG_INT(ClStatisticsShowFps, ec_statistics_show_fps, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show FPS in the statistics")
+MACRO_CONFIG_INT(ClStatisticsShowPing, ec_statistics_show_ping, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show Ping in the statistics")
+MACRO_CONFIG_INT(ClStatisticsShowSnapRate, ec_statistics_show_snap_rate, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show Snap Rate in the statistics")
+
+// Player HUD
+// Timer
+MACRO_CONFIG_INT(ClShowHudTimerStartedFlag, ec_showhud_timer_started_flag, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show a flag if the timer has started")
+MACRO_CONFIG_INT(ClShowhudPlayerCheckpoint, ec_showhud_player_checkpoint, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD (Player Checkpoint)")
+MACRO_CONFIG_INT(ClShowhudPlayerCompact, ec_showhud_player_compact, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Player Hud compact version")
+MACRO_CONFIG_INT(ClCursorSize, ec_cursor_size, 100, 5, 500, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Cursor size in %")
+
+// Finish Times
+MACRO_CONFIG_INT(ClClientSideMapFinishes, ec_client_side_map_finishes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show map finishes saved on the client in the server browser")
+
+// Finish Times
+MACRO_CONFIG_INT(ClSpectatorRadioShowDelay, ec_specradio_show_delay, 200, 0, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it takes until the spectator radio shows up fully, its usable before it shows up")
+
+// Night Shift
+MACRO_CONFIG_INT(ClNightShift, ec_night_shift, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Warm the colors of the whole screen after dark")
+MACRO_CONFIG_INT(ClNightShiftSchedule, ec_night_shift_schedule, 1, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When night shift is active (0 = always, 1 = custom hours, 2 = sunset to sunrise)")
+MACRO_CONFIG_INT(ClNightShiftTemperature, ec_night_shift_temperature, 4000, 1900, 6500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color temperature night shift warms the screen to, in kelvin (lower is warmer)")
+MACRO_CONFIG_INT(ClNightShiftFrom, ec_night_shift_from, 1260, 0, 1439, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Minute of the day the custom night shift schedule turns on")
+MACRO_CONFIG_INT(ClNightShiftTo, ec_night_shift_to, 420, 0, 1439, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Minute of the day the custom night shift schedule turns off")
+MACRO_CONFIG_INT(ClNightShiftTransition, ec_night_shift_transition, 30, 0, 180, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many minutes night shift takes to fade in and out")
+MACRO_CONFIG_INT(ClNightShiftLatitude, ec_night_shift_latitude, 0, -9000, 9000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Latitude in hundredths of a degree, used by the sunset to sunrise schedule")
+MACRO_CONFIG_INT(ClNightShiftLongitude, ec_night_shift_longitude, 0, -18000, 18000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Longitude in hundredths of a degree, used by the sunset to sunrise schedule")
+
+// Webhook
+MACRO_CONFIG_STR(EcWebhookUrl, ec_webhook_url, 512, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to use with webhook (remember to enable http_allow_insecure for http)")
 
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
@@ -437,3 +501,14 @@ MACRO_CONFIG_INT(ClShowMediaPlayerVisualizerAlignment, ec_show_media_player_visu
 // Quads
 MACRO_CONFIG_INT(SvMovingTiles, sv_moving_tiles, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Whether to use moving tiles using quads or not")
 MACRO_CONFIG_INT(SvTeleGrenade, sv_tele_grenade, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Whether to use tele grenade")
+
+// Local Practice World
+MACRO_CONFIG_INT(ClLocalPracticeGhost, ec_local_practice_ghost, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show your real tee on the server as a see-through ghost while practicing")
+MACRO_CONFIG_INT(ClLocalPracticeGhostAlpha, ec_local_practice_ghost_alpha, 40, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Opacity of your real tee while practicing")
+MACRO_CONFIG_INT(ClLocalPracticeGhostFade, ec_local_practice_ghost_fade, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fade the ghost out while it overlaps your practice tee")
+MACRO_CONFIG_INT(ClLocalPracticeFreezeAim, ec_local_practice_freeze_aim, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Keep the aim your real tee had when practice started instead of sending your live aim")
+MACRO_CONFIG_INT(ClLocalPracticeAlert, ec_local_practice_alert, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show a notice when your real tee gets moved while practicing")
+MACRO_CONFIG_INT(ClLocalPracticeAlertTime, ec_local_practice_alert_time, 2, 1, 60, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many seconds the moved notice stays on screen")
+MACRO_CONFIG_COL(ClLocalPracticeAlertColor, ec_local_practice_alert_color, 1376160, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of the moved notice")
+MACRO_CONFIG_INT(ClLocalPracticeExitOnMove, ec_local_practice_exit_on_move, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Leave the practice world as soon as your real tee gets moved")
+MACRO_CONFIG_INT(ClLocalPracticeKillToReal, ec_local_practice_kill_to_real, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Killing in the practice world puts you back at your real tee instead of at a spawn tile")

@@ -5,6 +5,7 @@
 
 #include "math.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 
@@ -97,6 +98,12 @@ inline T distance(const vector2_base<T> a, const vector2_base<T> &b)
 }
 
 template<Numeric T>
+inline T distance_squared(const vector2_base<T> a, const vector2_base<T> &b)
+{
+	return length_squared(a - b);
+}
+
+template<Numeric T>
 constexpr T dot(const vector2_base<T> a, const vector2_base<T> &b)
 {
 	return a.x * b.x + a.y * b.y;
@@ -176,7 +183,9 @@ constexpr bool closest_point_on_line(vector2_base<T> line_pointA, vector2_base<T
 		return true;
 	}
 	else
+	{
 		return false;
+	}
 }
 
 constexpr int intersect_line_circle(const vec2 LineStart, const vec2 LineEnd, const vec2 CircleCenter, float Radius, vec2 aIntersections[2])
@@ -214,6 +223,85 @@ constexpr int intersect_line_circle(const vec2 LineStart, const vec2 LineEnd, co
 		return 2;
 	}
 }
+
+// <FoxNet
+inline bool InsideQuadrilateral(const vec2 &Point, const vec2 aPoints[4])
+{
+	// Ray-casting / crossing-number algorithm for a 4-vertex polygon.
+	bool Inside = false;
+	for(int i = 0, j = 3; i < 4; j = i++)
+	{
+		const vec2 &p = aPoints[i], &pj = aPoints[j];
+		bool Intersect = ((p.y > Point.y) != (pj.y > Point.y)) &&
+				 (Point.x < (pj.x - p.x) * (Point.y - p.y) / (pj.y - p.y) + p.x);
+		if(Intersect)
+			Inside = !Inside;
+	}
+	return Inside;
+}
+
+inline bool InsideQuadrilateral(const vec2 &Pos, const vec2 aPoints[4], const vec2 &Size)
+{
+	const vec2 Min = vec2(Pos.x - Size.x, Pos.y - Size.y);
+	const vec2 Max = vec2(Pos.x + Size.x, Pos.y + Size.y);
+	const vec2 aBox[4] = {Min, vec2(Max.x, Min.y), Max, vec2(Min.x, Max.y)};
+
+	for(const vec2 &Corner : aBox)
+	{
+		if(InsideQuadrilateral(Corner, aPoints))
+			return true;
+	}
+
+	/*
+	 * A quad thinner than the box passes clean between those four corners without any of them
+	 * ever entering it, which is a tee walking straight through a shallow QStopa ramp while the
+	 * quad below holds it at exactly that height. Holding a corner of the quad, or crossing its
+	 * outline, is the rest of the overlap.
+	 */
+	for(int i = 0; i < 4; i++)
+	{
+		if(aPoints[i].x >= Min.x && aPoints[i].x <= Max.x && aPoints[i].y >= Min.y && aPoints[i].y <= Max.y)
+			return true;
+	}
+
+	const auto Side = [](const vec2 &A, const vec2 &B, const vec2 &P) {
+		const float Cross = (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
+		return Cross > 0.0f ? 1 : (Cross < 0.0f ? -1 : 0);
+	};
+
+	for(int i = 0; i < 4; i++)
+	{
+		const vec2 &BoxStart = aBox[i];
+		const vec2 &BoxEnd = aBox[(i + 1) % 4];
+		for(int k = 0; k < 4; k++)
+		{
+			const vec2 &QuadStart = aPoints[k];
+			const vec2 &QuadEnd = aPoints[(k + 1) % 4];
+			if(Side(BoxStart, BoxEnd, QuadStart) * Side(BoxStart, BoxEnd, QuadEnd) < 0 &&
+				Side(QuadStart, QuadEnd, BoxStart) * Side(QuadStart, QuadEnd, BoxEnd) < 0)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+inline void Rotate(const vec2 &Center, vec2 *pPoint, const float &Rotation)
+{
+	float x = pPoint->x - Center.x;
+	float y = pPoint->y - Center.y;
+	pPoint->x = (x * cosf(Rotation) - y * sinf(Rotation) + Center.x);
+	pPoint->y = (x * sinf(Rotation) + y * cosf(Rotation) + Center.y);
+}
+
+// Rotates a vector around the origin, for points held relative to a pivot
+inline vec2 RotateVec(const vec2 &Vec, const float &Rotation)
+{
+	const float c = cosf(Rotation);
+	const float s = sinf(Rotation);
+	return vec2(Vec.x * c - Vec.y * s, Vec.x * s + Vec.y * c);
+}
+// FoxNet>
 
 // ------------------------------------
 template<Numeric T>

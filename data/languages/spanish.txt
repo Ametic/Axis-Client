@@ -1273,9 +1273,6 @@ Initializing map logic
 Sending initial client info
 == Enviando información inicial del cliente
 
-Uploading map data to GPU
-== Cargando datos del mapa a la GPU
-
 Getting game info
 == Obteniendo información de la partida
 
@@ -2143,9 +2140,6 @@ All
 Preview dummy's name plate
 == Previsualizar el nombre del dummy
 
-AntiPing: prediction margin
-== AntiPing: margen de predicción
-
 [Graphics error]
 Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
 == Memoria de video agotada. Intenta reducir el valor de 'cl_skins_loaded_max' o elimina recursos personalizados (skins, entidades, etc.), especialmente aquellos con alta resolución.
@@ -2651,3 +2645,66 @@ Unmute emoticons
 
 Mute emoticons
 == Mutear emoticonos
+
+Refresh the demo list
+== Actualizar la lista de demos
+
+Open the selected folder
+== Abrir la carpeta seleccionada
+
+Play the selected demo
+== Reproducir la demo seleccionada
+
+Prediction margin
+== Margen de predicción
+
+Predict events (experimental)
+== Predecir eventos (experimental)
+
+[Direct touch input]
+Relative aim
+== Apunte relativo
+
+[Predefined touch button behaviors]
+Joystick Relative Aim
+== Apunte relativo del Joystick
+
+Virtual joystick which only aims and moves the mouse pointer relatively.
+== El joystick virtual, que solo apunta y mueve el puntero del mouse relativamente.
+
+[AntiPing: predict other players]
+Off
+== Apagado
+
+[AntiPing: predict other players]
+All
+== Todos
+
+[AntiPing: predict other players]
+Interact
+== Interactuar
+
+Always predict frozen players
+== Predecir jugadores congelados siempre
+
+No country flags match your filter criteria
+== Ninguna bandera coincide con tu criterio de filtrado
+
+[Important alert message]
+Tap to dismiss…
+== 
+
+Initializing layers
+== 
+
+Credits
+== 
+
+Join
+== 
+
+'%s' not bound.
+== 
+
+Press '%s' to show cursor.
+== 

@@ -252,6 +252,11 @@ int net_socket_read_wait(NETSOCKET sock, std::chrono::nanoseconds nanoseconds);
 /**
  * Creates a UDP socket and binds it to a port.
  *
+ * In case a port is already in use on any of the protocol families, the whole
+ * bind operation fails. Otherwise, if binding at least one protocol family
+ * succeeds, the operation is treated as a success: the host may not support all
+ * protocol families.
+ *
  * @ingroup Network-UDP
  *
  * @param bindaddr Address to bind the socket to.
@@ -288,6 +293,20 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 int net_udp_recv(NETSOCKET sock, NETADDR *addr, unsigned char **data);
 
 /**
+ * Checks whether an UDP socket was closed by the operating system.
+ *
+ * @ingroup Network-UDP
+ *
+ * @param sock Socket to check.
+ *
+ * @return `true` if the socket cannot be used anymore and has to be recreated.
+ *
+ * @remark iOS closes the sockets of apps while they are suspended. Sending on
+ * such a socket keeps failing with `EPIPE` until it is recreated.
+ */
+bool net_udp_is_broken(NETSOCKET sock);
+
+/**
  * Closes an UDP socket.
  *
  * @ingroup Network-UDP
@@ -304,6 +323,11 @@ void net_udp_close(NETSOCKET sock);
 
 /**
  * Creates a TCP socket.
+ *
+ * In case a port is already in use on any of the protocol families, the whole
+ * bind operation fails. Otherwise, if binding at least one protocol family
+ * succeeds, the operation is treated as a success: the host may not support all
+ * protocol families.
  *
  * @ingroup Network-TCP
  *

@@ -19,6 +19,8 @@
 #include <game/client/prediction/gameworld.h>
 #include <game/localization.h>
 
+#include <optional>
+
 static constexpr float ROW_HEIGHT = 46.0f;
 static constexpr float FONT_SIZE = 36.0f;
 static constexpr float RACE_FLAG_SIZE = 52.0f;
@@ -131,16 +133,28 @@ void CInfoMessages::AddInfoMsg(const CInfoMsg &InfoMsg)
 	const float Height = 1.5f * 400.0f * 3.0f;
 	const float Width = Height * Graphics()->ScreenAspect();
 
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	Graphics()->MapScreen(0, 0, Width, Height);
+	CScreenRect ScreenRect = Graphics()->GetScreen();
+	Graphics()->MapScreenToSize(Width, Height);
 
 	m_InfoMsgCurrent = (m_InfoMsgCurrent + 1) % MAX_INFOMSGS;
 	DeleteTextContainers(m_aInfoMsgs[m_InfoMsgCurrent]);
 	m_aInfoMsgs[m_InfoMsgCurrent] = InfoMsg;
 	CreateTextContainersIfNotCreated(m_aInfoMsgs[m_InfoMsgCurrent]);
 
-	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+	for(int i = 0; i < InfoMsg.m_TeamSize; i++)
+	{
+		const int ClientId = InfoMsg.m_aVictimIds[i];
+		for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
+		{
+			if(ClientId == GameClient()->m_aLocalIds[Dummy])
+			{
+				// Could be abused by servers
+				GameClient()->OnSelfDeath(Dummy);
+			}
+		}
+	}
+
+	Graphics()->MapScreen(ScreenRect);
 }
 
 void CInfoMessages::CreateTextContainersIfNotCreated(CInfoMsg &InfoMsg)
@@ -150,11 +164,6 @@ void CInfoMessages::CreateTextContainersIfNotCreated(CInfoMsg &InfoMsg)
 		if(ClientId == GameClient()->m_Snap.m_LocalClientId)
 		{
 			Color = g_Config.m_ClKillMessageHighlightColor;
-			if(!str_comp(InfoMsg.m_aVictimName, g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName))
-			{
-				// Could be abused by servers
-				GameClient()->OnSelfDeath();
-			}
 		}
 		else
 		{
@@ -240,7 +249,7 @@ void CInfoMessages::OnTeamKillMessage(const CNetMsg_Sv_KillMsgTeam *pMsg)
 	std::stable_sort(vStrongWeakSorted.begin(), vStrongWeakSorted.end(), [](auto &Left, auto &Right) { return Left.second > Right.second; });
 
 	CInfoMsg Kill = CreateInfoMsg(TYPE_KILL);
-	Kill.m_TeamSize = minimum<int>(vStrongWeakSorted.size(), MAX_KILLMSG_TEAM_MEMBERS);
+	Kill.m_TeamSize = std::min((int)vStrongWeakSorted.size(), (int)MAX_KILLMSG_TEAM_MEMBERS);
 
 	Kill.m_VictimDDTeam = pMsg->m_Team;
 	for(int i = 0; i < Kill.m_TeamSize; i++)
@@ -314,7 +323,8 @@ void CInfoMessages::OnRaceFinishMessage(const CNetMsg_Sv_RaceFinish *pMsg)
 	AddInfoMsg(Finish);
 }
 
-void CInfoMessages::RenderKillMsg(const CInfoMsg &InfoMsg, float x, float y)
+// EClient: returns the leftmost x it drew to, so the kill feed can measure its own width
+float CInfoMessages::RenderKillMsg(const CInfoMsg &InfoMsg, float x, float y)
 {
 	ColorRGBA TextColor;
 	if(InfoMsg.m_VictimDDTeam)
@@ -350,10 +360,7 @@ void CInfoMessages::RenderKillMsg(const CInfoMsg &InfoMsg, float x, float y)
 	// render victim tees
 	for(int j = (InfoMsg.m_TeamSize - 1); j >= 0; j--)
 	{
-		vec2 OffsetToMid;
-		CRenderTools::GetRenderTeeOffsetToRenderedTee(CAnimState::GetIdle(), &InfoMsg.m_apVictimManagedTeeRenderInfos[j]->TeeRenderInfo(), OffsetToMid);
-		const vec2 TeeRenderPos = vec2(x, y + ROW_HEIGHT / 2.0f + OffsetToMid.y);
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &InfoMsg.m_apVictimManagedTeeRenderInfos[j]->TeeRenderInfo(), EMOTE_PAIN, vec2(-1, 0), TeeRenderPos);
+		RenderTools()->RenderIdleTeeAtCenter(&InfoMsg.m_apVictimManagedTeeRenderInfos[j]->TeeRenderInfo(), vec2(x, y + ROW_HEIGHT / 2.0f), EMOTE_PAIN, vec2(-1, 0));
 		x -= 44.0f;
 	}
 
@@ -390,10 +397,7 @@ void CInfoMessages::RenderKillMsg(const CInfoMsg &InfoMsg, float x, float y)
 		x -= 24.0f;
 		if(InfoMsg.m_pKillerManagedTeeRenderInfo != nullptr)
 		{
-			vec2 OffsetToMid;
-			CRenderTools::GetRenderTeeOffsetToRenderedTee(CAnimState::GetIdle(), &InfoMsg.m_pKillerManagedTeeRenderInfo->TeeRenderInfo(), OffsetToMid);
-			const vec2 TeeRenderPos = vec2(x, y + ROW_HEIGHT / 2.0f + OffsetToMid.y);
-			RenderTools()->RenderTee(CAnimState::GetIdle(), &InfoMsg.m_pKillerManagedTeeRenderInfo->TeeRenderInfo(), EMOTE_ANGRY, vec2(1, 0), TeeRenderPos);
+			RenderTools()->RenderIdleTeeAtCenter(&InfoMsg.m_pKillerManagedTeeRenderInfo->TeeRenderInfo(), vec2(x, y + ROW_HEIGHT / 2.0f), EMOTE_ANGRY, vec2(1, 0));
 		}
 		x -= 32.0f;
 
@@ -404,9 +408,12 @@ void CInfoMessages::RenderKillMsg(const CInfoMsg &InfoMsg, float x, float y)
 			TextRender()->RenderTextContainer(InfoMsg.m_KillerTextContainerIndex, TextColor, TextRender()->DefaultTextOutlineColor(), x, y + (ROW_HEIGHT - FONT_SIZE) / 2.0f);
 		}
 	}
+
+	return x; // EClient
 }
 
-void CInfoMessages::RenderFinishMsg(const CInfoMsg &InfoMsg, float x, float y)
+// EClient: returns the leftmost x it drew to
+float CInfoMessages::RenderFinishMsg(const CInfoMsg &InfoMsg, float x, float y)
 {
 	// render time diff
 	if(InfoMsg.m_DiffTextContainerIndex.Valid())
@@ -441,11 +448,9 @@ void CInfoMessages::RenderFinishMsg(const CInfoMsg &InfoMsg, float x, float y)
 
 	// render victim tee
 	x -= 24.0f;
-	vec2 OffsetToMid;
-	CRenderTools::GetRenderTeeOffsetToRenderedTee(CAnimState::GetIdle(), &InfoMsg.m_apVictimManagedTeeRenderInfos[0]->TeeRenderInfo(), OffsetToMid);
-	const vec2 TeeRenderPos = vec2(x, y + ROW_HEIGHT / 2.0f + OffsetToMid.y);
 	const int Emote = InfoMsg.m_RecordPersonal ? EMOTE_HAPPY : EMOTE_NORMAL;
-	RenderTools()->RenderTee(CAnimState::GetIdle(), &InfoMsg.m_apVictimManagedTeeRenderInfos[0]->TeeRenderInfo(), Emote, vec2(-1, 0), TeeRenderPos);
+	RenderTools()->RenderIdleTeeAtCenter(&InfoMsg.m_apVictimManagedTeeRenderInfos[0]->TeeRenderInfo(), vec2(x, y + ROW_HEIGHT / 2.0f), Emote, vec2(-1, 0));
+	return x;
 }
 
 void CInfoMessages::OnRender()
@@ -456,17 +461,25 @@ void CInfoMessages::OnRender()
 	const float Height = 1.5f * 400.0f * 3.0f;
 	const float Width = Height * Graphics()->ScreenAspect();
 
-	Graphics()->MapScreen(0, 0, Width, Height);
+	Graphics()->MapScreenToSize(Width, Height);
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	int Showfps = g_Config.m_ClShowfps;
-#if defined(CONF_VIDEORECORDER)
-	if(IVideo::Current())
-		Showfps = 0;
-#endif
+	// EClient: the fps counter and prediction time used to be subtracted out by hand here. The
+	// HUD layout pushes this clear of them now, so it only says where it sits on its own.
 	const float StartX = Width - 10.0f;
-	const float StartY = 30.0f + (Showfps ? 100.0f : 0.0f) + (g_Config.m_ClShowpred && Client()->State() != IClient::STATE_DEMOPLAYBACK ? 100.0f : 0.0f);
+	const float StartY = 30.0f;
 
+	// EClient: being covered stops it drawing, not running. Returning outright would take the
+	// expiry below with it, and messages would sit in the ring buffer for as long as the scoreboard
+	// was up, crowding out newer ones.
+	CHudLayout &Layout = GameClient()->m_Hud.HudLayout();
+	const bool Occluded = Layout.IsOccluded(EHudElement::KILL_FEED);
+
+	std::optional<CHudLayout::CScope> Scope;
+	if(!Occluded)
+		Scope.emplace(&Layout, EHudElement::KILL_FEED, vec2(Width, Height));
+
+	float Left = StartX;
 	float y = StartY;
 	for(int i = 1; i <= MAX_INFOMSGS; i++)
 	{
@@ -481,17 +494,28 @@ void CInfoMessages::OnRender()
 			continue;
 		}
 
+		if(Occluded) // EClient
+			continue;
+
 		CreateTextContainersIfNotCreated(InfoMsg);
 
 		if(InfoMsg.m_Type == EType::TYPE_KILL && g_Config.m_ClShowKillMessages)
 		{
-			RenderKillMsg(InfoMsg, StartX, y);
+			Left = std::min(Left, RenderKillMsg(InfoMsg, StartX, y));
 			y += ROW_HEIGHT;
 		}
 		else if(InfoMsg.m_Type == EType::TYPE_FINISH && g_Config.m_ClShowFinishMessages)
 		{
-			RenderFinishMsg(InfoMsg, StartX, y);
+			Left = std::min(Left, RenderFinishMsg(InfoMsg, StartX, y));
 			y += ROW_HEIGHT;
 		}
+	}
+
+	// EClient: reported in HUD units, which is the space the layout works in
+	if(!Occluded && y > StartY)
+	{
+		const float ToHud = 300.0f / Height;
+		Layout.ReportNaturalRect(EHudElement::KILL_FEED,
+			vec2(Left * ToHud, StartY * ToHud), vec2((StartX - Left) * ToHud, (y - StartY) * ToHud));
 	}
 }

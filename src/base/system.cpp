@@ -2,9 +2,6 @@
 
 #include "str.h"
 
-#include <cctype> // std::toupper
-#include <cstdlib> // std::malloc, std::free
-
 void str_to_uppercase(const char *src, char *dst, int dst_size)
 {
 	int i = 0;

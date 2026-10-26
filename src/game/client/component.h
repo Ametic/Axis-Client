@@ -292,17 +292,18 @@ public:
 	/**
 	 * Called with all current touch finger states.
 	 *
-	 * @param vTouchFingerStates The touch finger states to be handled.
+	 * @param vTouchFingerStates The touch finger states to be handled. The component may remove
+	 * fingers from the vector which following components in the input order should not handle.
+	 * A component that returns `true` must clear the vector.
 	 *
 	 * @return `true` if the component used the touch events, `false` otherwise.
 	 */
-	virtual bool OnTouchState(const std::vector<IInput::CTouchFingerState> &vTouchFingerStates)
+	virtual bool OnTouchState(std::vector<IInput::CTouchFingerState> &vTouchFingerStates)
 	{
 		return false;
 	}
 
-	// <E-Client
-	virtual void OnSelfDeath()
+	virtual void OnSelfDeath(bool Dummy)
 	{
 	}
 
@@ -311,6 +312,14 @@ public:
 	 * @param Focused `true` if the window is now focused, `false` if it lost focus.
 	 */
 	virtual void OnFocusChange(bool Focused)
+	{
+	}
+
+	/*
+	 * Called once 10 snapshots have been received after connecting to the server.
+	 * @param Conn sates whether the main player or the dummy connected.
+	 */
+	virtual void OnConnect(int Conn)
 	{
 	}
 };

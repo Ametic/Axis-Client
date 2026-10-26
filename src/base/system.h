@@ -1,6 +1,7 @@
 #ifndef BASE_SYSTEM_H
 #define BASE_SYSTEM_H
 
+#include "color.h"
 #include "dbg.h"
 #include "detect.h"
 #include "fs.h"

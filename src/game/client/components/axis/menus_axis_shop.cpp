@@ -6,8 +6,8 @@
 #include <base/system.h>
 
 #include <engine/font_icons.h>
+#include <engine/http.h>
 #include <engine/shared/config.h>
-#include <engine/shared/http.h>
 #include <engine/shared/json.h>
 #include <engine/storage.h>
 
@@ -126,9 +126,9 @@ namespace
 		int m_InstallTab = -1;
 		int m_InstallUrlIndex = 0;
 		std::array<int, NUM_AXIS_SHOP_TABS> m_aPages{};
-		std::shared_ptr<CHttpRequest> m_pFetchTask;
-		std::shared_ptr<CHttpRequest> m_pInstallTask;
-		std::shared_ptr<CHttpRequest> m_pPreviewTask;
+		std::shared_ptr<IHttpRequest> m_pFetchTask;
+		std::shared_ptr<IHttpRequest> m_pInstallTask;
+		std::shared_ptr<IHttpRequest> m_pPreviewTask;
 		std::vector<SAxisClientShopItem> m_vItems;
 		std::vector<std::string> m_vInstallUrls;
 		char m_aAppliedSearch[128]{};
@@ -154,7 +154,7 @@ namespace
 		str_copy(gs_AxisClientShopState.m_aStatus, pText, sizeof(gs_AxisClientShopState.m_aStatus));
 	}
 
-	static void AxisClientShopAbortTask(std::shared_ptr<CHttpRequest> &pTask)
+	static void AxisClientShopAbortTask(std::shared_ptr<IHttpRequest> &pTask)
 	{
 		if(pTask)
 		{
@@ -283,7 +283,7 @@ namespace
 
 	static void AxisClientShopSetPage(CMenus *pMenus, int Page)
 	{
-		Page = maximum(1, Page);
+		Page = std::max(1, Page);
 		int &CurrentPage = gs_AxisClientShopState.m_aPages[gs_AxisClientShopState.m_Tab];
 		if(CurrentPage == Page)
 		{
@@ -334,7 +334,7 @@ namespace
 		char aRawName[128];
 		if(pFilename != nullptr && pFilename[0] != '\0')
 		{
-			IStorage::StripPathAndExtension(pFilename, aRawName, sizeof(aRawName));
+			fs_split_file_extension(fs_filename(pFilename), aRawName, sizeof(aRawName));
 		}
 		else if(pName != nullptr && pName[0] != '\0')
 		{
@@ -1367,14 +1367,14 @@ namespace
 		const json_value *pTotalPages = json_object_get(pJson, "totalPages");
 		if(!AxisClientShopHasActiveSearch() && pTotalPages != &json_value_none && pTotalPages->type == json_integer)
 		{
-			TotalPages = maximum(1, json_int_get(pTotalPages));
+			TotalPages = std::max(1, json_int_get(pTotalPages));
 		}
 
 		int TotalItems = (int)vItems.size();
 		const json_value *pTotal = json_object_get(pJson, "total");
 		if(pTotal != &json_value_none && pTotal->type == json_integer)
 		{
-			TotalItems = maximum(0, json_int_get(pTotal));
+			TotalItems = std::max(0, json_int_get(pTotal));
 		}
 
 		AxisClientShopClearItems(pMenus);
@@ -1546,8 +1546,8 @@ namespace
 		Overlay.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.82f), IGraphics::CORNER_ALL, 0.0f);
 
 		CUIRect Panel = Overlay;
-		Panel.VMargin(maximum(32.0f, (Overlay.w - 860.0f) / 2.0f), &Panel);
-		Panel.HMargin(maximum(24.0f, (Overlay.h - 600.0f) / 2.0f), &Panel);
+		Panel.VMargin(std::max(32.0f, (Overlay.w - 860.0f) / 2.0f), &Panel);
+		Panel.HMargin(std::max(24.0f, (Overlay.h - 600.0f) / 2.0f), &Panel);
 		Panel.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 0.96f), IGraphics::CORNER_ALL, AXIS_SHOP_SECTION_ROUNDING + 2.0f);
 
 		CUIRect Content;
@@ -1684,7 +1684,7 @@ void CMenus::RenderSettingsAxisClientShop(CUIRect MainView)
 		}
 
 		char aPageLabel[128];
-		str_format(aPageLabel, sizeof(aPageLabel), "%d/%d", CurrentPage, maximum(1, gs_AxisClientShopState.m_TotalPages));
+		str_format(aPageLabel, sizeof(aPageLabel), "%d/%d", CurrentPage, std::max(1, gs_AxisClientShopState.m_TotalPages));
 		Ui()->DoLabel(&PageLabel, aPageLabel, AXIS_SHOP_FONT_SIZE, TEXTALIGN_MC);
 
 		if(DoButton_Menu(&s_NextButton, ">", CurrentPage < gs_AxisClientShopState.m_TotalPages ? 0 : -1, &NextButton, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, CurrentPage < gs_AxisClientShopState.m_TotalPages ? 0.25f : 0.15f)) && CurrentPage < gs_AxisClientShopState.m_TotalPages)

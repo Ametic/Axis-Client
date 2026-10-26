@@ -4,6 +4,7 @@
 #ifndef BASE_STR_H
 #define BASE_STR_H
 
+#include <array>
 #include <cinttypes>
 #include <cstdarg>
 #include <cstddef>
@@ -40,6 +41,7 @@
  * @return Length of written string, even if it has been truncated
  *
  * @remark The strings are treated as null-terminated strings.
+ * @remark At most dst_size bytes are read from src.
  * @remark Guarantees that dst string will contain null-termination.
  */
 int str_copy(char *dst, const char *src, int dst_size);
@@ -59,6 +61,23 @@ template<int N>
 void str_copy(char (&dst)[N], const char *src)
 {
 	str_copy(dst, src, N);
+}
+
+/**
+ * Copies a string to a fixed-size std::array of chars.
+ *
+ * @ingroup Strings
+ *
+ * @param dst Array that shall receive the string.
+ * @param src String to be copied.
+ *
+ * @remark The strings are treated as null-terminated strings.
+ * @remark Guarantees that dst string will contain null-termination.
+ */
+template<size_t N>
+void str_copy(std::array<char, N> &dst, const char *src)
+{
+	str_copy(dst.data(), src, static_cast<int>(N));
 }
 
 /**
@@ -185,9 +204,9 @@ char str_uppercase(char c);
 
 bool str_isnum(char c);
 
-int str_isallnum(const char *str);
+bool str_isallnum(const char *str);
 
-int str_isallnum_hex(const char *str);
+bool str_isallnum_hex(const char *str);
 
 /**
  * Determines whether a character is whitespace.
@@ -196,11 +215,11 @@ int str_isallnum_hex(const char *str);
  *
  * @param c the character to check.
  *
- * @return `1` if the character is whitespace, `0` otherwise.
+ * @return `true` if the character is whitespace, `false` otherwise.
  *
  * @remark The following characters are considered whitespace: ` `, `\n`, `\r`, `\t`.
  */
-int str_isspace(char c);
+bool str_isspace(char c);
 
 /**
  * Trims specific number of words at the start of a string.
@@ -516,7 +535,7 @@ const char *str_find(const char *haystack, const char *needle);
  *
  * @remark The token is always null-terminated.
  */
-const char *str_next_token(const char *str, const char *delim, char *buffer, int buffer_size);
+const char *str_next_token(const char *str, const char *delim, char *buffer, size_t buffer_size);
 
 /**
  * Checks if needle is in list delimited by delim.
@@ -530,7 +549,7 @@ const char *str_next_token(const char *str, const char *delim, char *buffer, int
  *
  * @remark The strings are treated as null-terminated strings.
  */
-int str_in_list(const char *list, const char *delim, const char *needle);
+bool str_in_list(const char *list, const char *delim, const char *needle);
 
 /**
  * @ingroup Strings
@@ -669,6 +688,15 @@ int str_base64_decode(void *dst, int dst_size, const char *data);
  */
 void str_escape(char **dst, const char *src, const char *end);
 
+/**
+ * Replaces pairs of `\` and `n` characters in a string with newline character `\n`.
+ *
+ * @param str String to unescape in place.
+ *
+ * @remark The strings are treated as null-terminated strings.
+ */
+void str_unescape_newlines(char *str);
+
 int str_toint(const char *str);
 bool str_toint(const char *str, int *out);
 int str_toint_base(const char *str, int base);
@@ -772,7 +800,7 @@ void str_utf8_tolower(const char *input, char *output, size_t size);
  *
  * @return Whether the codepoint is a space.
  */
-int str_utf8_isspace(int code);
+bool str_utf8_isspace(int code);
 
 /**
  * Checks whether a given byte is the start of a UTF-8 character.
@@ -783,7 +811,7 @@ int str_utf8_isspace(int code);
  *
  * @return Whether the char starts a UTF-8 character.
  */
-int str_utf8_isstart(char c);
+bool str_utf8_isstart(char c);
 
 /**
  * Moves a cursor backwards in an UTF-8 string,
@@ -881,11 +909,11 @@ int str_utf8_forward(const char *str, int cursor);
  *
  * @param str Pointer to a possible UTF-8 string.
  *
- * @return `0` if invalid characters were found, `1` if only valid characters were found.
+ * @return `false` if invalid characters were found, `true` if only valid characters were found.
  *
  * @remark The string is treated as null-terminated UTF-8 string.
  */
-int str_utf8_check(const char *str);
+bool str_utf8_check(const char *str);
 
 /**
  * Copies a number of UTF-8 characters from one string to another.
