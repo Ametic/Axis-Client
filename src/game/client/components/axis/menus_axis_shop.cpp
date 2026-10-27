@@ -30,10 +30,12 @@ using namespace FontIcon;
 
 namespace
 {
-	static constexpr const char *AXIS_SHOP_HOST = "https://teeworlds.xyz";
-	static constexpr const char *AXIS_SHOP_BROWSE_API_URL = "https://teeworlds.xyz/api/skins?page=%d&limit=10&type=%s";
-	static constexpr const char *AXIS_SHOP_SEARCH_API_URL = "https://teeworlds.xyz/api/skins?page=%d&limit=10&type=%s&search=%s";
-	static constexpr CTimeout AXIS_SHOP_TIMEOUT{8000, 0, 1024, 8};
+	static constexpr const char *AXIS_SHOP_HOST = "https://teedata.net";
+	static constexpr const char *AXIS_SHOP_DATABASE_PATH = "/databasev2";
+	static constexpr int AXIS_SHOP_PAGE_LIMIT = 10;
+	static constexpr const char *AXIS_SHOP_BROWSE_API_URL = "https://teedata.net/api/%s/read?page=%d&limit=10&status=accepted";
+	static constexpr const char *AXIS_SHOP_SEARCH_API_URL = "https://teedata.net/api/%s/read?page=%d&limit=10&status=accepted&name=%s";
+	static constexpr CTimeout AXIS_SHOP_TIMEOUT{15000, 0, 512, 15};
 	static constexpr int64_t AXIS_SHOP_PAGE_MAX_RESPONSE_SIZE = 2 * 1024 * 1024;
 	static constexpr int64_t AXIS_SHOP_IMAGE_MAX_RESPONSE_SIZE = 32 * 1024 * 1024;
 	static constexpr int64_t AXIS_SHOP_AUDIO_MAX_RESPONSE_SIZE = 128 * 1024 * 1024;
@@ -87,10 +89,10 @@ namespace
 		{"Game", "gameskin", "assets/game", AXIS_ASSETS_TAB_GAME},
 		{"Emoticons", "emoticon", "assets/emoticons", AXIS_ASSETS_TAB_EMOTICONS},
 		{"Particles", "particle", "assets/particles", AXIS_ASSETS_TAB_PARTICLES},
-		{"HUD", "hud", "assets/hud", AXIS_ASSETS_TAB_HUD},
-		{"Arrows", "arrows", "assets/arrow", AXIS_ASSETS_TAB_ARROW},
+		{"HUD", nullptr, "assets/hud", AXIS_ASSETS_TAB_HUD},
+		{"Arrows", nullptr, "assets/arrow", AXIS_ASSETS_TAB_ARROW},
 		{"Cursors", "cursor", "assets/cursor", AXIS_ASSETS_TAB_CURSOR},
-		{"Audio", "sounds", "assets/audio", AXIS_ASSETS_TAB_AUDIO},
+		{"Audio", nullptr, "assets/audio", AXIS_ASSETS_TAB_AUDIO},
 	};
 
 	struct SAxisClientShopItem
@@ -99,8 +101,8 @@ namespace
 		char m_aName[128]{};
 		char m_aFilename[128]{};
 		char m_aUsername[64]{};
-		char m_aImageUrl[256]{};
-		char m_aDownloadUrl[256]{};
+		char m_aImageUrl[512]{};
+		char m_aDownloadUrl[512]{};
 		bool m_PreviewFailed = false;
 		int m_PreviewWidth = 0;
 		int m_PreviewHeight = 0;
@@ -329,6 +331,32 @@ namespace
 		}
 	}
 
+	static void AxisClientShopResolveDatabaseUrl(const char *pInput, char *pOutput, size_t OutputSize)
+	{
+		pOutput[0] = '\0';
+		if(pInput == nullptr || pInput[0] == '\0')
+		{
+			return;
+		}
+
+		if(str_startswith(pInput, "https://") != nullptr || str_startswith(pInput, "http://") != nullptr)
+		{
+			str_copy(pOutput, pInput, OutputSize);
+		}
+		else if(str_startswith(pInput, "/databasev2/") != nullptr)
+		{
+			str_format(pOutput, OutputSize, "%s%s", AXIS_SHOP_HOST, pInput);
+		}
+		else if(pInput[0] == '/')
+		{
+			str_format(pOutput, OutputSize, "%s%s%s", AXIS_SHOP_HOST, AXIS_SHOP_DATABASE_PATH, pInput);
+		}
+		else
+		{
+			str_format(pOutput, OutputSize, "%s%s/%s", AXIS_SHOP_HOST, AXIS_SHOP_DATABASE_PATH, pInput);
+		}
+	}
+
 	static void AxisClientShopNormalizeAssetName(const char *pName, const char *pFilename, char *pOutput, size_t OutputSize)
 	{
 		char aRawName[128];
@@ -383,7 +411,10 @@ namespace
 
 	static void AxisClientShopBuildPreviewPath(int Tab, const char *pItemId, char *pOutput, size_t OutputSize)
 	{
-		str_format(pOutput, OutputSize, "axisclient/shop_previews/%s/%s.png", gs_aAxisClientShopTypeInfos[Tab].m_pApiType, pItemId);
+		const char *pCategory = gs_aAxisClientShopTypeInfos[Tab].m_pApiType != nullptr ?
+						gs_aAxisClientShopTypeInfos[Tab].m_pApiType :
+						gs_aAxisClientShopTypeInfos[Tab].m_pLabel;
+		str_format(pOutput, OutputSize, "axisclient/shop_previews/%s/%s.png", pCategory, pItemId);
 	}
 
 	static void AxisClientShopBuildAssetPath(int Tab, const char *pAssetName, char *pOutput, size_t OutputSize)
@@ -1075,6 +1106,7 @@ namespace
 
 	static void AxisClientShopBuildInstallUrls(int Tab, const SAxisClientShopItem &Item, std::vector<std::string> &vUrls)
 	{
+		(void)Tab;
 		vUrls.clear();
 
 		auto AddUrl = [&vUrls](const char *pUrl) {
@@ -1083,7 +1115,7 @@ namespace
 				return;
 			}
 
-			char aResolvedUrl[256];
+			char aResolvedUrl[512];
 			AxisClientShopResolveUrl(pUrl, aResolvedUrl, sizeof(aResolvedUrl));
 			if(aResolvedUrl[0] == '\0')
 			{
@@ -1097,37 +1129,35 @@ namespace
 			}
 		};
 
-		char aFallbackUrl[256];
-		if(Tab == AXIS_SHOP_AUDIO)
-		{
-			AddUrl(Item.m_aDownloadUrl);
-
-			str_format(aFallbackUrl, sizeof(aFallbackUrl), "%s/api/skins/%s?download=true", AXIS_SHOP_HOST, Item.m_aId);
-			AddUrl(aFallbackUrl);
-
-			str_format(aFallbackUrl, sizeof(aFallbackUrl), "%s/api/skins/%s?file=true", AXIS_SHOP_HOST, Item.m_aId);
-			AddUrl(aFallbackUrl);
-		}
-
+		AddUrl(Item.m_aDownloadUrl);
 		AddUrl(Item.m_aImageUrl);
-
-		str_format(aFallbackUrl, sizeof(aFallbackUrl), "%s/api/skins/%s?image=true", AXIS_SHOP_HOST, Item.m_aId);
-		AddUrl(aFallbackUrl);
 	}
 
 	static void AxisClientShopStartFetch(CMenus *pMenus)
 	{
 		const char *pApiType = gs_aAxisClientShopTypeInfos[gs_AxisClientShopState.m_Tab].m_pApiType;
+		if(pApiType == nullptr || pApiType[0] == '\0')
+		{
+			AxisClientShopClearItems(pMenus);
+			gs_AxisClientShopState.m_LoadedTab = gs_AxisClientShopState.m_Tab;
+			gs_AxisClientShopState.m_LoadedPage = 1;
+			str_copy(gs_AxisClientShopState.m_aLoadedSearch, gs_AxisClientShopState.m_aAppliedSearch, sizeof(gs_AxisClientShopState.m_aLoadedSearch));
+			gs_AxisClientShopState.m_TotalPages = 1;
+			gs_AxisClientShopState.m_TotalItems = 0;
+			AxisClientShopSetStatus(Localize("No assets found on this page"));
+			return;
+		}
+
 		char aUrl[512];
 		if(AxisClientShopHasActiveSearch())
 		{
 			char aEscapedQuery[384];
 			EscapeUrl(aEscapedQuery, sizeof(aEscapedQuery), gs_AxisClientShopState.m_aAppliedSearch);
-			str_format(aUrl, sizeof(aUrl), AXIS_SHOP_SEARCH_API_URL, 1, pApiType, aEscapedQuery);
+			str_format(aUrl, sizeof(aUrl), AXIS_SHOP_SEARCH_API_URL, pApiType, 1, aEscapedQuery);
 		}
 		else
 		{
-			str_format(aUrl, sizeof(aUrl), AXIS_SHOP_BROWSE_API_URL, gs_AxisClientShopState.m_aPages[gs_AxisClientShopState.m_Tab], pApiType);
+			str_format(aUrl, sizeof(aUrl), AXIS_SHOP_BROWSE_API_URL, pApiType, gs_AxisClientShopState.m_aPages[gs_AxisClientShopState.m_Tab]);
 		}
 
 		gs_AxisClientShopState.m_pFetchTask = HttpGet(aUrl);
@@ -1182,14 +1212,18 @@ namespace
 				continue;
 			}
 
-			char aPreviewUrl[256];
+			char aPreviewUrl[512];
 			if(Item.m_aImageUrl[0] != '\0')
 			{
 				AxisClientShopResolveUrl(Item.m_aImageUrl, aPreviewUrl, sizeof(aPreviewUrl));
 			}
+			else if(Item.m_aDownloadUrl[0] != '\0')
+			{
+				AxisClientShopResolveUrl(Item.m_aDownloadUrl, aPreviewUrl, sizeof(aPreviewUrl));
+			}
 			else
 			{
-				str_format(aPreviewUrl, sizeof(aPreviewUrl), "%s/api/skins/%s?image=true", AXIS_SHOP_HOST, Item.m_aId);
+				aPreviewUrl[0] = '\0';
 			}
 
 			if(aPreviewUrl[0] == '\0')
@@ -1302,54 +1336,103 @@ namespace
 			return;
 		}
 
+		const json_value *pResultObj = json_object_get(pJson, "result");
+		const json_value *pRoot = (pResultObj != &json_value_none && pResultObj->type == json_object) ? pResultObj : pJson;
+
 		std::vector<SAxisClientShopItem> vItems;
-		const json_value *pSkins = json_object_get(pJson, "skins");
-		if(pSkins != &json_value_none && pSkins->type == json_array)
+		const json_value *pItems = json_object_get(pRoot, "items");
+		if(pItems == &json_value_none || pItems->type != json_array)
 		{
-			for(int Index = 0; Index < json_array_length(pSkins); ++Index)
+			pItems = json_object_get(pRoot, "skins");
+		}
+		if(pItems != &json_value_none && pItems->type == json_array)
+		{
+			for(int Index = 0; Index < json_array_length(pItems); ++Index)
 			{
-				const json_value *pSkin = json_array_get(pSkins, Index);
+				const json_value *pSkin = json_array_get(pItems, Index);
 				if(pSkin == &json_value_none || pSkin->type != json_object)
 				{
 					continue;
 				}
 
 				const char *pStatus = json_string_get(json_object_get(pSkin, "status"));
-				if(pStatus != nullptr && pStatus[0] != '\0' && str_comp(pStatus, "approved") != 0)
+				if(pStatus != nullptr && pStatus[0] != '\0' && str_comp(pStatus, "accepted") != 0 && str_comp(pStatus, "approved") != 0)
 				{
 					continue;
 				}
 
 				SAxisClientShopItem Item;
-				if(const char *pId = json_string_get(json_object_get(pSkin, "id")); pId != nullptr)
+				const json_value *pIdValue = json_object_get(pSkin, "id");
+				if(pIdValue != &json_value_none && pIdValue->type == json_integer)
+				{
+					str_format(Item.m_aId, sizeof(Item.m_aId), "%d", json_int_get(pIdValue));
+				}
+				else if(const char *pId = json_string_get(pIdValue); pId != nullptr)
 				{
 					str_copy(Item.m_aId, pId, sizeof(Item.m_aId));
 					str_sanitize_filename(Item.m_aId);
 				}
+
 				if(const char *pName = json_string_get(json_object_get(pSkin, "name")); pName != nullptr)
 				{
 					str_copy(Item.m_aName, pName, sizeof(Item.m_aName));
 				}
-				if(const char *pFilename = json_string_get(json_object_get(pSkin, "filename")); pFilename != nullptr)
+
+				if(const char *pFilePath = json_string_get(json_object_get(pSkin, "file_path")); pFilePath != nullptr && pFilePath[0] != '\0')
 				{
-					str_copy(Item.m_aFilename, pFilename, sizeof(Item.m_aFilename));
+					AxisClientShopResolveDatabaseUrl(pFilePath, Item.m_aDownloadUrl, sizeof(Item.m_aDownloadUrl));
+					str_copy(Item.m_aFilename, fs_filename(pFilePath), sizeof(Item.m_aFilename));
 				}
-				if(const char *pUsername = json_string_get(json_object_get(pSkin, "username")); pUsername != nullptr)
+				if(Item.m_aFilename[0] == '\0')
 				{
-					str_copy(Item.m_aUsername, pUsername, sizeof(Item.m_aUsername));
+					if(const char *pFilename = json_string_get(json_object_get(pSkin, "filename")); pFilename != nullptr)
+					{
+						str_copy(Item.m_aFilename, pFilename, sizeof(Item.m_aFilename));
+					}
 				}
-				if(const char *pImageUrl = json_string_get(json_object_get(pSkin, "imageUrl")); pImageUrl != nullptr)
+
+				const json_value *pAuthor = json_object_get(pSkin, "author");
+				if(pAuthor != &json_value_none && pAuthor->type == json_object)
+				{
+					if(const char *pAuthorName = json_string_get(json_object_get(pAuthor, "name")); pAuthorName != nullptr)
+					{
+						str_copy(Item.m_aUsername, pAuthorName, sizeof(Item.m_aUsername));
+					}
+				}
+				if(Item.m_aUsername[0] == '\0')
+				{
+					if(const char *pUsername = json_string_get(json_object_get(pSkin, "username")); pUsername != nullptr)
+					{
+						str_copy(Item.m_aUsername, pUsername, sizeof(Item.m_aUsername));
+					}
+				}
+
+				if(const char *pThumbnailPath = json_string_get(json_object_get(pSkin, "thumbnail_path")); pThumbnailPath != nullptr && pThumbnailPath[0] != '\0')
+				{
+					AxisClientShopResolveDatabaseUrl(pThumbnailPath, Item.m_aImageUrl, sizeof(Item.m_aImageUrl));
+				}
+				else if(const char *pImageUrl = json_string_get(json_object_get(pSkin, "imageUrl")); pImageUrl != nullptr)
 				{
 					str_copy(Item.m_aImageUrl, pImageUrl, sizeof(Item.m_aImageUrl));
 				}
-				if(const char *pDownloadUrl = json_string_get(json_object_get(pSkin, "downloadUrl")); pDownloadUrl != nullptr)
+
+				if(Item.m_aDownloadUrl[0] == '\0')
 				{
-					str_copy(Item.m_aDownloadUrl, pDownloadUrl, sizeof(Item.m_aDownloadUrl));
+					if(const char *pDownloadUrl = json_string_get(json_object_get(pSkin, "downloadUrl")); pDownloadUrl != nullptr)
+					{
+						str_copy(Item.m_aDownloadUrl, pDownloadUrl, sizeof(Item.m_aDownloadUrl));
+					}
+					else if(const char *pFileUrl = json_string_get(json_object_get(pSkin, "fileUrl")); pFileUrl != nullptr)
+					{
+						str_copy(Item.m_aDownloadUrl, pFileUrl, sizeof(Item.m_aDownloadUrl));
+					}
 				}
-				else if(const char *pFileUrl = json_string_get(json_object_get(pSkin, "fileUrl")); pFileUrl != nullptr)
+
+				if(Item.m_aImageUrl[0] == '\0' && Item.m_aDownloadUrl[0] != '\0')
 				{
-					str_copy(Item.m_aDownloadUrl, pFileUrl, sizeof(Item.m_aDownloadUrl));
+					str_copy(Item.m_aImageUrl, Item.m_aDownloadUrl, sizeof(Item.m_aImageUrl));
 				}
+
 				if(Item.m_aId[0] == '\0')
 				{
 					continue;
@@ -1363,18 +1446,29 @@ namespace
 			}
 		}
 
-		int TotalPages = 1;
-		const json_value *pTotalPages = json_object_get(pJson, "totalPages");
-		if(!AxisClientShopHasActiveSearch() && pTotalPages != &json_value_none && pTotalPages->type == json_integer)
-		{
-			TotalPages = std::max(1, json_int_get(pTotalPages));
-		}
-
 		int TotalItems = (int)vItems.size();
-		const json_value *pTotal = json_object_get(pJson, "total");
+		const json_value *pTotal = json_object_get(pRoot, "totalCount");
+		if(pTotal == &json_value_none || pTotal->type != json_integer)
+		{
+			pTotal = json_object_get(pRoot, "total");
+		}
 		if(pTotal != &json_value_none && pTotal->type == json_integer)
 		{
 			TotalItems = std::max(0, json_int_get(pTotal));
+		}
+
+		int TotalPages = 1;
+		if(!AxisClientShopHasActiveSearch())
+		{
+			const json_value *pTotalPages = json_object_get(pRoot, "totalPages");
+			if(pTotalPages != &json_value_none && pTotalPages->type == json_integer)
+			{
+				TotalPages = std::max(1, json_int_get(pTotalPages));
+			}
+			else
+			{
+				TotalPages = std::max(1, (TotalItems + AXIS_SHOP_PAGE_LIMIT - 1) / AXIS_SHOP_PAGE_LIMIT);
+			}
 		}
 
 		AxisClientShopClearItems(pMenus);
@@ -1718,7 +1812,7 @@ void CMenus::RenderSettingsAxisClientShop(CUIRect MainView)
 		str_format(aStatusText, sizeof(aStatusText), "%s: %d", Localize("Items"), gs_AxisClientShopState.m_TotalItems);
 	}
 	static constexpr const char *s_pCreditPrefix = "\xc2\xa9 powered by ";
-	static constexpr const char *s_pCreditLink = "CatData";
+	static constexpr const char *s_pCreditLink = "TeeData";
 	const float CreditPrefixWidth = TextRender()->TextWidth(AXIS_SHOP_SMALL_FONT_SIZE, s_pCreditPrefix, -1, -1.0f);
 	const float CreditLinkWidth = TextRender()->TextWidth(AXIS_SHOP_SMALL_FONT_SIZE, s_pCreditLink, -1, -1.0f);
 	const float CreditWidth = CreditPrefixWidth + CreditLinkWidth + 6.0f;
@@ -1907,8 +2001,22 @@ void CMenus::RenderSettingsAxisClientShop(CUIRect MainView)
 	gs_AxisClientShopState.m_SelectedIndex = s_ListBox.DoEnd();
 
 	static CButtonContainer s_aShopTabs[NUM_AXIS_SHOP_TABS] = {};
-	const float TabWidth = TabsRow.w < (float)NUM_AXIS_SHOP_TABS * AXIS_SHOP_TAB_WIDTH ? TabsRow.w / (float)NUM_AXIS_SHOP_TABS : AXIS_SHOP_TAB_WIDTH;
-	const float TabsWidth = (float)NUM_AXIS_SHOP_TABS * TabWidth;
+	int NumVisibleTabs = 0;
+	int FirstVisibleTab = -1;
+	int LastVisibleTab = -1;
+	for(int Tab = 0; Tab < NUM_AXIS_SHOP_TABS; ++Tab)
+	{
+		if(gs_aAxisClientShopTypeInfos[Tab].m_pApiType != nullptr)
+		{
+			if(FirstVisibleTab == -1)
+				FirstVisibleTab = Tab;
+			LastVisibleTab = Tab;
+			++NumVisibleTabs;
+		}
+	}
+
+	const float TabWidth = TabsRow.w < (float)NumVisibleTabs * AXIS_SHOP_TAB_WIDTH ? TabsRow.w / (float)std::max(1, NumVisibleTabs) : AXIS_SHOP_TAB_WIDTH;
+	const float TabsWidth = (float)NumVisibleTabs * TabWidth;
 	CUIRect Tabs = TabsRow;
 	if(TabsRow.w > TabsWidth)
 	{
@@ -1918,9 +2026,13 @@ void CMenus::RenderSettingsAxisClientShop(CUIRect MainView)
 	}
 	for(int Tab = 0; Tab < NUM_AXIS_SHOP_TABS; ++Tab)
 	{
+		if(gs_aAxisClientShopTypeInfos[Tab].m_pApiType == nullptr)
+			continue;
+
 		CUIRect Button;
 		Tabs.VSplitLeft(TabWidth, &Button, &Tabs);
-		const int Corners = Tab == 0 ? IGraphics::CORNER_L : (Tab == NUM_AXIS_SHOP_TABS - 1 ? IGraphics::CORNER_R : IGraphics::CORNER_NONE);
+		const int Corners = FirstVisibleTab == LastVisibleTab ? IGraphics::CORNER_ALL :
+									(Tab == FirstVisibleTab ? IGraphics::CORNER_L : (Tab == LastVisibleTab ? IGraphics::CORNER_R : IGraphics::CORNER_NONE));
 		if(DoButton_MenuTab(&s_aShopTabs[Tab], Localize(gs_aAxisClientShopTypeInfos[Tab].m_pLabel), gs_AxisClientShopState.m_Tab == Tab, &Button, Corners, nullptr, nullptr, nullptr, nullptr, 4.0f))
 		{
 			AxisClientShopSetTab(this, Tab);
