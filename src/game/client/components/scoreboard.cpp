@@ -1333,10 +1333,7 @@ void CScoreboard::OnRender()
 		Ui()->RenderPopupMenus();
 
 		if(m_MouseUnlocked)
-		{
 			RenderTools()->RenderCursor(Ui()->MousePos(), 24.0f);
-			GameClient()->m_Hud.m_CursorPos = Ui()->MousePos();
-		}
 
 		Ui()->FinishCheck();
 	}
